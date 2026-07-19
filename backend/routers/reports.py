@@ -9,6 +9,7 @@ Aggregates per-month:
 - Unmapped-orders sheet (for ops to fix masters)
 """
 import io
+import re
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
@@ -21,6 +22,7 @@ from fastapi.responses import StreamingResponse
 from db import db
 
 router = APIRouter(tags=["reports"])
+MONTH_RE = re.compile(r"^\d{4}-\d{2}$")
 
 
 @router.get("/reports/months")
@@ -144,8 +146,8 @@ async def _month_aggregate(month: str) -> Dict[str, Any]:
 
 @router.get("/reports/monthly")
 async def monthly_report(month: str = Query(..., description="YYYY-MM")):
-    if not month or len(month) != 7:
-        raise HTTPException(400, "month must be YYYY-MM")
+    if not MONTH_RE.match(month or ""):
+        raise HTTPException(400, "month must be in YYYY-MM format")
     return await _month_aggregate(month)
 
 
@@ -293,10 +295,6 @@ async def export_monthly(month: str = Query(..., description="YYYY-MM")):
         ws5.cell(row_i, 5, s.get("sub_category"))
         ws5.cell(row_i, 6, s.get("zone"))
         ws5.cell(row_i, 7, s.get("qty"))
-        for col_i, key in enumerate([
-            "mrp_from_sale", "customer_discount_from_sale", "nsv_val_from_sale",
-        ], start=8):
-            pass
         c8 = ws5.cell(row_i, 8, _fmt_num(s.get("mrp"))); c8.number_format = money_fmt
         c9 = ws5.cell(row_i, 9, _fmt_num(s.get("customer_discount"))); c9.number_format = money_fmt
         c10 = ws5.cell(row_i, 10, _fmt_num(s.get("nsv_val"))); c10.number_format = money_fmt

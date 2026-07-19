@@ -10,10 +10,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import List, Optional
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from db import db
+from deps import require_admin
 
 router = APIRouter(tags=["masters"])
 ROOT_DIR = Path(__file__).parent.parent
@@ -248,14 +249,14 @@ async def list_commission_rules():
 
 
 @router.post("/masters/commission-rules")
-async def upsert_commission_rule(rule: CommissionRule):
+async def upsert_commission_rule(rule: CommissionRule, _user=Depends(require_admin)):
     d = rule.model_dump()
     await db.commission_rules.update_one({"id": d["id"]}, {"$set": d}, upsert=True)
     return _clean(d)
 
 
 @router.delete("/masters/commission-rules/{rule_id}")
-async def delete_commission_rule(rule_id: str):
+async def delete_commission_rule(rule_id: str, _user=Depends(require_admin)):
     await db.commission_rules.delete_one({"id": rule_id})
     return {"ok": True}
 
@@ -267,14 +268,14 @@ async def list_fixed_fees():
 
 
 @router.post("/masters/fixed-fees")
-async def upsert_fixed_fee(fee: FixedFeeSlab):
+async def upsert_fixed_fee(fee: FixedFeeSlab, _user=Depends(require_admin)):
     d = fee.model_dump()
     await db.fixed_fees.update_one({"id": d["id"]}, {"$set": d}, upsert=True)
     return _clean(d)
 
 
 @router.delete("/masters/fixed-fees/{fee_id}")
-async def delete_fixed_fee(fee_id: str):
+async def delete_fixed_fee(fee_id: str, _user=Depends(require_admin)):
     await db.fixed_fees.delete_one({"id": fee_id})
     return {"ok": True}
 
@@ -288,14 +289,14 @@ async def list_gt_charges():
 
 
 @router.post("/masters/gt-charges")
-async def upsert_gt_charge(cell: GTChargeCell):
+async def upsert_gt_charge(cell: GTChargeCell, _user=Depends(require_admin)):
     d = cell.model_dump()
     await db.gt_charges.update_one({"id": d["id"]}, {"$set": d}, upsert=True)
     return _clean(d)
 
 
 @router.delete("/masters/gt-charges/{cell_id}")
-async def delete_gt_charge(cell_id: str):
+async def delete_gt_charge(cell_id: str, _user=Depends(require_admin)):
     await db.gt_charges.delete_one({"id": cell_id})
     return {"ok": True}
 
@@ -307,7 +308,7 @@ async def list_return_fees():
 
 
 @router.post("/masters/return-fees")
-async def upsert_return_fee(cell: ReturnFeeCell):
+async def upsert_return_fee(cell: ReturnFeeCell, _user=Depends(require_admin)):
     d = cell.model_dump()
     await db.return_fees.update_one({"id": d["id"]}, {"$set": d}, upsert=True)
     return _clean(d)
@@ -320,7 +321,7 @@ async def list_subcat_levels():
 
 
 @router.post("/masters/subcat-levels")
-async def upsert_subcat_level(item: SubCategoryLevel):
+async def upsert_subcat_level(item: SubCategoryLevel, _user=Depends(require_admin)):
     d = item.model_dump()
     await db.subcat_levels.update_one({"id": d["id"]}, {"$set": d}, upsert=True)
     return _clean(d)
@@ -335,7 +336,7 @@ async def get_tolerance():
 
 
 @router.post("/masters/tolerance")
-async def set_tolerance(payload: ToleranceConfig):
+async def set_tolerance(payload: ToleranceConfig, _user=Depends(require_admin)):
     d = payload.model_dump()
     await db.tolerances.update_one({}, {"$set": d}, upsert=True)
     return d
@@ -350,7 +351,7 @@ async def get_tax_rates():
 
 
 @router.post("/masters/tax-rates")
-async def set_tax_rates(payload: TaxRates):
+async def set_tax_rates(payload: TaxRates, _user=Depends(require_admin)):
     d = payload.model_dump()
     await db.tax_rates.update_one({}, {"$set": d}, upsert=True)
     return d
@@ -365,15 +366,15 @@ async def get_settlement_settings():
 
 
 @router.post("/masters/settlement-settings")
-async def set_settlement_settings(payload: SettlementSettings):
+async def set_settlement_settings(payload: SettlementSettings, _user=Depends(require_admin)):
     d = payload.model_dump()
     await db.settlement_settings.update_one({}, {"$set": d}, upsert=True)
     return d
 
 
 @router.post("/masters/reset-defaults")
-async def reset_defaults():
-    """Wipe all masters and re-seed from the source file. DESTRUCTIVE."""
+async def reset_defaults(_user=Depends(require_admin)):
+    """Wipe all masters and re-seed from the source file. DESTRUCTIVE. Admin only."""
     await db.commission_rules.delete_many({})
     await db.fixed_fees.delete_many({})
     await db.gt_charges.delete_many({})
