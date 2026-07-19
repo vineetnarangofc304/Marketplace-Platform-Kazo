@@ -2,11 +2,12 @@ import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import {
   LayoutDashboard, Upload, Table2, Calculator, GitCompareArrows,
-  AlertTriangle, Settings2, LogOut, Sparkles,
+  AlertTriangle, Settings2, LogOut, Sparkles, FileText,
 } from "lucide-react";
 
 const nav = [
   { to: "/", label: "Overview", icon: LayoutDashboard, testId: "nav-overview" },
+  { to: "/reports", label: "Monthly Report", icon: FileText, testId: "nav-reports" },
   { to: "/uploads", label: "Uploads", icon: Upload, testId: "nav-uploads" },
   { to: "/sales", label: "Sales Ledger", icon: Table2, testId: "nav-sales" },
   { to: "/calculations", label: "Calculations", icon: Calculator, testId: "nav-calculations" },

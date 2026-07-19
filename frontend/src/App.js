@@ -5,6 +5,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import Layout from "@/components/Layout";
 import Login from "@/pages/Login";
 import Overview from "@/pages/Overview";
+import Reports from "@/pages/Reports";
 import Uploads from "@/pages/Uploads";
 import SalesLedger from "@/pages/SalesLedger";
 import Calculations from "@/pages/Calculations";
@@ -29,6 +30,7 @@ function App() {
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/" element={<Shell><Overview /></Shell>} />
+            <Route path="/reports" element={<Shell><Reports /></Shell>} />
             <Route path="/uploads" element={<Shell><Uploads /></Shell>} />
             <Route path="/sales" element={<Shell><SalesLedger /></Shell>} />
             <Route path="/calculations" element={<Shell><Calculations /></Shell>} />

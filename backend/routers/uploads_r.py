@@ -1,11 +1,13 @@
 """File uploads: Sales data (Myntra Raw_Online Sale-m) and Settlement report."""
-from fastapi import APIRouter, UploadFile, File, HTTPException, Query
-from pydantic import BaseModel
-from typing import List, Dict, Any, Optional
-from datetime import datetime, timezone
-import uuid
 import io
+import re
+import uuid
+from datetime import datetime, timezone
+from typing import Any, Dict, List, Optional
+
 import openpyxl
+from fastapi import APIRouter, File, HTTPException, Query, UploadFile
+from pydantic import BaseModel
 
 from db import db
 
@@ -23,7 +25,8 @@ def _uid():
 def _norm_str(v):
     if v is None:
         return None
-    return str(v).strip()
+    s = str(v).strip()
+    return s if s else None
 
 
 def _num(v):
@@ -48,115 +51,167 @@ def _date_iso(v):
         return None
 
 
+def _to_month(v) -> Optional[str]:
+    """Convert 'Apr-26' / 'April 2026' / datetime / ISO string to 'YYYY-MM'."""
+    if v is None:
+        return None
+    if isinstance(v, datetime):
+        return v.strftime("%Y-%m")
+    s = str(v).strip()
+    for fmt in ("%b-%y", "%b-%Y", "%B-%y", "%B-%Y", "%B %Y", "%b %Y", "%Y-%m", "%m/%Y"):
+        try:
+            return datetime.strptime(s, fmt).strftime("%Y-%m")
+        except ValueError:
+            continue
+    # ISO date fallback: YYYY-MM-DDTHH:MM:SS...
+    m = re.match(r"^(\d{4})-(\d{2})", s)
+    if m:
+        return f"{m.group(1)}-{m.group(2)}"
+    return None
+
+
 # ---------- Sales upload ----------
-# Column mapping for Myntra "Raw_Online Sale-m" sheet
-SALES_COLUMN_MAP = {
-    "Order Date": "order_date",
-    "Txn Type": "txn_type",
-    "Brand": "brand",
-    "Month": "month",
-    "Posting Date": "posting_date",
-    "Order Status": "order_status",
-    "Portal Name": "portal_name",
-    "Sales Invoice No": "sales_invoice_no",
-    "Online Order Id": "online_order_id",
-    "Sku": "sku",
-    "Shipped To _ZONE": "zone",
-    "QTY-Final": "qty",
-    "MRP": "mrp",
-    "Total MRP": "total_mrp",
-    "Cust. Discount": "customer_discount",
-    "NSV VAL.": "nsv_val",
-    "NSV/Unit": "nsv_per_unit",
-    "Main Category": "main_category",
-    "Category": "category",
-    "Sub Category_ GTA Charges": "sub_category",
-    "GT Amount (Inc. gst)": "actual_gt_amount",
-    "Fixed Fee-New": "actual_fixed_fee",
-    "Return Fee-New": "actual_return_fee",
-    "Commission Value.-New": "actual_commission_value",
+# Canonical target fields + a list of possible source header variants.
+# Match is case-insensitive and whitespace-insensitive.
+SALES_HEADER_ALIASES: Dict[str, List[str]] = {
+    "order_date": ["Order Date", "OrderDate", "Order_Date"],
+    "txn_type": ["Txn Type", "Transaction Type", "Type"],
+    "brand": ["Brand"],
+    "month": ["Month", "Report Month"],
+    "posting_date": ["Posting Date", "PostingDate"],
+    "order_status": ["Order Status", "Status"],
+    "portal_name": ["Portal Name", "Portal", "Marketplace"],
+    "sales_invoice_no": ["Sales Invoice No", "Invoice No", "Invoice Number"],
+    "online_order_id": ["Online Order Id", "Order Id", "Order ID", "OrderId"],
+    "sku": ["Sku", "SKU", "sku"],
+    "zone": ["Shipped To _ZONE", "Zone", "Shipped Zone", "Shipping Zone"],
+    "qty": ["QTY-Final", "Qty", "Quantity", "Order Qty"],
+    "mrp": ["MRP", "MRP/Item"],
+    "total_mrp": ["Total MRP", "MRP Total"],
+    "customer_discount": ["Cust. Discount", "Customer Discount", "Discount"],
+    "nsv_val": ["NSV VAL.", "NSV Value", "NSV Val", "NSV"],
+    "nsv_per_unit": ["NSV/Unit", "NSV per Unit"],
+    "main_category": ["Main Category", "Master Category"],
+    "category": ["Category"],
+    "sub_category": ["Sub Category_ GTA Charges", "Sub Category", "Sub-Category", "Subcategory"],
+    "actual_gt_amount": ["GT Amount (Inc. gst)", "GT Amount", "GT Charges (Inc GST)"],
+    "actual_fixed_fee": ["Fixed Fee-New", "Fixed Fee"],
+    "actual_return_fee": ["Return Fee-New", "Return Fee"],
+    "actual_commission_value": ["Commission Value.-New", "Commission Value", "Commission"],
 }
 
 
-def _find_header_row(ws, expected_names):
-    """Search first 5 rows for a row that contains at least half of the expected header names."""
-    exp_lower = {e.lower() for e in expected_names}
-    for row_idx, row in enumerate(ws.iter_rows(min_row=1, max_row=6, values_only=True), start=1):
+def _build_alias_lookup(aliases: Dict[str, List[str]]) -> Dict[str, str]:
+    m = {}
+    for canonical, variants in aliases.items():
+        for v in variants:
+            m[v.strip().lower()] = canonical
+    return m
+
+
+SALES_LOOKUP = _build_alias_lookup(SALES_HEADER_ALIASES)
+
+
+def _find_header_row(ws, lookup: Dict[str, str]):
+    """Scan first 10 rows for a header row with the most matches against alias lookup."""
+    best = (0, None, None)
+    for row_idx, row in enumerate(ws.iter_rows(min_row=1, max_row=10, values_only=True), start=1):
         vals = [str(v).strip().lower() if v else "" for v in row]
-        matches = sum(1 for v in vals if v in exp_lower)
-        if matches >= 3:
-            return row_idx, row
-    return None, None
+        matches = sum(1 for v in vals if v in lookup)
+        if matches > best[0]:
+            best = (matches, row_idx, row)
+    if best[0] < 3:
+        return None, None
+    return best[1], best[2]
 
 
 def _parse_sales_xlsx(content: bytes) -> Dict[str, Any]:
     wb = openpyxl.load_workbook(io.BytesIO(content), read_only=True, data_only=True)
 
-    # Try preferred sheet name, else pick largest sheet
-    target = None
+    # Rank sheets by header matches
+    best_sheet = None
+    best_score = 0
+    best_header_row = None
+    best_header = None
     for sname in wb.sheetnames:
-        if "sale" in sname.lower() or "raw" in sname.lower() or "online" in sname.lower():
-            target = sname
-            break
-    if not target:
-        target = max(wb.sheetnames, key=lambda s: wb[s].max_row)
-    ws = wb[target]
+        ws = wb[sname]
+        if ws.max_row < 2:
+            continue
+        hr, header = _find_header_row(ws, SALES_LOOKUP)
+        if not header:
+            continue
+        score = sum(1 for h in header if h and str(h).strip().lower() in SALES_LOOKUP)
+        if score > best_score:
+            best_sheet, best_score, best_header_row, best_header = sname, score, hr, header
+    if not best_sheet:
+        raise HTTPException(400, "Could not detect a valid sales sheet. Ensure headers include Order Id, SKU, MRP, NSV etc.")
 
-    header_row, header = _find_header_row(ws, list(SALES_COLUMN_MAP.keys()))
-    if not header:
-        raise HTTPException(400, "Could not detect header row in sales sheet")
-
-    header_norm = [str(h).strip() if h else "" for h in header]
-    col_idx = {}
+    ws = wb[best_sheet]
+    header_norm = [str(h).strip() if h else "" for h in best_header]
+    col_idx: Dict[str, int] = {}
     for i, name in enumerate(header_norm):
-        if name in SALES_COLUMN_MAP:
-            col_idx[SALES_COLUMN_MAP[name]] = i
+        canonical = SALES_LOOKUP.get(name.lower())
+        if canonical and canonical not in col_idx:
+            col_idx[canonical] = i
+
+    # Require the minimum set of columns
+    required = {"online_order_id", "sku", "nsv_val", "sub_category"}
+    missing = required - set(col_idx.keys())
+    if missing:
+        raise HTTPException(400, f"Missing required columns: {sorted(missing)}. Found: {sorted(col_idx.keys())}")
+
+    def gv(row, k):
+        return row[col_idx[k]] if k in col_idx else None
 
     accepted = []
     rejected = []
-    for r_no, row in enumerate(ws.iter_rows(min_row=header_row + 1, values_only=True), start=header_row + 1):
+    for r_no, row in enumerate(ws.iter_rows(min_row=best_header_row + 1, values_only=True), start=best_header_row + 1):
         if not row or all(v is None for v in row):
             continue
         try:
+            month_raw = gv(row, "month")
+            posting = _date_iso(gv(row, "posting_date"))
+            order_date_iso = _date_iso(gv(row, "order_date"))
+            report_month = _to_month(month_raw) or _to_month(posting) or _to_month(order_date_iso)
             rec = {
-                "order_date": _date_iso(row[col_idx["order_date"]]) if "order_date" in col_idx else None,
-                "txn_type": _norm_str(row[col_idx["txn_type"]]) if "txn_type" in col_idx else None,
-                "brand": _norm_str(row[col_idx["brand"]]) if "brand" in col_idx else None,
-                "month": _norm_str(row[col_idx["month"]]) if "month" in col_idx else None,
-                "posting_date": _date_iso(row[col_idx["posting_date"]]) if "posting_date" in col_idx else None,
-                "order_status": _norm_str(row[col_idx["order_status"]]) if "order_status" in col_idx else None,
-                "portal_name": _norm_str(row[col_idx["portal_name"]]) if "portal_name" in col_idx else None,
-                "sales_invoice_no": _norm_str(row[col_idx["sales_invoice_no"]]) if "sales_invoice_no" in col_idx else None,
-                "online_order_id": _norm_str(row[col_idx["online_order_id"]]) if "online_order_id" in col_idx else None,
-                "sku": _norm_str(row[col_idx["sku"]]) if "sku" in col_idx else None,
-                "zone": _norm_str(row[col_idx["zone"]]) if "zone" in col_idx else None,
-                "qty": _num(row[col_idx["qty"]]) if "qty" in col_idx else 0,
-                "mrp": _num(row[col_idx["mrp"]]) if "mrp" in col_idx else 0,
-                "total_mrp": _num(row[col_idx["total_mrp"]]) if "total_mrp" in col_idx else 0,
-                "customer_discount": _num(row[col_idx["customer_discount"]]) if "customer_discount" in col_idx else 0,
-                "nsv_val": _num(row[col_idx["nsv_val"]]) if "nsv_val" in col_idx else 0,
-                "nsv_per_unit": _num(row[col_idx["nsv_per_unit"]]) if "nsv_per_unit" in col_idx else 0,
-                "main_category": _norm_str(row[col_idx["main_category"]]) if "main_category" in col_idx else None,
-                "category": _norm_str(row[col_idx["category"]]) if "category" in col_idx else None,
-                "sub_category": _norm_str(row[col_idx["sub_category"]]) if "sub_category" in col_idx else None,
-                "actual_gt_amount": _num(row[col_idx["actual_gt_amount"]]) if "actual_gt_amount" in col_idx else 0,
-                "actual_fixed_fee": _num(row[col_idx["actual_fixed_fee"]]) if "actual_fixed_fee" in col_idx else 0,
-                "actual_return_fee": _num(row[col_idx["actual_return_fee"]]) if "actual_return_fee" in col_idx else 0,
-                "actual_commission_value": _num(row[col_idx["actual_commission_value"]]) if "actual_commission_value" in col_idx else 0,
+                "order_date": order_date_iso,
+                "txn_type": _norm_str(gv(row, "txn_type")),
+                "brand": _norm_str(gv(row, "brand")),
+                "month": _norm_str(month_raw),
+                "report_month": report_month,
+                "posting_date": posting,
+                "order_status": _norm_str(gv(row, "order_status")),
+                "portal_name": _norm_str(gv(row, "portal_name")),
+                "sales_invoice_no": _norm_str(gv(row, "sales_invoice_no")),
+                "online_order_id": _norm_str(gv(row, "online_order_id")),
+                "sku": _norm_str(gv(row, "sku")),
+                "zone": _norm_str(gv(row, "zone")),
+                "qty": _num(gv(row, "qty")),
+                "mrp": _num(gv(row, "mrp")),
+                "total_mrp": _num(gv(row, "total_mrp")),
+                "customer_discount": _num(gv(row, "customer_discount")),
+                "nsv_val": _num(gv(row, "nsv_val")),
+                "nsv_per_unit": _num(gv(row, "nsv_per_unit")),
+                "main_category": _norm_str(gv(row, "main_category")),
+                "category": _norm_str(gv(row, "category")),
+                "sub_category": _norm_str(gv(row, "sub_category")),
+                "actual_gt_amount": _num(gv(row, "actual_gt_amount")),
+                "actual_fixed_fee": _num(gv(row, "actual_fixed_fee")),
+                "actual_return_fee": _num(gv(row, "actual_return_fee")),
+                "actual_commission_value": _num(gv(row, "actual_commission_value")),
                 "_row_no": r_no,
             }
-            # Basic validation
-            if not rec.get("online_order_id") or not rec.get("sku"):
-                rejected.append({"row_no": r_no, "reason": "Missing Online Order ID or SKU", "data": rec})
+            if not rec.get("online_order_id") or not rec.get("sku") or rec["sku"] == "-":
+                rejected.append({"row_no": r_no, "reason": "Missing/placeholder Online Order ID or SKU"})
                 continue
             if rec.get("nsv_val", 0) < 0:
-                rejected.append({"row_no": r_no, "reason": "Negative NSV value", "data": rec})
+                rejected.append({"row_no": r_no, "reason": "Negative NSV value"})
                 continue
             accepted.append(rec)
         except Exception as e:
             rejected.append({"row_no": r_no, "reason": f"Parse error: {e}"})
 
-    return {"accepted": accepted, "rejected": rejected, "sheet": target, "header_row": header_row}
+    return {"accepted": accepted, "rejected": rejected, "sheet": best_sheet, "header_row": best_header_row}
 
 
 @router.post("/uploads/sales")
@@ -169,7 +224,7 @@ async def upload_sales(file: UploadFile = File(...)):
     total_accepted = len(parsed["accepted"])
     total_rejected = len(parsed["rejected"])
 
-    # Persist sales rows
+    months: Dict[str, int] = {}
     if parsed["accepted"]:
         docs = []
         for r in parsed["accepted"]:
@@ -180,17 +235,18 @@ async def upload_sales(file: UploadFile = File(...)):
                 "uploaded_at": _iso(),
                 "source_file": file.filename,
             })
+            if d.get("report_month"):
+                months[d["report_month"]] = months.get(d["report_month"], 0) + 1
             docs.append(d)
-        # Chunk insert
         for i in range(0, len(docs), 1000):
             await db.sales.insert_many(docs[i:i + 1000])
 
-    # Save upload record
     upload_doc = {
         "id": upload_id, "type": "sales", "filename": file.filename,
         "uploaded_at": _iso(), "sheet": parsed["sheet"],
         "accepted_count": total_accepted, "rejected_count": total_rejected,
         "rejections_sample": parsed["rejected"][:50],
+        "months": months,
         "status": "processed",
     }
     await db.uploads.insert_one({**upload_doc})
@@ -202,74 +258,89 @@ async def upload_sales(file: UploadFile = File(...)):
         "rejections_sample": parsed["rejected"][:20],
         "sheet": parsed["sheet"],
         "filename": file.filename,
+        "months": months,
     }
 
 
 # ---------- Settlement upload ----------
-# Common Myntra settlement columns (heuristic — will attempt to match)
-SETTLEMENT_COLUMN_MAP = {
-    "Order Id": "online_order_id", "Online Order Id": "online_order_id",
-    "Order ID": "online_order_id", "OrderId": "online_order_id",
-    "Sku": "sku", "SKU": "sku", "sku": "sku",
-    "Settlement Date": "settlement_date", "Settled Date": "settlement_date",
-    "Commission": "settled_commission", "Marketplace Fee": "settled_commission",
-    "Commission Amount": "settled_commission",
-    "Fixed Fee": "settled_fixed_fee", "Closing Fee": "settled_fixed_fee",
-    "GT Charges": "settled_gt_charge", "Logistics": "settled_gt_charge",
-    "Logistics Fee": "settled_gt_charge",
-    "Return Fee": "settled_return_fee", "Return Shipping Fee": "settled_return_fee",
-    "TCS": "settled_tcs", "TDS": "settled_tds",
-    "Settlement Value": "settled_amount", "Payout": "settled_amount",
-    "Net Settlement": "settled_amount",
-    "Selling Price": "selling_price", "MRP": "mrp",
-    "Order Status": "order_status", "Zone": "zone",
+SETTLEMENT_HEADER_ALIASES: Dict[str, List[str]] = {
+    "online_order_id": ["Order Id", "Order ID", "Online Order Id", "OrderId"],
+    "sku": ["Sku", "SKU", "sku"],
+    "settlement_date": ["Settlement Date", "Settled Date", "Payout Date"],
+    "settled_commission": ["Commission", "Marketplace Fee", "Commission Amount", "Commission (incl GST)"],
+    "settled_fixed_fee": ["Fixed Fee", "Closing Fee"],
+    "settled_gt_charge": ["GT Charges", "Logistics", "Logistics Fee", "GT"],
+    "settled_return_fee": ["Return Fee", "Return Shipping Fee"],
+    "settled_tcs": ["TCS"],
+    "settled_tds": ["TDS"],
+    "settled_amount": ["Settlement Value", "Payout", "Net Settlement", "Settled Amount"],
+    "selling_price": ["Selling Price", "SP"],
+    "mrp": ["MRP"],
+    "order_status": ["Order Status", "Status"],
+    "zone": ["Zone", "Shipping Zone"],
+    "month": ["Month", "Report Month"],
 }
+SETTLEMENT_LOOKUP = _build_alias_lookup(SETTLEMENT_HEADER_ALIASES)
 
 
 def _parse_settlement_xlsx(content: bytes) -> Dict[str, Any]:
     wb = openpyxl.load_workbook(io.BytesIO(content), read_only=True, data_only=True)
-    target = None
-    for s in wb.sheetnames:
-        if "settle" in s.lower() or "payout" in s.lower() or "commission" in s.lower():
-            target = s
-            break
-    if not target:
-        target = max(wb.sheetnames, key=lambda s: wb[s].max_row)
-    ws = wb[target]
+    best_sheet = None
+    best_score = 0
+    best_header_row = None
+    best_header = None
+    for sname in wb.sheetnames:
+        ws = wb[sname]
+        if ws.max_row < 2:
+            continue
+        hr, header = _find_header_row(ws, SETTLEMENT_LOOKUP)
+        if not header:
+            continue
+        score = sum(1 for h in header if h and str(h).strip().lower() in SETTLEMENT_LOOKUP)
+        if score > best_score:
+            best_sheet, best_score, best_header_row, best_header = sname, score, hr, header
+    if not best_sheet:
+        raise HTTPException(400, "Could not detect a valid settlement sheet. Ensure headers include Order Id, SKU, Commission, etc.")
 
-    header_row, header = _find_header_row(ws, list(SETTLEMENT_COLUMN_MAP.keys()))
-    if not header:
-        raise HTTPException(400, "Could not detect header row in settlement sheet")
-
-    header_norm = [str(h).strip() if h else "" for h in header]
-    col_idx = {}
+    ws = wb[best_sheet]
+    header_norm = [str(h).strip() if h else "" for h in best_header]
+    col_idx: Dict[str, int] = {}
     for i, name in enumerate(header_norm):
-        if name in SETTLEMENT_COLUMN_MAP:
-            col_idx[SETTLEMENT_COLUMN_MAP[name]] = i
+        canonical = SETTLEMENT_LOOKUP.get(name.lower())
+        if canonical and canonical not in col_idx:
+            col_idx[canonical] = i
 
-    if "online_order_id" not in col_idx or "sku" not in col_idx:
-        raise HTTPException(400, "Settlement file must have Order ID and SKU columns")
+    required = {"online_order_id", "sku"}
+    missing = required - set(col_idx.keys())
+    if missing:
+        raise HTTPException(400, f"Settlement file missing required columns: {sorted(missing)}")
+
+    def gv(row, k):
+        return row[col_idx[k]] if k in col_idx else None
 
     accepted = []
     rejected = []
-    for r_no, row in enumerate(ws.iter_rows(min_row=header_row + 1, values_only=True), start=header_row + 1):
+    for r_no, row in enumerate(ws.iter_rows(min_row=best_header_row + 1, values_only=True), start=best_header_row + 1):
         if not row or all(v is None for v in row):
             continue
         try:
+            settlement_date = _date_iso(gv(row, "settlement_date"))
+            report_month = _to_month(gv(row, "month")) or _to_month(settlement_date)
             rec = {
-                "online_order_id": _norm_str(row[col_idx["online_order_id"]]),
-                "sku": _norm_str(row[col_idx["sku"]]),
-                "settlement_date": _date_iso(row[col_idx["settlement_date"]]) if "settlement_date" in col_idx else None,
-                "settled_commission": _num(row[col_idx["settled_commission"]]) if "settled_commission" in col_idx else 0,
-                "settled_fixed_fee": _num(row[col_idx["settled_fixed_fee"]]) if "settled_fixed_fee" in col_idx else 0,
-                "settled_gt_charge": _num(row[col_idx["settled_gt_charge"]]) if "settled_gt_charge" in col_idx else 0,
-                "settled_return_fee": _num(row[col_idx["settled_return_fee"]]) if "settled_return_fee" in col_idx else 0,
-                "settled_tcs": _num(row[col_idx["settled_tcs"]]) if "settled_tcs" in col_idx else 0,
-                "settled_tds": _num(row[col_idx["settled_tds"]]) if "settled_tds" in col_idx else 0,
-                "settled_amount": _num(row[col_idx["settled_amount"]]) if "settled_amount" in col_idx else 0,
-                "selling_price": _num(row[col_idx["selling_price"]]) if "selling_price" in col_idx else 0,
-                "zone": _norm_str(row[col_idx["zone"]]) if "zone" in col_idx else None,
-                "order_status": _norm_str(row[col_idx["order_status"]]) if "order_status" in col_idx else None,
+                "online_order_id": _norm_str(gv(row, "online_order_id")),
+                "sku": _norm_str(gv(row, "sku")),
+                "settlement_date": settlement_date,
+                "report_month": report_month,
+                "settled_commission": _num(gv(row, "settled_commission")),
+                "settled_fixed_fee": _num(gv(row, "settled_fixed_fee")),
+                "settled_gt_charge": _num(gv(row, "settled_gt_charge")),
+                "settled_return_fee": _num(gv(row, "settled_return_fee")),
+                "settled_tcs": _num(gv(row, "settled_tcs")),
+                "settled_tds": _num(gv(row, "settled_tds")),
+                "settled_amount": _num(gv(row, "settled_amount")),
+                "selling_price": _num(gv(row, "selling_price")),
+                "zone": _norm_str(gv(row, "zone")),
+                "order_status": _norm_str(gv(row, "order_status")),
                 "_row_no": r_no,
             }
             if not rec["online_order_id"] or not rec["sku"]:
@@ -278,7 +349,7 @@ def _parse_settlement_xlsx(content: bytes) -> Dict[str, Any]:
             accepted.append(rec)
         except Exception as e:
             rejected.append({"row_no": r_no, "reason": f"Parse error: {e}"})
-    return {"accepted": accepted, "rejected": rejected, "sheet": target, "header_row": header_row}
+    return {"accepted": accepted, "rejected": rejected, "sheet": best_sheet, "header_row": best_header_row}
 
 
 @router.post("/uploads/settlement")
@@ -351,6 +422,7 @@ async def delete_upload(upload_id: str):
 @router.get("/sales")
 async def list_sales(
     upload_id: Optional[str] = None,
+    report_month: Optional[str] = None,
     search: Optional[str] = None,
     zone: Optional[str] = None,
     category: Optional[str] = None,
@@ -362,6 +434,8 @@ async def list_sales(
     q: Dict[str, Any] = {}
     if upload_id:
         q["upload_id"] = upload_id
+    if report_month:
+        q["report_month"] = report_month
     if zone:
         q["zone"] = zone
     if category:
@@ -379,6 +453,18 @@ async def list_sales(
     total = await db.sales.count_documents(q)
     docs = await db.sales.find(q, {"_id": 0}).sort("uploaded_at", -1).skip(skip).limit(limit).to_list(limit)
     return {"total": total, "items": docs}
+
+
+@router.get("/sales/months")
+async def list_sales_months():
+    """Distinct report_month values present in the sales collection."""
+    pipeline = [
+        {"$match": {"report_month": {"$ne": None}}},
+        {"$group": {"_id": "$report_month", "count": {"$sum": 1}}},
+        {"$sort": {"_id": 1}},
+    ]
+    rows = await db.sales.aggregate(pipeline).to_list(200)
+    return [{"month": r["_id"], "count": r["count"]} for r in rows]
 
 
 @router.get("/settlement")

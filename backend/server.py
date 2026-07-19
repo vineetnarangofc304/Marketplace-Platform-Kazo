@@ -171,7 +171,7 @@ async def list_users(user=Depends(require_role("admin"))):
 
 
 # Include auth router now; other routers imported below
-from routers import masters, uploads_r, calculations, reconciliation, dashboards  # noqa: E402
+from routers import masters, uploads_r, calculations, reconciliation, dashboards, reports  # noqa: E402
 
 app.include_router(api)
 app.include_router(masters.router, prefix="/api", dependencies=[Depends(current_user)])
@@ -179,6 +179,7 @@ app.include_router(uploads_r.router, prefix="/api", dependencies=[Depends(curren
 app.include_router(calculations.router, prefix="/api", dependencies=[Depends(current_user)])
 app.include_router(reconciliation.router, prefix="/api", dependencies=[Depends(current_user)])
 app.include_router(dashboards.router, prefix="/api", dependencies=[Depends(current_user)])
+app.include_router(reports.router, prefix="/api", dependencies=[Depends(current_user)])
 
 # CORS
 _origins = os.environ.get("CORS_ORIGINS", "*")
@@ -200,10 +201,15 @@ async def _startup():
     await db.sales.create_index([("upload_id", 1)])
     await db.sales.create_index([("online_order_id", 1), ("sku", 1)])
     await db.sales.create_index([("order_date", 1)])
+    await db.sales.create_index([("report_month", 1)])
     await db.settlement.create_index([("upload_id", 1)])
     await db.settlement.create_index([("online_order_id", 1), ("sku", 1)])
+    await db.settlement.create_index([("report_month", 1)])
     await db.calculations.create_index([("sales_id", 1)], unique=True)
+    await db.calculations.create_index([("report_month", 1)])
+    await db.calculations.create_index([("unmapped", 1)])
     await db.discrepancies.create_index([("severity", 1), ("recon_run_id", 1)])
+    await db.discrepancies.create_index([("report_month", 1)])
     await db.uploads.create_index([("uploaded_at", -1)])
 
     # Seed admin

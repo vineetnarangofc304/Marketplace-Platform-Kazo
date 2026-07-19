@@ -32,9 +32,10 @@ def _classify(actual: float, expected: float, tol: Dict[str, float]) -> str:
     abs_var = abs(variance)
     if abs_var <= tol["absolute_inr"]:
         return "matched"
-    pct = (abs_var / expected * 100) if expected else 100
-    if pct <= tol["percentage"] and abs_var <= tol["absolute_inr"] * 5:
-        return "matched"
+    if expected:
+        pct = abs_var / abs(expected) * 100
+        if pct <= tol["percentage"]:
+            return "matched"
     return "overcharged" if variance > 0 else "undercharged"
 
 
@@ -52,6 +53,7 @@ def _severity(recoverable: float, tol: Dict[str, float]) -> str:
 class RunReconIn(BaseModel):
     settlement_upload_id: Optional[str] = None
     sales_upload_id: Optional[str] = None
+    report_month: Optional[str] = None
 
 
 @router.post("/reconciliation/run")
@@ -59,15 +61,22 @@ async def run_reconciliation(payload: RunReconIn):
     tol = await _tolerance()
     run_id = _uid()
 
-    settle_q = {"upload_id": payload.settlement_upload_id} if payload.settlement_upload_id else {}
-    settlements = await db.settlement.find(settle_q, {"_id": 0}).to_list(50000)
+    settle_q: Dict[str, Any] = {}
+    if payload.settlement_upload_id:
+        settle_q["upload_id"] = payload.settlement_upload_id
+    if payload.report_month:
+        settle_q["report_month"] = payload.report_month
+    settlements = await db.settlement.find(settle_q, {"_id": 0}).to_list(200000)
 
     if not settlements:
-        raise HTTPException(400, "No settlement rows to reconcile. Please upload a settlement file.")
+        raise HTTPException(400, "No settlement rows to reconcile. Please upload a settlement file for this month.")
 
-    # Build map of sales+calc by (order_id, sku)
-    sales_q = {"upload_id": payload.sales_upload_id} if payload.sales_upload_id else {}
-    sales_docs = await db.sales.find(sales_q, {"_id": 0}).to_list(200000)
+    sales_q: Dict[str, Any] = {}
+    if payload.sales_upload_id:
+        sales_q["upload_id"] = payload.sales_upload_id
+    if payload.report_month:
+        sales_q["report_month"] = payload.report_month
+    sales_docs = await db.sales.find(sales_q, {"_id": 0}).to_list(500000)
     sales_map = {(s["online_order_id"], s["sku"]): s for s in sales_docs}
 
     sales_ids = [s["id"] for s in sales_docs]
@@ -83,10 +92,12 @@ async def run_reconciliation(payload: RunReconIn):
     for settle in settlements:
         key = (settle["online_order_id"], settle["sku"])
         sale = sales_map.get(key)
+        report_month = settle.get("report_month") or (sale.get("report_month") if sale else None)
         if not sale:
             unmatched_count += 1
             discrepancies.append({
                 "id": _uid(), "recon_run_id": run_id,
+                "report_month": report_month,
                 "online_order_id": settle["online_order_id"], "sku": settle["sku"],
                 "match_status": "unmatched",
                 "severity": "high",
@@ -104,11 +115,30 @@ async def run_reconciliation(payload: RunReconIn):
             unmatched_count += 1
             discrepancies.append({
                 "id": _uid(), "recon_run_id": run_id,
+                "report_month": report_month,
                 "online_order_id": settle["online_order_id"], "sku": settle["sku"],
                 "sales_id": sale["id"],
                 "match_status": "unmatched",
                 "severity": "medium",
                 "reason": "Sale found but calculation missing — run calculations first",
+                "recoverable": 0,
+                "components": [],
+                "settled": settle,
+                "expected": None,
+                "created_at": _iso(),
+            })
+            continue
+
+        if calc.get("unmapped"):
+            unmatched_count += 1
+            discrepancies.append({
+                "id": _uid(), "recon_run_id": run_id,
+                "report_month": report_month,
+                "online_order_id": settle["online_order_id"], "sku": settle["sku"],
+                "sales_id": sale["id"], "calc_id": calc["id"],
+                "match_status": "unmatched",
+                "severity": "medium",
+                "reason": "Expected calc has unmapped components: " + "; ".join(calc.get("unmapped_reasons", []))[:200],
                 "recoverable": 0,
                 "components": [],
                 "settled": settle,
@@ -175,6 +205,7 @@ async def run_reconciliation(payload: RunReconIn):
 
         discrepancies.append({
             "id": _uid(), "recon_run_id": run_id,
+            "report_month": report_month,
             "online_order_id": settle["online_order_id"], "sku": settle["sku"],
             "sales_id": sale["id"], "calc_id": calc["id"],
             "match_status": "variance",

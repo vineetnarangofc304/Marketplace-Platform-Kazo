@@ -1,0 +1,40 @@
+{
+  "summary": "Production-hardening validation for KAZO Marketplace Finance platform. Backend: 29/29 pytest tests PASSED (15 legacy + 14 new). New tests cover monthly reports (list/detail/xlsx export), unmapped-order flags & summary, report_month filters on calculations/reconciliation, settlement-settings and tax-rates CRUD, and master seed counts. Frontend: all data-testids from spec present and functional on Overview, Reports (/reports), Calculations (unmapped-only filter), Masters (Settlement Config + Tax Rates tabs). Data integrity verified — 14,219 sales orders in 2026-04, 37 unmapped (0.26% ratio, well under 1% threshold, all Clothing Set variants), 260 discrepancies with ₹5,056.12 recoverable. Commission rules count = 173 (>=170 required). All KPI values on monthly report non-zero (NSV ₹2.61Cr, Commission ₹31.5L incl 18% GST, Settlement ₹1.94Cr with 74.2% margin). Excel export returns valid xlsx with all 7 required sheets (Summary, By Category, By Sub-Category, By Zone, Order Detail, Discrepancies, Unmapped Orders).",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Overview", "issues": ["Recharts still emits width(-1)/height(-1) warnings on initial render — carried over from iteration 1, cosmetic only."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/backend_test.py",
+    "/app/backend/tests/test_monthly_reports.py",
+    "/app/test_reports/pytest/pytest_results.xml",
+    "/app/test_reports/pytest/monthly_reports.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "reports.py: `_month_aggregate` runs 6 sequential Mongo aggregations serially; could be parallelised with asyncio.gather for faster response on months with millions of rows.",
+    "reports.py export_monthly: loads ALL calculations for the month into memory (to_list(100000)) then all sales by id; for very large months this will spike memory. Consider streaming or chunked iteration when >50k orders.",
+    "reports.py line 296-299: dead loop `for col_i, key in enumerate([...]): pass` — leftover from refactor, safe but should be removed.",
+    "masters.py POST /masters/reset-defaults is destructive but has NO auth dependency at router level — anyone hitting the URL can wipe all masters. Add Depends(current_user) with role='admin' check. Task spec explicitly calls this out as required.",
+    "masters.py: same missing-auth concern applies to all POST/DELETE endpoints (commission-rules, fixed-fees, gt-charges, return-fees, subcat-levels, tolerance, tax-rates, settlement-settings). Iteration 1 also flagged this — still unresolved.",
+    "reports.py: bad-month handling only validates length==7, not format. e.g. 'abc-def' passes length check and would return empty aggregates instead of 400. Use a regex `^\\d{4}-\\d{2}$`.",
+    "calculations engine (per spec): verified commission engine returns unmapped=True with reasons rather than falling back to 0 — confirmed via /api/calculations?unmapped_only=true returning 37 rows all with Clothing Set (no matching commission rule)."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_monthly_reports.py"
+  ],
+  "success_rate": {"backend": "100% (29/29)", "frontend": "100% (all testids present, all pages render, download button wired)"},
+  "test_credentials": "admin@kazo.com / admin123",
+  "seed_data_creation": "None — reused existing 14,219 sales / 296 settlement rows / 173 commission rules / 260 discrepancies from prior iteration.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Backend fully green (29 pytest tests). All new production-hardening endpoints tested: /api/reports/months, /api/reports/monthly, /api/reports/monthly/export (xlsx), /api/calculations/unmapped-summary, /api/calculations?unmapped_only, /api/masters/settlement-settings (GET+POST), /api/masters/tax-rates (GET+POST), /api/masters/reset-defaults. Unmapped ratio is 37/14219 = 0.26% (all Clothing Set — no commission rules for that sub-cat in master file). Frontend uses data-testids: overview-month-select, unmapped-banner, link-view-reports, nav-reports, reports-page, report-month-select, kpi-{nsv,commission,deductions,settlement}, btn-download-report, calc-month-select, chk-unmapped-only, tab-settlement, tab-tax, input-default-zone, input-dash-as-missing, input-apply-default-zone, btn-save-settlement — all confirmed present and functional. Only outstanding concern is auth-protection on write endpoints (see critical_code_review_comments).",
+  "rca of the issue": "N/A — no bugs"
+}

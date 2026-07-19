@@ -11,6 +11,8 @@ const TABS = [
   { id: "return", label: "Return Fee" },
   { id: "level", label: "Sub-Cat Levels" },
   { id: "tolerance", label: "Tolerance" },
+  { id: "settlement", label: "Settlement Config" },
+  { id: "tax", label: "Tax Rates" },
 ];
 
 export default function Masters() {
@@ -44,6 +46,76 @@ export default function Masters() {
       {tab === "return" && <ReturnFees />}
       {tab === "level" && <SubCatLevels />}
       {tab === "tolerance" && <Tolerance />}
+      {tab === "settlement" && <SettlementConfig />}
+      {tab === "tax" && <TaxRatesConfig />}
+    </div>
+  );
+}
+
+function SettlementConfig() {
+  const [s, setS] = useState(null);
+  useEffect(() => { api.get("/masters/settlement-settings").then((r) => setS(r.data)); }, []);
+  if (!s) return null;
+  return (
+    <div className="border border-border bg-card p-5 max-w-xl">
+      <div className="overline mb-3">Settlement Configuration</div>
+      <p className="text-xs text-muted-foreground mb-4">
+        When a marketplace file omits or uses a placeholder (e.g. &quot;-&quot;) for zone, this configuration decides how the calculation engine treats it.
+      </p>
+      <div className="space-y-3 text-sm">
+        <label className="block">
+          <div className="overline mb-1">Default Zone When Missing</div>
+          <select className="bg-secondary border border-border px-2 py-1 w-40 mono" value={s.default_zone_when_missing || ""} onChange={(e) => setS({ ...s, default_zone_when_missing: e.target.value })} data-testid="input-default-zone">
+            <option value="">— None —</option>
+            <option value="Local">Local</option>
+            <option value="Zonal">Zonal</option>
+            <option value="National">National</option>
+          </select>
+        </label>
+        <label className="flex items-center gap-2">
+          <input type="checkbox" checked={!!s.treat_dash_as_missing_zone} onChange={(e) => setS({ ...s, treat_dash_as_missing_zone: e.target.checked })} data-testid="input-dash-as-missing" />
+          <span className="text-xs">Treat &quot;-&quot; as missing zone (recommended for KAZO Myntra files)</span>
+        </label>
+        <label className="flex items-center gap-2">
+          <input type="checkbox" checked={!!s.apply_default_zone} onChange={(e) => setS({ ...s, apply_default_zone: e.target.checked })} data-testid="input-apply-default-zone" />
+          <span className="text-xs">Apply default zone when missing (if off, flag as unmapped)</span>
+        </label>
+        <button
+          data-testid="btn-save-settlement"
+          onClick={async () => { await api.post("/masters/settlement-settings", s); toast.success("Settlement config saved. Re-run calculations to apply."); }}
+          className="mt-2 bg-primary text-primary-foreground px-4 py-2 text-xs mono uppercase tracking-widest hover:opacity-90"
+        >Save Configuration</button>
+      </div>
+    </div>
+  );
+}
+
+function TaxRatesConfig() {
+  const [t, setT] = useState(null);
+  useEffect(() => { api.get("/masters/tax-rates").then((r) => setT(r.data)); }, []);
+  if (!t) return null;
+  return (
+    <div className="border border-border bg-card p-5 max-w-xl">
+      <div className="overline mb-3">Tax Rates</div>
+      <div className="space-y-3 text-sm">
+        <label className="block">
+          <div className="overline mb-1">GST Rate (fraction, e.g. 0.18 = 18%)</div>
+          <input type="number" step="0.001" className="bg-secondary border border-border px-2 py-1 w-40 mono" value={t.gst_rate} onChange={(e) => setT({ ...t, gst_rate: parseFloat(e.target.value) })} data-testid="input-gst-rate" />
+        </label>
+        <label className="block">
+          <div className="overline mb-1">TCS Rate (fraction, e.g. 0.005 = 0.5%)</div>
+          <input type="number" step="0.0001" className="bg-secondary border border-border px-2 py-1 w-40 mono" value={t.tcs_rate} onChange={(e) => setT({ ...t, tcs_rate: parseFloat(e.target.value) })} data-testid="input-tcs-rate" />
+        </label>
+        <label className="block">
+          <div className="overline mb-1">TDS Rate (fraction, e.g. 0.001 = 0.1%)</div>
+          <input type="number" step="0.0001" className="bg-secondary border border-border px-2 py-1 w-40 mono" value={t.tds_rate} onChange={(e) => setT({ ...t, tds_rate: parseFloat(e.target.value) })} data-testid="input-tds-rate" />
+        </label>
+        <button
+          data-testid="btn-save-tax-rates"
+          onClick={async () => { await api.post("/masters/tax-rates", t); toast.success("Tax rates saved. Re-run calculations to apply."); }}
+          className="mt-2 bg-primary text-primary-foreground px-4 py-2 text-xs mono uppercase tracking-widest hover:opacity-90"
+        >Save Tax Rates</button>
+      </div>
     </div>
   );
 }
