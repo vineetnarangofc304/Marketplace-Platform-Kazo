@@ -174,11 +174,11 @@ async def list_users(user=Depends(require_role("admin"))):
 from routers import masters, uploads_r, calculations, reconciliation, dashboards  # noqa: E402
 
 app.include_router(api)
-app.include_router(masters.router, prefix="/api")
-app.include_router(uploads_r.router, prefix="/api")
-app.include_router(calculations.router, prefix="/api")
-app.include_router(reconciliation.router, prefix="/api")
-app.include_router(dashboards.router, prefix="/api")
+app.include_router(masters.router, prefix="/api", dependencies=[Depends(current_user)])
+app.include_router(uploads_r.router, prefix="/api", dependencies=[Depends(current_user)])
+app.include_router(calculations.router, prefix="/api", dependencies=[Depends(current_user)])
+app.include_router(reconciliation.router, prefix="/api", dependencies=[Depends(current_user)])
+app.include_router(dashboards.router, prefix="/api", dependencies=[Depends(current_user)])
 
 # CORS
 _origins = os.environ.get("CORS_ORIGINS", "*")

@@ -109,7 +109,7 @@ async def reconciliation_summary(recon_run_id: Optional[str] = None):
         }},
         {"$sort": {"variance_sum": -1}},
     ]
-    by_component = await db.calculations.database.discrepancies.aggregate(comp_pipe).to_list(20)
+    by_component = await db.discrepancies.aggregate(comp_pipe).to_list(20)
 
     total_recoverable_pipe = [{"$match": q}, {"$group": {"_id": None, "sum": {"$sum": "$recoverable"}}}]
     tr = await db.discrepancies.aggregate(total_recoverable_pipe).to_list(1)
