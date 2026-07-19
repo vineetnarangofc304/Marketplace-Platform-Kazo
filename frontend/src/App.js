@@ -1,54 +1,50 @@
-import { useEffect } from "react";
 import "@/App.css";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import axios from "axios";
-import { HOME } from "@/constants/testIds";
+import { AuthProvider } from "@/context/AuthContext";
+import ProtectedRoute from "@/components/ProtectedRoute";
+import Layout from "@/components/Layout";
+import Login from "@/pages/Login";
+import Overview from "@/pages/Overview";
+import Uploads from "@/pages/Uploads";
+import SalesLedger from "@/pages/SalesLedger";
+import Calculations from "@/pages/Calculations";
+import Reconciliation from "@/pages/Reconciliation";
+import Discrepancies from "@/pages/Discrepancies";
+import Masters from "@/pages/Masters";
+import { Toaster } from "sonner";
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
-
-const Home = () => {
-  const helloWorldApi = async () => {
-    try {
-      const response = await axios.get(`${API}/`);
-      console.log(response.data.message);
-    } catch (e) {
-      console.error(e, `errored out requesting / api`);
-    }
-  };
-
-  useEffect(() => {
-    helloWorldApi();
-  }, []);
-
+function Shell({ children }) {
   return (
-    <div>
-      <header className="App-header">
-        <a
-          data-testid={HOME.emergentLink}
-          className="App-link"
-          href="https://emergent.sh"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <img src="https://avatars.githubusercontent.com/in/1201222?s=120&u=2686cf91179bbafbc7a71bfbc43004cf9ae1acea&v=4" />
-        </a>
-        <p className="mt-5">Building something incredible ~!</p>
-      </header>
-    </div>
+    <ProtectedRoute>
+      <Layout>{children}</Layout>
+    </ProtectedRoute>
   );
-};
+}
 
 function App() {
   return (
-    <div className="App">
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Home />}>
-            <Route index element={<Home />} />
-          </Route>
-        </Routes>
-      </BrowserRouter>
+    <div className="App dark">
+      <AuthProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/" element={<Shell><Overview /></Shell>} />
+            <Route path="/uploads" element={<Shell><Uploads /></Shell>} />
+            <Route path="/sales" element={<Shell><SalesLedger /></Shell>} />
+            <Route path="/calculations" element={<Shell><Calculations /></Shell>} />
+            <Route path="/reconciliation" element={<Shell><Reconciliation /></Shell>} />
+            <Route path="/discrepancies" element={<Shell><Discrepancies /></Shell>} />
+            <Route path="/masters" element={<Shell><Masters /></Shell>} />
+          </Routes>
+        </BrowserRouter>
+        <Toaster
+          theme="dark"
+          position="top-right"
+          toastOptions={{
+            style: { background: "#0a0a0a", border: "1px solid #2a2a2a", fontFamily: "JetBrains Mono", fontSize: 12, borderRadius: 0 },
+          }}
+        />
+      </AuthProvider>
     </div>
   );
 }
