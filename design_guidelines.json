@@ -1,0 +1,156 @@
+{
+  "design_direction": {
+    "theme": "Swiss & High-Contrast (Authority, Clarity, Truth) merged with Modern Bloomberg Terminal",
+    "core_philosophy": "Enterprise finance demands precision, not playfulness. We reject generic 'SaaS Blue' and soft UI. The design uses 'Tactical Minimalism'—hard edges, extreme data density, arbitrary tabbed panels, and strict monospaced numerical alignments. Color is functional, not decorative. 95% of the UI is monochrome; color is strictly reserved for variance, severity, and status.",
+    "emotional_tone": "Objective, authoritative, precise, and highly analytical."
+  },
+  "typography": {
+    "primary_font": "IBM Plex Sans",
+    "data_font": "JetBrains Mono",
+    "rules": [
+      "No Inter, Roboto, or Space Grotesk.",
+      "Headings (IBM Plex Sans): Use tight tracking (tracking-tight) and geometric weight contrast (e.g., Light for titles, Black for KPIs).",
+      "Data Grids & Numbers (JetBrains Mono): CRITICAL. All tabular data, currency, percentages, and IDs MUST use JetBrains Mono for perfect vertical column alignment. Use tabular-nums utility.",
+      "Labels/Overlines: Uppercase, tiny (text-xs), wide tracking (tracking-widest) in JetBrains Mono."
+    ],
+    "installation": "Import 'IBM Plex Sans' and 'JetBrains Mono' from Google Fonts."
+  },
+  "colors": {
+    "dark_mode": {
+      "background": "#050505",
+      "surface": "#111111",
+      "surface_hover": "#1A1A1A",
+      "border": "#2A2A2A",
+      "text_primary": "#F3F4F6",
+      "text_secondary": "#9CA3AF"
+    },
+    "light_mode": {
+      "background": "#FFFFFF",
+      "surface": "#F8FAFC",
+      "surface_hover": "#F1F5F9",
+      "border": "#E2E8F0",
+      "text_primary": "#0F172A",
+      "text_secondary": "#64748B"
+    },
+    "brand": {
+      "primary": "#FFFFFF",
+      "primary_foreground": "#000000",
+      "accent": "#2A2A2A"
+    },
+    "finance_tokens": {
+      "variance_positive": {
+        "text": "#10B981",
+        "bg": "rgba(16, 185, 129, 0.1)",
+        "border": "#059669"
+      },
+      "variance_negative": {
+        "text": "#EF4444",
+        "bg": "rgba(239, 68, 68, 0.1)",
+        "border": "#DC2626"
+      },
+      "neutral": {
+        "text": "#9CA3AF",
+        "bg": "rgba(156, 163, 175, 0.1)",
+        "border": "#6B7280"
+      },
+      "severity_critical": {
+        "text": "#DC2626",
+        "bg": "rgba(220, 38, 38, 0.15)",
+        "border": "#B91C1C",
+        "indicator": "Pulsing red dot or hard red left-border on row"
+      },
+      "severity_high": {
+        "text": "#F59E0B",
+        "bg": "rgba(245, 158, 11, 0.15)",
+        "border": "#D97706"
+      },
+      "severity_medium": {
+        "text": "#FBBF24",
+        "bg": "rgba(251, 191, 36, 0.15)",
+        "border": "#F59E0B"
+      },
+      "severity_low": {
+        "text": "#38BDF8",
+        "bg": "rgba(56, 189, 248, 0.15)",
+        "border": "#0284C7"
+      },
+      "status_matched": {
+        "text": "#10B981",
+        "badge_style": "Solid minimal chip, green text, dark green bg"
+      },
+      "status_unmatched": {
+        "text": "#EF4444",
+        "badge_style": "Solid minimal chip, red text, dark red bg"
+      },
+      "status_disputed": {
+        "text": "#0891B2",
+        "badge_style": "Solid minimal chip, cyan text, dark cyan bg"
+      },
+      "status_resolved": {
+        "text": "#6B7280",
+        "badge_style": "Strikethrough text or muted gray chip"
+      }
+    }
+  },
+  "grids_and_layouts": {
+    "spacing_philosophy": "Dense but legible. Avoid massive white space in data tools. Use standard Tailwind spacing but heavily utilize p-2, p-3 for grid cells to pack information.",
+    "border_radius": "CRITICAL: rounded-none globally. Zero rounding. 1px hard lines for all cards, inputs, and buttons.",
+    "tables": {
+      "style": "Excel-like, border-collapse, rigid structure.",
+      "headers": "Sticky top, text-xs uppercase, JetBrains Mono, border-b-2 border-border.",
+      "frozen_columns": "Use sticky left-0 z-10 for primary identifiers (e.g., Order ID) with a hard right border to separate from scrolling content.",
+      "row_hover": "Subtle background shift (hover:bg-surface_hover) with a hard left border accent if actionable."
+    },
+    "panels": {
+      "side_drawer": "Used for 'Calculation Explainer' and 'Order Drill-down'. Must span 100vh, slide in from right, with heavy backdrop-blur-sm bg-black/60. Drawer body is stark surface color with dense key-value pair grids."
+    }
+  },
+  "components": {
+    "buttons": "Square edges (rounded-none). Primary: white bg, black text. Secondary: transparent bg, 1px hard border. Hover states must invert colors or sharply change background.",
+    "badges_chips": "Square edges. Used for Status and Severity. Text-xs, JetBrains Mono, 1px border. No soft pill shapes.",
+    "tabs": "Underline or solid rectangular block tabs. Active tab gets a bright top or bottom 2px border (e.g., stark white or accent color).",
+    "upload_workspace": "Dashed 1px border with dark surface background. Center alignment for dropzone, but left-aligned for the 'Upload History' table below it. Include technical 'Processing...' monospace loaders.",
+    "charts": "Recharts. Tooltips must be square, black background, mono typography. Grid lines must be very faint (opacity-10). Use monochrome for baseline data (Total Sales) and only use Green/Red for variances or exceptions."
+  },
+  "icons_and_media": {
+    "icon_library": "@phosphor-icons/react",
+    "icon_style": "Regular or Light weight. Sharp, geometric. DO NOT use generic rounded icons.",
+    "image_urls": [
+      {
+        "url": "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA3MDR8MHwxfHNlYXJjaHwzfHxmaW5hbmNlJTIwZGFzaGJvYXJkJTIwdHJhZGluZyUyMHNjcmVlbnxlbnwwfHx8fDE3ODQ0NzQwNjd8MA&ixlib=rb-4.1.0&q=85",
+        "category": "Hero/Login Background",
+        "description": "Abstract stock market candlestick chart on dark screen. Use with a heavy dark overlay (bg-black/70) for login screen."
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA3MDR8MHwxfHNlYXJjaHwxfHxmaW5hbmNlJTIwZGFzaGJvYXJkJTIwdHJhZGluZyUyMHNjcmVlbnxlbnwwfHx8fDE3ODQ0NzQwNjd8MA&ixlib=rb-4.1.0&q=85",
+        "category": "Marketing/Hero",
+        "description": "Screen showing technical trading chart. Good for landing page structural visuals."
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1551288049-bebda4e38f71?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA3MDR8MHwxfHNlYXJjaHwyfHxmaW5hbmNlJTIwZGFzaGJvYXJkJTIwdHJhZGluZyUyMHNjcmVlbnxlbnwwfHx8fDE3ODQ0NzQwNjd8MA&ixlib=rb-4.1.0&q=85",
+        "category": "Feature Showcase",
+        "description": "Graphs of performance analytics on a laptop screen."
+      },
+      {
+        "url": "https://images.pexels.com/photos/5833762/pexels-photo-5833762.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+        "category": "Contextual Visual",
+        "description": "Close-up of a hand pointing at stock market graphs. Good for 'Insights' or 'Drill-down' feature cards."
+      }
+    ]
+  },
+  "universal_guidelines_for_main_agent": [
+    "You tend to converge toward generic, 'on distribution' outputs. In frontend design, this creates what users call the 'AI slop' aesthetic. Avoid this: make creative, distinctive frontends that surprise and delight.",
+    "Dark colors look good when used independently without gradients. DO NOT use dark colors as gradients.",
+    "Create depth through layered design elements with z-index hierarchy, but for this specific enterprise app, rely on 1px borders instead of heavy drop shadows.",
+    "DO NOT use complete `transparent` background in header, overlays, or any surface that has content under it. Example: Dropdown with transparent background is strictly forbidden. Use bg-black/90 or solid bg-background.",
+    "You MUST NOT apply universal transition. Eg: `transition: all`. This results in breaking transforms. Always add transitions for specific interactive elements like button, input excluding transforms.",
+    "You MUST NOT center align the app container, ie do not add `.App { text-align: center; }` in the css file.",
+    "Use Phosphor icons. NEVER use AI assistant Emoji characters like 🤖🧠💭💡🔮🎯 etc for icons.",
+    "Every interaction needs micro-animations - hover states, transitions, and entrance animations. Static = dead.",
+    "Use `sonner` for toasts. Sonner components are located in `/app/src/components/ui/sonner.tsx`.",
+    "Prioritize using pre-existing components from src/components/ui when applicable.",
+    "All interactive and key informational elements MUST include a `data-testid` attribute to facilitate robust automated testing (e.g., data-testid='login-submit-button').",
+    "Share guidelines for .js files not for .tsx files as the stack uses .js.",
+    "Implement both Light and Dark mode using Tailwind's 'dark:' variant class system. Default to dark mode given the enterprise finance nature."
+  ]
+}
