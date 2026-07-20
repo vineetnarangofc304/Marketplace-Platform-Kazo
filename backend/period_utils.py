@@ -44,7 +44,13 @@ def parse_period(period_type: str, period_value: Optional[str]) -> Tuple[List[st
 
 
 def month_query(period_type: str, period_value: Optional[str]) -> dict:
-    """Return a MongoDB filter fragment matching the requested period on `report_month`."""
+    """Return a MongoDB filter fragment matching the requested period on `report_month`.
+
+    If period_type is 'all' OR period_value is missing/empty, returns {} (no filter).
+    This lets the caller "start empty" until a period is picked without 500-ing.
+    """
+    if period_type == "all" or not period_value:
+        return {}
     months, _ = parse_period(period_type, period_value)
     if not months:
         return {}

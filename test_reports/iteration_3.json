@@ -1,0 +1,33 @@
+{
+  "summary": "Phase 6 (Recovery Management) + Phase 7 (AI Insights) end-to-end validation. Backend: 10/10 new pytest tests pass covering /api/insights/health-score (month/quarter/ytd), /api/insights/morning-brief (LLM source='llm' confirmed - Claude Sonnet 4.6), /api/insights/briefs, /api/recovery/summary, /api/recovery/cases/auto-create (0/0/0 candidates for 2026-04 as expected), /api/recovery/cases 404 on non-existent id, and a full lifecycle (seed discrepancy -> create case -> duplicate 409 -> list -> get -> PATCH status=in_review -> PATCH status=recovered with amount -> notes POST+GET -> evidence upload/list/download/delete -> case delete). Regression: GET /api/dashboard/overview?period_type=month (no period_value) returns 200. Frontend: /insights page renders, health gauge shows 93.5 Grade A, all component-{mapping,leakage,margin,recovery} testids present, stat chips render NSV/Recoverable/Unmapped, Generate brief triggers LLM narrative (source='llm', ~1780 chars markdown rendered). Period switch to Quarter 2026-Q2 reloads score without 500. /recovery page renders empty-state row, all filter/kpi testids present, auto-create button posts and toasts '0 cases created · 0 already tracked · 0 candidates' as expected.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Insights health gauge", "issues": ["Recharts still emits width(-1)/height(-1) warning on initial render before container measures — cosmetic, carried over from earlier iterations."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_recovery_insights.py",
+    "/app/test_reports/pytest/phase67.xml",
+    "/app/test_reports/pytest/phase67_full.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "recovery.py + insights.py routers have NO auth dependency at router level. Any authenticated user (or unauthenticated if a caller strips the Depends chain in server.py) could create/patch/delete cases and evidence. Add role='admin' or at least Depends(current_user) explicitly per endpoint. Same concern was raised for masters in iteration 2 — still unresolved.",
+    "recovery.py delete_case does NOT return 404 when case does not exist because _load_case raises early, that's fine — but auto_create has no cap on how many docs it will insert (limit=5000 fetch). For very large discrepancy universes, wrap in a bulk insert (insert_many with ordered=False) instead of N sequential insert_one calls.",
+    "recovery.py evidence stored inline in Mongo as base64 (data_b64) — fine for MVP but Mongo doc size cap is 16MB and current 15MB file limit leaves only 1MB headroom for the doc envelope. Consider GridFS or S3 for anything beyond MVP.",
+    "insights.py _llm_narrative catches ALL exceptions and returns a string like '_LLM narrative unavailable (X)._' which then becomes the narrative with source='llm' (bug!). Should set narrative=None on error so the caller correctly labels it 'rule_based'. Currently a partial LLM failure would be logged as source='llm' with an error string.",
+    "insights.py leakage_health formula '1 - min(1, leakage_ratio * 20)' hardcodes 5% leakage → 0 threshold. Consider making the 20 multiplier configurable via tolerance master.",
+    "recovery.py auto_create iterates one-by-one (await insert_one per doc). Convert to insert_many for O(1) round-trip when large."
+  ],
+  "updated_files": ["/app/backend/tests/test_recovery_insights.py"],
+  "success_rate": {"backend": "100% (10/10 new phase 6+7 tests)", "frontend": "100% (all Insights + Recovery testids present and functional)"},
+  "test_credentials": "admin@kazo.com / admin123",
+  "seed_data_creation": "Full-lifecycle test seeds one TEST_-prefixed discrepancy via pymongo when the collection is empty, then cleans it up (case + notes + evidence + discrepancy) at end. No residual test data.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Backend phase 6+7 fully green. LLM key working (source=llm confirmed, Claude Sonnet 4.6 narrative rendered). 5 legacy tests in backend_test.py + test_monthly_reports.py fail because the current env has NO settlement upload -> 0 discrepancies -> reconciliation/report tests can't produce data. This is expected per user's brief (`settlement not re-uploaded post cleanup`). If you need to run full regression, upload /app/samples/synthetic_settlement.xlsx via POST /api/uploads/settlement first, then re-run reconciliation. Focus for next iteration should be on the code-review items above (esp. auth on recovery/insights routers and the LLM error->'llm' mislabeling bug).",
+  "rca of the issue": "N/A — no failures in Phase 6+7 scope."
+}
