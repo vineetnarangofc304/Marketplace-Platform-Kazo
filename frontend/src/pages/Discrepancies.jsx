@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
-import api from "@/lib/api";
+import { useSearchParams, useNavigate } from "react-router-dom";
+import api, { formatApiError } from "@/lib/api";
 import { fmtCurrency, fmtInt } from "@/lib/format";
-import { AlertTriangle, X, Search, Filter } from "lucide-react";
+import { toast } from "sonner";
+import { AlertTriangle, X, Search, Filter, Wallet } from "lucide-react";
 import PeriodSelector from "@/components/PeriodSelector";
 import { SortableTh, nextDir } from "@/components/SortableTable";
 
@@ -131,6 +132,18 @@ export default function Discrepancies() {
 }
 
 function DiscDrawer({ disc, onClose }) {
+  const nav = useNavigate();
+  const [creating, setCreating] = useState(false);
+  const createRecoveryCase = async () => {
+    setCreating(true);
+    try {
+      const { data } = await api.post("/recovery/cases", { discrepancy_id: disc.id });
+      toast.success(`Recovery case created (${data.id.slice(0, 8)})`);
+      nav(`/recovery?period_type=month&period_value=${disc.report_month || ""}`);
+    } catch (e) {
+      toast.error(formatApiError(e.response?.data?.detail));
+    } finally { setCreating(false); }
+  };
   return (
     <div className="fixed inset-0 z-40" data-testid="disc-drawer">
       <div className="absolute inset-0 bg-black/30" onClick={onClose} />
@@ -149,6 +162,17 @@ function DiscDrawer({ disc, onClose }) {
         </div>
 
         <div className="p-5 space-y-5">
+          <div className="flex justify-end">
+            <button
+              data-testid="btn-create-recovery-case"
+              onClick={createRecoveryCase}
+              disabled={creating || !disc.recoverable}
+              className="btn btn-primary text-xs"
+              title={!disc.recoverable ? "Only discrepancies with ₹>0 recoverable can become cases" : ""}
+            >
+              <Wallet size={12} /> {creating ? "Creating…" : "Open Recovery Case"}
+            </button>
+          </div>
           <div className="border border-border p-4 rounded-sm">
             <div className="overline mb-2">Reason</div>
             <div className="text-sm">{disc.reason}</div>

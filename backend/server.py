@@ -171,7 +171,7 @@ async def list_users(user=Depends(require_role("admin"))):
 
 
 # Include auth router now; other routers imported below
-from routers import masters, uploads_r, calculations, reconciliation, dashboards, reports  # noqa: E402
+from routers import masters, uploads_r, calculations, reconciliation, dashboards, reports, recovery, insights  # noqa: E402
 
 app.include_router(api)
 app.include_router(masters.router, prefix="/api", dependencies=[Depends(current_user)])
@@ -180,6 +180,8 @@ app.include_router(calculations.router, prefix="/api", dependencies=[Depends(cur
 app.include_router(reconciliation.router, prefix="/api", dependencies=[Depends(current_user)])
 app.include_router(dashboards.router, prefix="/api", dependencies=[Depends(current_user)])
 app.include_router(reports.router, prefix="/api", dependencies=[Depends(current_user)])
+app.include_router(recovery.router, prefix="/api", dependencies=[Depends(current_user)])
+app.include_router(insights.router, prefix="/api", dependencies=[Depends(current_user)])
 
 # CORS
 _origins = os.environ.get("CORS_ORIGINS", "*")
@@ -211,6 +213,12 @@ async def _startup():
     await db.discrepancies.create_index([("severity", 1), ("recon_run_id", 1)])
     await db.discrepancies.create_index([("report_month", 1)])
     await db.uploads.create_index([("uploaded_at", -1)])
+    await db.recovery_cases.create_index([("discrepancy_id", 1)])
+    await db.recovery_cases.create_index([("status", 1)])
+    await db.recovery_cases.create_index([("report_month", 1)])
+    await db.recovery_notes.create_index([("case_id", 1), ("created_at", 1)])
+    await db.recovery_evidence.create_index([("case_id", 1)])
+    await db.insights_briefs.create_index([("created_at", -1)])
 
     # Seed admin
     existing = await db.users.find_one({"email": ADMIN_EMAIL})

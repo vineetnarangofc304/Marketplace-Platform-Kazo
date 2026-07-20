@@ -11,6 +11,8 @@ import SalesLedger from "@/pages/SalesLedger";
 import Calculations from "@/pages/Calculations";
 import Reconciliation from "@/pages/Reconciliation";
 import Discrepancies from "@/pages/Discrepancies";
+import Recovery from "@/pages/Recovery";
+import Insights from "@/pages/Insights";
 import Masters from "@/pages/Masters";
 import { Toaster } from "sonner";
 
@@ -36,6 +38,8 @@ function App() {
             <Route path="/calculations" element={<Shell><Calculations /></Shell>} />
             <Route path="/reconciliation" element={<Shell><Reconciliation /></Shell>} />
             <Route path="/discrepancies" element={<Shell><Discrepancies /></Shell>} />
+            <Route path="/recovery" element={<Shell><Recovery /></Shell>} />
+            <Route path="/insights" element={<Shell><Insights /></Shell>} />
             <Route path="/masters" element={<Shell><Masters /></Shell>} />
           </Routes>
         </BrowserRouter>
