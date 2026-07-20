@@ -56,15 +56,39 @@ User: "Make it production ready...no hard code no fallback. Make it ready for mo
 - Frontend: All new data-testids present and functional
 - Security: auth guard + admin-only enforcement verified end-to-end
 
-## Prioritized Backlog
+## Iteration 3 — Recovery Management + AI Insights (2026-02, session 3)
+User: "go ahead and complete pending tasks" — deliver Phase 6 & Phase 7 from the backlog.
+
+### Delivered in iteration 3
+- **Phase 6 — Recovery Management** (new `routers/recovery.py`, new page `/recovery`)
+  - Case tracking with statuses `open → in_review → submitted → recovered | rejected | closed`
+  - Auto-create cases from open discrepancies (period-filtered, ₹>0 recoverable)
+  - Manual case creation from any discrepancy via a new "Open Recovery Case" button in the Discrepancies drawer
+  - Communication log (channel: note/email/call/chat/myntra_ticket, direction: inbound/outbound/internal)
+  - Evidence file upload (≤15MB), download, delete — stored in Mongo (`recovery_evidence`, base64)
+  - Summary endpoint: totals + by_status + by_priority + coverage % of discrepancy universe
+  - Endpoints: `POST /api/recovery/cases`, `POST /api/recovery/cases/auto-create`, `GET/PATCH/DELETE /api/recovery/cases/{id}`, `GET/POST /api/recovery/cases/{id}/notes`, `GET/POST /api/recovery/cases/{id}/evidence`, `GET /api/recovery/evidence/{id}/download`, `GET /api/recovery/summary`
+  - New collections: `recovery_cases`, `recovery_notes`, `recovery_evidence` with indexes
+- **Phase 7 — AI Insights** (new `routers/insights.py`, new page `/insights`)
+  - Deterministic Health Score (0–100, Grade A–F) from four weighted components: Mapping (25%), Leakage (35%), Margin (25%), Recovery (15%)
+  - Morning Finance Brief — Claude Sonnet 4.6 via Emergent Universal Key (`EMERGENT_LLM_KEY`), rule-based fallback when LLM unavailable
+  - Radial gauge, per-component progress bars, tone selector (executive/operational/concise), audit log of past briefs
+  - Endpoints: `GET /api/insights/health-score`, `POST /api/insights/morning-brief`, `GET /api/insights/briefs`
+  - Numbers never fabricated — LLM receives only real aggregates from Mongo and is instructed to quote them verbatim
+- **Fix** — `period_utils.month_query()` now tolerates missing `period_value` (returns `{}` instead of raising) so dashboards do not 500 on initial load
+
+### Test Results (iteration 3)
+- 10/10 new pytest tests pass covering Recovery + Insights (create, duplicate 409, PATCH transitions, notes, evidence upload/download/delete, LLM brief with source='llm', period switching)
+- Frontend Recovery + Insights render correctly on 2026-04; Overview health-check regression passes
+- Insights Morning Brief validated end-to-end with live Claude Sonnet 4.6 output
+
+## Prioritized Backlog (updated)
 
 ### P0 (blocking for pilot)
 - Rule versioning + effective_from/effective_to + maker-checker approval workflow
 - Full audit log (who edited which master, when, what value changed)
 
 ### P1 (next iteration)
-- AI Insights (Morning Brief / CEO Brief / SKU-level margin narrative) via Emergent Universal Key
-- Recovery case management (auto-create from critical discrepancies, timeline, evidence attachments)
 - Raw-file retention with checksum in object storage (currently only parsed rows)
 - Scheduled report generation + email delivery via Resend
 - Visual nested rule builder (IF/AND/OR) instead of slab tables
@@ -76,6 +100,7 @@ User: "Make it production ready...no hard code no fallback. Make it ready for mo
 - Vector-based finance copilot (MongoDB Atlas Vector Search)
 - ERP integrations (SAP, Business Central, Tally)
 - Multi-entity / multi-GST support
+- SSO / stricter tenant boundaries
 
 ## Test Credentials
 - **Admin**: `admin@kazo.com` / `admin123`
