@@ -423,27 +423,40 @@ async def delete_upload(upload_id: str):
 async def list_sales(
     upload_id: Optional[str] = None,
     report_month: Optional[str] = None,
+    period_type: Optional[str] = None,
+    period_value: Optional[str] = None,
     search: Optional[str] = None,
     zone: Optional[str] = None,
     category: Optional[str] = None,
     sub_category: Optional[str] = None,
+    main_category: Optional[str] = None,
     order_status: Optional[str] = None,
-    limit: int = Query(200, le=1000),
+    txn_type: Optional[str] = None,
+    limit: int = Query(200, le=2000),
     skip: int = 0,
+    sort_by: str = "order_date",
+    sort_dir: str = "desc",
 ):
+    from period_utils import month_query as _mq
     q: Dict[str, Any] = {}
+    if period_type:
+        q.update(_mq(period_type, period_value))
+    elif report_month:
+        q["report_month"] = report_month
     if upload_id:
         q["upload_id"] = upload_id
-    if report_month:
-        q["report_month"] = report_month
     if zone:
         q["zone"] = zone
     if category:
         q["category"] = category
     if sub_category:
         q["sub_category"] = sub_category
+    if main_category:
+        q["main_category"] = main_category
     if order_status:
         q["order_status"] = order_status
+    if txn_type:
+        q["txn_type"] = txn_type
     if search:
         q["$or"] = [
             {"online_order_id": {"$regex": search, "$options": "i"}},
@@ -451,7 +464,14 @@ async def list_sales(
             {"sales_invoice_no": {"$regex": search, "$options": "i"}},
         ]
     total = await db.sales.count_documents(q)
-    docs = await db.sales.find(q, {"_id": 0}).sort("uploaded_at", -1).skip(skip).limit(limit).to_list(limit)
+    sort_map = {
+        "order_date": "order_date", "sku": "sku", "order_id": "online_order_id",
+        "nsv": "nsv_val", "mrp": "mrp", "qty": "qty", "month": "report_month",
+        "sub_category": "sub_category", "zone": "zone",
+    }
+    sort_field = sort_map.get(sort_by, "order_date")
+    direction = -1 if sort_dir == "desc" else 1
+    docs = await db.sales.find(q, {"_id": 0}).sort(sort_field, direction).skip(skip).limit(limit).to_list(limit)
     return {"total": total, "items": docs}
 
 

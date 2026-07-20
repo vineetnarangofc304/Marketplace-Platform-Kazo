@@ -24,7 +24,7 @@ function Shell({ children }) {
 
 function App() {
   return (
-    <div className="App dark">
+    <div className="App">
       <AuthProvider>
         <BrowserRouter>
           <Routes>
@@ -40,10 +40,10 @@ function App() {
           </Routes>
         </BrowserRouter>
         <Toaster
-          theme="dark"
+          theme="light"
           position="top-right"
           toastOptions={{
-            style: { background: "#0a0a0a", border: "1px solid #2a2a2a", fontFamily: "JetBrains Mono", fontSize: 12, borderRadius: 0 },
+            style: { background: "#FFFFFF", border: "1px solid #E1E4E8", fontFamily: "JetBrains Mono", fontSize: 12, borderRadius: 2, color: "#111827" },
           }}
         />
       </AuthProvider>

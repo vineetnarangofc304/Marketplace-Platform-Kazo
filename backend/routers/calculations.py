@@ -372,25 +372,53 @@ async def run_calculations(payload: RunCalcIn):
 async def list_calculations(
     upload_id: Optional[str] = None,
     report_month: Optional[str] = None,
+    period_type: Optional[str] = None,
+    period_value: Optional[str] = None,
+    sub_category: Optional[str] = None,
+    master_category: Optional[str] = None,
+    zone: Optional[str] = None,
+    severity_flag: Optional[str] = None,  # 'unmapped' or 'mapped'
     unmapped_only: bool = False,
-    limit: int = Query(200, le=1000),
+    limit: int = Query(200, le=2000),
     skip: int = 0,
     search: Optional[str] = None,
+    sort_by: str = "computed_at",
+    sort_dir: str = "desc",
 ):
+    from period_utils import month_query as _mq
     q: Dict[str, Any] = {}
+    if period_type:
+        q.update(_mq(period_type, period_value))
+    elif report_month:
+        q["report_month"] = report_month
     if upload_id:
         q["upload_id"] = upload_id
-    if report_month:
-        q["report_month"] = report_month
-    if unmapped_only:
+    if sub_category:
+        q["breakdown.sub_category"] = sub_category
+    if master_category:
+        q["breakdown.master_category"] = master_category
+    if zone:
+        q["breakdown.zone"] = zone
+    if unmapped_only or severity_flag == "unmapped":
         q["unmapped"] = True
+    if severity_flag == "mapped":
+        q["unmapped"] = {"$ne": True}
     if search:
         q["$or"] = [
             {"online_order_id": {"$regex": search, "$options": "i"}},
             {"sku": {"$regex": search, "$options": "i"}},
         ]
     total = await db.calculations.count_documents(q)
-    docs = await db.calculations.find(q, {"_id": 0}).sort("computed_at", -1).skip(skip).limit(limit).to_list(limit)
+    sort_map = {
+        "computed_at": "computed_at", "nsv": "breakdown.nsv_val",
+        "commission": "commission_incl_gst", "gt_charge": "gt_charge",
+        "fixed_fee": "fixed_fee_incl_gst", "deductions": "total_deductions",
+        "settlement": "expected_settlement", "sku": "sku", "order_id": "online_order_id",
+        "sub_category": "breakdown.sub_category", "month": "report_month",
+    }
+    sort_field = sort_map.get(sort_by, "computed_at")
+    direction = -1 if sort_dir == "desc" else 1
+    docs = await db.calculations.find(q, {"_id": 0}).sort(sort_field, direction).skip(skip).limit(limit).to_list(limit)
     return {"total": total, "items": docs}
 
 

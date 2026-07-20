@@ -1,53 +1,48 @@
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import api from "@/lib/api";
 import { fmtCurrency, fmtInt, fmtPct } from "@/lib/format";
 import { toast } from "sonner";
-import { Download, RefreshCw, Calendar } from "lucide-react";
+import { Download, RefreshCw } from "lucide-react";
 import StatChip from "@/components/StatChip";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell } from "recharts";
+import PeriodSelector from "@/components/PeriodSelector";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell, LineChart, Line, Legend } from "recharts";
 
-const COLORS = ["#38BDF8", "#10B981", "#F59E0B", "#EF4444", "#A78BFA", "#EC4899", "#818CF8"];
+const SEV_COLORS = { critical: "#DC2626", high: "#EA580C", medium: "#CA8A04", low: "#0284C7" };
 
 export default function Reports() {
-  const [months, setMonths] = useState([]);
-  const [month, setMonth] = useState("");
+  const nav = useNavigate();
+  const [period, setPeriod] = useState({ period_type: "month", period_value: "" });
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(false);
   const [downloading, setDownloading] = useState(false);
 
   useEffect(() => {
-    api.get("/reports/months").then((r) => {
-      setMonths(r.data);
-      if (r.data.length && !month) setMonth(r.data[r.data.length - 1]);
-    });
-  }, []);
-
-  useEffect(() => {
-    if (!month) return;
+    if (!period.period_type || (period.period_type !== "all" && !period.period_value)) return;
     setLoading(true);
-    api.get("/reports/monthly", { params: { month } })
+    api.get("/reports/period", { params: { period_type: period.period_type, period_value: period.period_value || undefined } })
       .then((r) => setReport(r.data))
       .catch((e) => toast.error(e.response?.data?.detail || e.message))
       .finally(() => setLoading(false));
-  }, [month]);
+  }, [period.period_type, period.period_value]);
 
   const download = async () => {
-    if (!month) return;
+    if (period.period_type !== "month" || !period.period_value) {
+      toast.error("Excel export currently supports Month periods. Use Month + a value.");
+      return;
+    }
     setDownloading(true);
     try {
-      const backendUrl = process.env.REACT_APP_BACKEND_URL;
-      const res = await api.get("/reports/monthly/export", {
-        params: { month }, responseType: "blob",
-      });
+      const res = await api.get("/reports/monthly/export", { params: { month: period.period_value }, responseType: "blob" });
       const url = window.URL.createObjectURL(new Blob([res.data]));
       const a = document.createElement("a");
       a.href = url;
-      a.download = `KAZO_Myntra_Report_${month}.xlsx`;
+      a.download = `KAZO_Myntra_Report_${period.period_value}.xlsx`;
       document.body.appendChild(a);
       a.click();
       a.remove();
       window.URL.revokeObjectURL(url);
-      toast.success(`Downloaded report for ${month}`);
+      toast.success(`Downloaded ${period.period_value}`);
     } catch (e) {
       toast.error("Download failed");
     } finally {
@@ -58,149 +53,132 @@ export default function Reports() {
   const kpi = report?.kpi || {};
   const marginPct = useMemo(() => {
     const nsv = kpi.total_nsv || kpi.sales_nsv || 0;
-    const settlement = kpi.expected_settlement || 0;
-    return nsv ? settlement / nsv : 0;
+    const s = kpi.expected_settlement || 0;
+    return nsv ? s / nsv : 0;
   }, [kpi]);
+
+  const goTo = (path, extra = {}) => {
+    const p = new URLSearchParams();
+    if (period.period_type) p.set("period_type", period.period_type);
+    if (period.period_value) p.set("period_value", period.period_value);
+    Object.entries(extra).forEach(([k, v]) => v !== undefined && p.set(k, v));
+    nav(`${path}?${p.toString()}`);
+  };
 
   return (
     <div className="p-6 space-y-6" data-testid="reports-page">
       <div className="flex items-end justify-between flex-wrap gap-4">
         <div>
-          <div className="overline">Monthly Report</div>
-          <h1 className="text-2xl font-semibold tracking-tight mt-1">
-            Marketplace Finance — {month || "Select month"}
+          <div className="overline">Marketplace Finance Report</div>
+          <h1 className="text-2xl font-semibold tracking-tight mt-1 text-slate-900">
+            {report?.label ? `${report.label} — Marketplace Report` : "Select a period"}
           </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Executive report for the selected reporting period. Download as Excel with full order detail, discrepancies, and unmapped-orders sheets.
+          <p className="text-sm text-slate-500 mt-1">
+            Monthly · Quarterly · YTD · Annual. Click any row / bar / chip to drill into underlying data.
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="relative">
-            <Calendar size={12} className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <select
-              data-testid="report-month-select"
-              value={month}
-              onChange={(e) => setMonth(e.target.value)}
-              className="bg-secondary border border-border pl-7 pr-3 py-2 text-xs mono outline-none focus:border-foreground/50 min-w-[140px]"
-            >
-              <option value="">Select month</option>
-              {months.map((m) => <option key={m} value={m}>{m}</option>)}
-            </select>
-          </div>
-          <button
-            data-testid="btn-refresh-report"
-            onClick={() => month && setMonth(month)}
-            disabled={loading}
-            className="border border-border hover:bg-secondary px-3 py-2 text-xs mono inline-flex items-center gap-1"
-          >
+        <div className="flex items-center gap-2 flex-wrap">
+          <PeriodSelector value={period} onChange={setPeriod} testIdPrefix="report-period" />
+          <button data-testid="btn-refresh-report" onClick={() => setPeriod({ ...period })} disabled={loading} className="btn">
             <RefreshCw size={12} className={loading ? "animate-spin" : ""} /> Refresh
           </button>
-          <button
-            data-testid="btn-download-report"
-            onClick={download}
-            disabled={!month || downloading}
-            className="bg-primary text-primary-foreground hover:opacity-90 px-4 py-2 text-xs mono inline-flex items-center gap-2 disabled:opacity-50"
-          >
+          <button data-testid="btn-download-report" onClick={download} disabled={downloading || period.period_type !== "month"} className="btn btn-primary" title={period.period_type !== "month" ? "Excel export supports Month period only" : ""}>
             <Download size={12} /> {downloading ? "Preparing…" : "Download Excel"}
           </button>
         </div>
       </div>
 
-      {!month ? (
-        <div className="border border-border bg-card p-12 text-center text-muted-foreground text-sm">
-          Upload sales data and select a reporting month above.
-        </div>
-      ) : loading ? (
-        <div className="border border-border bg-card p-12 text-center text-muted-foreground mono text-xs uppercase tracking-widest">Loading report…</div>
+      {loading ? (
+        <div className="border border-border bg-white p-12 text-center text-slate-400 mono text-xs uppercase tracking-widest rounded-sm">Loading report…</div>
       ) : report ? (
         <>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <StatChip
-              testId="kpi-nsv"
-              label="Total NSV"
-              value={fmtCurrency(kpi.total_nsv || kpi.sales_nsv)}
-              sub={`${fmtInt(kpi.total_orders || kpi.sales_rows)} orders`}
-            />
-            <StatChip
-              testId="kpi-commission"
-              label="Expected Commission"
-              value={fmtCurrency(kpi.expected_commission)}
-              sub={`Incl 18% GST`}
-              tone="negative"
-            />
-            <StatChip
-              testId="kpi-deductions"
-              label="Total Deductions"
-              value={fmtCurrency(kpi.expected_deductions)}
-              sub="Commission + Fixed + GT + Return + TCS/TDS"
-              tone="negative"
-            />
-            <StatChip
-              testId="kpi-settlement"
-              label="Expected Settlement"
-              value={fmtCurrency(kpi.expected_settlement)}
-              sub={`Margin: ${fmtPct(marginPct, 1)}`}
-              tone="positive"
-            />
+            <StatChip testId="rep-nsv" label="Total NSV" value={fmtCurrency(kpi.total_nsv || kpi.sales_nsv)} sub={`${fmtInt(kpi.total_orders || kpi.sales_rows)} orders`} onClick={() => goTo("/sales")} drillHint />
+            <StatChip testId="rep-commission" label="Expected Commission" value={fmtCurrency(kpi.expected_commission)} sub="Incl 18% GST" tone="negative" onClick={() => goTo("/calculations")} drillHint />
+            <StatChip testId="rep-deductions" label="Total Deductions" value={fmtCurrency(kpi.expected_deductions)} sub="Comm + Fixed + GT + Return + TCS/TDS" tone="negative" onClick={() => goTo("/calculations")} drillHint />
+            <StatChip testId="rep-settlement" label="Expected Settlement" value={fmtCurrency(kpi.expected_settlement)} sub={`Margin ${fmtPct(marginPct, 1)}`} tone="positive" onClick={() => goTo("/calculations")} drillHint />
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-            <div className="lg:col-span-2 border border-border bg-card p-5">
-              <div className="overline">Top Sub-Categories — NSV vs Commission</div>
+            <div className="lg:col-span-2 border border-border bg-white p-5 rounded-sm">
+              <div className="overline">Top Sub-Categories — click a bar to drill</div>
               <div className="h-72 mt-4">
                 <ResponsiveContainer>
-                  <BarChart data={report.by_sub_category?.slice(0, 10) || []}>
-                    <CartesianGrid strokeDasharray="0" stroke="#1a1a1a" />
-                    <XAxis dataKey="sub_category" stroke="#9CA3AF" tick={{ fontSize: 10, fontFamily: "JetBrains Mono" }} />
-                    <YAxis stroke="#9CA3AF" tick={{ fontSize: 10, fontFamily: "JetBrains Mono" }} />
-                    <Tooltip contentStyle={{ background: "#0a0a0a", border: "1px solid #2a2a2a", fontFamily: "JetBrains Mono", fontSize: 11 }} />
-                    <Bar dataKey="nsv" fill="#38BDF8" name="NSV" />
-                    <Bar dataKey="commission" fill="#EF4444" name="Commission" />
+                  <BarChart data={report.by_sub_category?.slice(0, 12) || []} onClick={(e) => e?.activeLabel && goTo("/calculations", { sub_category: e.activeLabel })}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
+                    <XAxis dataKey="sub_category" stroke="#6B7280" tick={{ fontSize: 10, fontFamily: "JetBrains Mono" }} />
+                    <YAxis stroke="#6B7280" tick={{ fontSize: 10, fontFamily: "JetBrains Mono" }} />
+                    <Tooltip contentStyle={{ background: "#FFFFFF", border: "1px solid #E1E4E8", fontFamily: "JetBrains Mono", fontSize: 11 }} />
+                    <Legend wrapperStyle={{ fontFamily: "JetBrains Mono", fontSize: 11 }} />
+                    <Bar dataKey="nsv" fill="#2563EB" name="NSV" cursor="pointer" />
+                    <Bar dataKey="commission" fill="#DC2626" name="Commission" cursor="pointer" />
+                    <Bar dataKey="gt_charge" fill="#F59E0B" name="GT Charge" cursor="pointer" />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
             </div>
 
-            <div className="border border-border bg-card p-5">
-              <div className="overline">Reconciliation — Discrepancy Split</div>
+            <div className="border border-border bg-white p-5 rounded-sm">
+              <div className="overline">Discrepancies</div>
               <div className="h-48 mt-4">
                 {report.reconciliation?.by_severity?.length ? (
                   <ResponsiveContainer>
                     <PieChart>
-                      <Pie data={report.reconciliation.by_severity} dataKey="count" nameKey="severity" innerRadius={40} outerRadius={70}>
-                        {report.reconciliation.by_severity.map((_, idx) => <Cell key={idx} fill={COLORS[idx % COLORS.length]} />)}
+                      <Pie data={report.reconciliation.by_severity} dataKey="count" nameKey="severity" innerRadius={40} outerRadius={70}
+                        onClick={(e) => e?.severity && goTo("/discrepancies", { severity: e.severity })} cursor="pointer">
+                        {report.reconciliation.by_severity.map((s, idx) => <Cell key={idx} fill={SEV_COLORS[s.severity] || "#94A3B8"} />)}
                       </Pie>
-                      <Tooltip contentStyle={{ background: "#0a0a0a", border: "1px solid #2a2a2a", fontFamily: "JetBrains Mono", fontSize: 11 }} />
+                      <Tooltip contentStyle={{ background: "#FFFFFF", border: "1px solid #E1E4E8", fontFamily: "JetBrains Mono", fontSize: 11 }} />
                     </PieChart>
                   </ResponsiveContainer>
                 ) : (
-                  <div className="h-full flex items-center justify-center text-xs mono text-muted-foreground">
-                    No settlement uploaded for {month}
+                  <div className="h-full flex items-center justify-center text-xs mono text-slate-400 text-center px-4">
+                    Upload a settlement file to see reconciliation.
                   </div>
                 )}
               </div>
               <div className="mt-3 space-y-1">
                 <div className="flex justify-between text-xs mono">
-                  <span className="text-muted-foreground">Total Discrepancies</span>
+                  <span className="text-slate-500">Total Discrepancies</span>
                   <span>{fmtInt(report.reconciliation?.total_discrepancies || 0)}</span>
                 </div>
                 <div className="flex justify-between text-xs mono">
-                  <span className="text-muted-foreground">Total Recoverable</span>
+                  <span className="text-slate-500">Total Recoverable</span>
                   <span className="fin-pos">{fmtCurrency(report.reconciliation?.total_recoverable || 0)}</span>
                 </div>
                 {kpi.unmapped_orders > 0 && (
                   <div className="flex justify-between text-xs mono">
-                    <span className="text-muted-foreground">Unmapped Orders</span>
-                    <span className="sev-high">{fmtInt(kpi.unmapped_orders)}</span>
+                    <span className="text-slate-500">Unmapped Orders</span>
+                    <button onClick={() => goTo("/calculations", { unmapped: "1" })} className="sev-high underline">{fmtInt(kpi.unmapped_orders)}</button>
                   </div>
                 )}
               </div>
             </div>
           </div>
 
-          <div className="border border-border bg-card">
+          {report.by_month?.length > 1 && (
+            <div className="border border-border bg-white p-5 rounded-sm">
+              <div className="overline mb-2">Monthly Trend</div>
+              <div className="h-64">
+                <ResponsiveContainer>
+                  <LineChart data={report.by_month}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
+                    <XAxis dataKey="month" stroke="#6B7280" tick={{ fontSize: 10, fontFamily: "JetBrains Mono" }} />
+                    <YAxis stroke="#6B7280" tick={{ fontSize: 10, fontFamily: "JetBrains Mono" }} />
+                    <Tooltip contentStyle={{ background: "#FFFFFF", border: "1px solid #E1E4E8", fontFamily: "JetBrains Mono", fontSize: 11 }} />
+                    <Legend wrapperStyle={{ fontFamily: "JetBrains Mono", fontSize: 11 }} />
+                    <Line type="monotone" dataKey="nsv" stroke="#2563EB" name="NSV" strokeWidth={2} />
+                    <Line type="monotone" dataKey="commission" stroke="#DC2626" name="Commission" strokeWidth={2} />
+                    <Line type="monotone" dataKey="expected_settlement" stroke="#059669" name="Settlement" strokeWidth={2} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          )}
+
+          <div className="border border-border bg-white rounded-sm">
             <div className="p-4 border-b border-border">
-              <div className="overline">Sub-Category Breakdown</div>
+              <div className="overline">Sub-Category Breakdown — click any row to drill into calculations</div>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-xs">
@@ -209,7 +187,7 @@ export default function Reports() {
                     <th className="grid-cell text-left">Sub Category</th>
                     <th className="grid-cell text-right">Orders</th>
                     <th className="grid-cell text-right">NSV</th>
-                    <th className="grid-cell text-right">Commission (incl GST)</th>
+                    <th className="grid-cell text-right">Commission</th>
                     <th className="grid-cell text-right">Fixed Fee</th>
                     <th className="grid-cell text-right">GT Charge</th>
                     <th className="grid-cell text-right">Expected Settlement</th>
@@ -220,8 +198,9 @@ export default function Reports() {
                   {(report.by_sub_category || []).map((r) => {
                     const margin = r.nsv ? r.expected_settlement / r.nsv : 0;
                     return (
-                      <tr key={r.sub_category} className="grid-row" data-testid={`report-sub-${r.sub_category}`}>
-                        <td className="grid-cell">{r.sub_category}</td>
+                      <tr key={r.sub_category} className="grid-row drill" data-testid={`report-sub-${r.sub_category}`}
+                          onClick={() => goTo("/calculations", { sub_category: r.sub_category })}>
+                        <td className="grid-cell drill-link">{r.sub_category}</td>
                         <td className="grid-cell text-right">{fmtInt(r.orders)}</td>
                         <td className="grid-cell text-right">{fmtCurrency(r.nsv)}</td>
                         <td className="grid-cell text-right fin-neg">{fmtCurrency(r.commission)}</td>

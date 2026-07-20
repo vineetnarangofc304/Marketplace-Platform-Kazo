@@ -2,106 +2,119 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import api from "@/lib/api";
 import { fmtCurrency, fmtInt } from "@/lib/format";
-import { AlertTriangle, X, Search } from "lucide-react";
+import { AlertTriangle, X, Search, Filter } from "lucide-react";
+import PeriodSelector from "@/components/PeriodSelector";
+import { SortableTh, nextDir } from "@/components/SortableTable";
 
 export default function Discrepancies() {
-  const [params, setParams] = useSearchParams();
-  const runId = params.get("run") || "";
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [period, setPeriod] = useState({
+    period_type: searchParams.get("period_type") || "month",
+    period_value: searchParams.get("period_value") || "",
+  });
   const [items, setItems] = useState([]);
   const [total, setTotal] = useState(0);
-  const [severity, setSeverity] = useState("");
-  const [status, setStatus] = useState("");
-  const [search, setSearch] = useState("");
+  const [severity, setSeverity] = useState(searchParams.get("severity") || "");
+  const [status, setStatus] = useState(searchParams.get("match_status") || "");
+  const [search, setSearch] = useState(searchParams.get("search") || "");
+  const [sort, setSort] = useState({ by: "recoverable", dir: "desc" });
   const [drawer, setDrawer] = useState(null);
+  const runId = searchParams.get("run") || "";
 
   const load = async () => {
     const { data } = await api.get("/reconciliation/discrepancies", {
       params: {
+        period_type: period.period_type,
+        period_value: period.period_value || undefined,
         recon_run_id: runId || undefined,
         severity: severity || undefined,
         match_status: status || undefined,
         search: search || undefined,
-        limit: 300,
+        sort_by: sort.by, sort_dir: sort.dir,
+        limit: 500,
       },
     });
     setItems(data.items);
     setTotal(data.total);
   };
-  useEffect(() => { load(); /* eslint-disable-next-line */ }, [runId, severity, status]);
+  useEffect(() => { load(); /* eslint-disable-next-line */ }, [period.period_type, period.period_value, severity, status, sort.by, sort.dir, runId]);
+
+  const onSort = (key) => setSort((s) => nextDir(s.by, s.dir, key));
+
+  const activeFilterCount = [severity, status, search, runId].filter(Boolean).length;
+  const clearFilters = () => { setSeverity(""); setStatus(""); setSearch(""); setSearchParams({}); };
 
   return (
     <div className="p-6 space-y-4" data-testid="discrepancies-page">
-      <div className="flex items-end justify-between">
+      <div className="flex items-end justify-between flex-wrap gap-3">
         <div>
           <div className="overline">Discrepancy Workbench</div>
-          <h1 className="text-2xl font-semibold tracking-tight mt-1 flex items-center gap-2">
+          <h1 className="text-2xl font-semibold tracking-tight mt-1 text-slate-900 flex items-center gap-2">
             <AlertTriangle size={18} className="text-amber-500" /> {fmtInt(total)} Discrepancies
           </h1>
-          <p className="text-sm text-muted-foreground mt-1 mono">
-            {runId ? `Run: ${runId.slice(0, 8)}` : "All runs"} · sorted by severity + recoverable
+          <p className="text-sm text-slate-500 mt-1 mono">
+            {runId ? `Run: ${runId.slice(0, 8)}` : "All runs"} · click any row for full component compare
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="relative">
-            <Search size={12} className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <input
-              data-testid="disc-search"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && load()}
-              placeholder="Order ID / SKU"
-              className="bg-secondary border border-border pl-7 pr-3 py-1.5 text-xs mono w-56 outline-none"
-            />
-          </div>
-          <select data-testid="filter-severity" value={severity} onChange={(e) => setSeverity(e.target.value)} className="bg-secondary border border-border px-2 py-1.5 text-xs mono">
-            <option value="">All severity</option>
-            <option value="critical">Critical</option>
-            <option value="high">High</option>
-            <option value="medium">Medium</option>
-            <option value="low">Low</option>
-          </select>
-          <select data-testid="filter-status" value={status} onChange={(e) => setStatus(e.target.value)} className="bg-secondary border border-border px-2 py-1.5 text-xs mono">
-            <option value="">All status</option>
-            <option value="variance">Variance</option>
-            <option value="unmatched">Unmatched</option>
-          </select>
-          {runId && (
-            <button onClick={() => setParams({})} className="border border-border hover:bg-secondary px-2 py-1.5 text-xs mono">Clear run</button>
-          )}
-        </div>
+        <PeriodSelector value={period} onChange={setPeriod} testIdPrefix="disc-period" />
       </div>
 
-      <div className="border border-border bg-card overflow-auto max-h-[calc(100vh-240px)]">
+      <div className="border border-border bg-white p-3 rounded-sm flex items-center gap-2 flex-wrap">
+        <div className="inline-flex items-center gap-1 text-xs mono text-slate-500 pr-2 border-r border-border">
+          <Filter size={12} /> Filters
+          {activeFilterCount > 0 && <span className="chip chip-neutral text-[9px] py-0">{activeFilterCount}</span>}
+        </div>
+        <div className="relative">
+          <Search size={12} className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400" />
+          <input data-testid="disc-search" value={search} onChange={(e) => setSearch(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && load()}
+            placeholder="Order ID / SKU" className="input pl-7 w-52" />
+        </div>
+        <select data-testid="filter-severity" value={severity} onChange={(e) => setSeverity(e.target.value)} className="input">
+          <option value="">All severity</option>
+          <option value="critical">Critical</option>
+          <option value="high">High</option>
+          <option value="medium">Medium</option>
+          <option value="low">Low</option>
+        </select>
+        <select data-testid="filter-status" value={status} onChange={(e) => setStatus(e.target.value)} className="input">
+          <option value="">All status</option>
+          <option value="variance">Variance</option>
+          <option value="unmatched">Unmatched</option>
+        </select>
+        {activeFilterCount > 0 && (
+          <button onClick={clearFilters} className="btn text-xs"><X size={10} /> Clear</button>
+        )}
+      </div>
+
+      <div className="border border-border bg-white overflow-auto max-h-[calc(100vh-300px)] rounded-sm">
         <table className="w-full text-xs">
           <thead className="grid-header sticky top-0 z-10">
             <tr>
-              <th className="text-left grid-cell">Severity</th>
-              <th className="text-left grid-cell">Order ID</th>
-              <th className="text-left grid-cell">SKU</th>
-              <th className="text-left grid-cell">Status</th>
-              <th className="text-left grid-cell">Reason</th>
-              <th className="text-right grid-cell">Settle Variance</th>
-              <th className="text-right grid-cell">Recoverable</th>
+              <SortableTh label="Severity" sortKey="severity" sort={sort} onSort={onSort} />
+              <SortableTh label="Order ID" sortKey="order_id" sort={sort} onSort={onSort} />
+              <SortableTh label="SKU" sortKey="sku" sort={sort} onSort={onSort} />
+              <th className="grid-cell text-left">Status</th>
+              <th className="grid-cell text-left">Reason</th>
+              <SortableTh label="Settle Variance" sortKey="settle_variance" sort={sort} onSort={onSort} align="right" />
+              <SortableTh label="Recoverable" sortKey="recoverable" sort={sort} onSort={onSort} align="right" />
             </tr>
           </thead>
           <tbody>
             {items.length === 0 ? (
-              <tr><td colSpan={7} className="grid-cell text-center text-muted-foreground py-10">No discrepancies. Run reconciliation from the Reconciliation page.</td></tr>
+              <tr><td colSpan={7} className="grid-cell text-center text-slate-400 py-10">
+                No discrepancies for this period. Upload a settlement file and run reconciliation.
+              </td></tr>
             ) : items.map((d) => (
-              <tr
-                key={d.id}
-                onClick={() => setDrawer(d)}
-                className="grid-row cursor-pointer"
-                data-testid={`disc-row-${d.id}`}
-                style={{ borderLeft: d.severity === "critical" ? "3px solid #DC2626" : d.severity === "high" ? "3px solid #F59E0B" : d.severity === "medium" ? "3px solid #FBBF24" : "3px solid #38BDF8" }}
-              >
+              <tr key={d.id} onClick={() => setDrawer(d)} className="grid-row drill" data-testid={`disc-row-${d.id}`}
+                  style={{ borderLeft: `3px solid ${d.severity === "critical" ? "#DC2626" : d.severity === "high" ? "#EA580C" : d.severity === "medium" ? "#CA8A04" : "#0284C7"}` }}>
                 <td className="grid-cell"><span className={`chip chip-${d.severity}`}>{d.severity}</span></td>
-                <td className="grid-cell">{(d.online_order_id || "").slice(0, 14)}…</td>
+                <td className="grid-cell drill-link">{(d.online_order_id || "").slice(0, 14)}…</td>
                 <td className="grid-cell">{d.sku}</td>
                 <td className="grid-cell">
                   <span className={`chip ${d.match_status === "unmatched" ? "chip-unmatched" : "chip-variance"}`}>{d.match_status}</span>
                 </td>
-                <td className="grid-cell text-muted-foreground truncate max-w-[380px]">{d.reason}</td>
+                <td className="grid-cell text-slate-500 text-xs max-w-[380px] truncate" title={d.reason}>{d.reason}</td>
                 <td className={`grid-cell text-right ${d.settle_variance > 0 ? "fin-pos" : "fin-neg"}`}>
                   {d.settle_variance !== undefined ? fmtCurrency(d.settle_variance) : "—"}
                 </td>
@@ -112,7 +125,7 @@ export default function Discrepancies() {
         </table>
       </div>
 
-      {drawer ? <DiscDrawer disc={drawer} onClose={() => setDrawer(null)} /> : null}
+      {drawer && <DiscDrawer disc={drawer} onClose={() => setDrawer(null)} />}
     </div>
   );
 }
@@ -120,23 +133,23 @@ export default function Discrepancies() {
 function DiscDrawer({ disc, onClose }) {
   return (
     <div className="fixed inset-0 z-40" data-testid="disc-drawer">
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
-      <div className="absolute right-0 top-0 h-full w-full max-w-3xl bg-background border-l border-border overflow-auto">
+      <div className="absolute inset-0 bg-black/30" onClick={onClose} />
+      <div className="absolute right-0 top-0 h-full w-full max-w-3xl bg-white border-l border-border overflow-auto">
         <div className="p-5 border-b border-border flex items-start justify-between">
           <div>
             <div className="overline">Discrepancy Detail</div>
-            <div className="text-lg mt-1 mono">{disc.online_order_id}</div>
-            <div className="text-xs text-muted-foreground mono">{disc.sku}</div>
+            <div className="text-lg mt-1 mono text-slate-900">{disc.online_order_id}</div>
+            <div className="text-xs text-slate-500 mono">{disc.sku}</div>
             <div className="mt-2 flex gap-2">
               <span className={`chip chip-${disc.severity}`}>{disc.severity}</span>
               <span className={`chip ${disc.match_status === "unmatched" ? "chip-unmatched" : "chip-variance"}`}>{disc.match_status}</span>
             </div>
           </div>
-          <button onClick={onClose} className="p-1 hover:bg-secondary" data-testid="close-disc-drawer"><X size={16} /></button>
+          <button onClick={onClose} className="btn" data-testid="close-disc-drawer"><X size={14} /></button>
         </div>
 
         <div className="p-5 space-y-5">
-          <div className="border border-border p-4">
+          <div className="border border-border p-4 rounded-sm">
             <div className="overline mb-2">Reason</div>
             <div className="text-sm">{disc.reason}</div>
             <div className="mt-3 grid grid-cols-2 gap-3 text-xs mono">
@@ -150,11 +163,11 @@ function DiscDrawer({ disc, onClose }) {
             <table className="w-full text-xs mono border border-border">
               <thead className="grid-header">
                 <tr>
-                  <th className="text-left grid-cell">Component</th>
-                  <th className="text-right grid-cell">Expected</th>
-                  <th className="text-right grid-cell">Actual</th>
-                  <th className="text-right grid-cell">Variance</th>
-                  <th className="text-left grid-cell">Status</th>
+                  <th className="grid-cell text-left">Component</th>
+                  <th className="grid-cell text-right">Expected</th>
+                  <th className="grid-cell text-right">Actual</th>
+                  <th className="grid-cell text-right">Variance</th>
+                  <th className="grid-cell text-left">Status</th>
                 </tr>
               </thead>
               <tbody>
@@ -175,7 +188,7 @@ function DiscDrawer({ disc, onClose }) {
 
           <div>
             <div className="overline mb-2">Marketplace-Reported (Settled)</div>
-            <pre className="text-[10px] mono bg-secondary p-3 border border-border overflow-auto">
+            <pre className="text-[10px] mono bg-slate-50 p-3 border border-border rounded-sm overflow-auto">
 {JSON.stringify(disc.settled, null, 2)}
             </pre>
           </div>

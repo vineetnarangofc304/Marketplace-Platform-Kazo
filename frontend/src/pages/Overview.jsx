@@ -1,137 +1,122 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import api from "@/lib/api";
 import StatChip from "@/components/StatChip";
+import PeriodSelector from "@/components/PeriodSelector";
 import { fmtCurrency, fmtInt, fmtPct } from "@/lib/format";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, CartesianGrid } from "recharts";
-import { Link } from "react-router-dom";
-import { AlertTriangle, ArrowUpRight, Calendar, TrendingDown } from "lucide-react";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell, CartesianGrid, Legend } from "recharts";
+import { AlertTriangle, ArrowUpRight } from "lucide-react";
 
-const COLORS = ["#DC2626", "#F59E0B", "#FBBF24", "#38BDF8", "#10B981", "#A78BFA"];
+const SEV_COLORS = { critical: "#DC2626", high: "#EA580C", medium: "#CA8A04", low: "#0284C7" };
+const CHART_COLORS = ["#2563EB", "#059669", "#D97706", "#DC2626", "#7C3AED", "#DB2777"];
 
 export default function Overview() {
-  const [months, setMonths] = useState([]);
-  const [month, setMonth] = useState("");
+  const nav = useNavigate();
+  const [period, setPeriod] = useState({ period_type: "month", period_value: "" });
   const [overview, setOverview] = useState(null);
   const [commSum, setCommSum] = useState(null);
   const [reconSum, setReconSum] = useState(null);
 
   useEffect(() => {
-    api.get("/reports/months").then((r) => {
-      setMonths(r.data);
-      if (r.data.length && !month) setMonth(r.data[r.data.length - 1]);
-    });
-  }, []);
-
-  useEffect(() => {
-    const params = month ? { report_month: month } : {};
+    const params = { period_type: period.period_type, period_value: period.period_value || undefined };
     api.get("/dashboard/overview", { params }).then((r) => setOverview(r.data));
     api.get("/dashboard/commission-summary", { params }).then((r) => setCommSum(r.data));
     api.get("/dashboard/reconciliation-summary", { params }).then((r) => setReconSum(r.data));
-  }, [month]);
+  }, [period.period_type, period.period_value]);
 
   const kpi = commSum?.kpi || {};
   const marginPct = kpi.total_nsv ? (kpi.expected_settlement || 0) / kpi.total_nsv : 0;
+  const commPct = kpi.total_nsv ? (kpi.expected_commission || 0) / kpi.total_nsv : 0;
+
+  // Drill helpers — pass current period to detail pages
+  const goTo = (path, extra = {}) => {
+    const p = new URLSearchParams();
+    if (period.period_type) p.set("period_type", period.period_type);
+    if (period.period_value) p.set("period_value", period.period_value);
+    Object.entries(extra).forEach(([k, v]) => v !== undefined && p.set(k, v));
+    nav(`${path}?${p.toString()}`);
+  };
 
   return (
-    <div className="p-6 space-y-6" data-testid="overview-page">
+    <div className="p-6 space-y-5" data-testid="overview-page">
       <div className="flex items-end justify-between flex-wrap gap-4">
         <div>
           <div className="overline">Executive Overview</div>
-          <h1 className="text-2xl font-semibold tracking-tight mt-1">Marketplace Finance Command Center</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Deterministic commission math + settlement reconciliation for Myntra.
-            {month ? <> · Filter: <span className="mono">{month}</span></> : null}
+          <h1 className="text-2xl font-semibold tracking-tight mt-1 text-slate-900">Marketplace Finance Command Center</h1>
+          <p className="text-sm text-slate-500 mt-1">
+            Click any KPI, sub-category, or chart bar to drill into the underlying rows.
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="relative">
-            <Calendar size={12} className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <select
-              data-testid="overview-month-select"
-              value={month}
-              onChange={(e) => setMonth(e.target.value)}
-              className="bg-secondary border border-border pl-7 pr-3 py-2 text-xs mono outline-none focus:border-foreground/50 min-w-[160px]"
-            >
-              <option value="">All months</option>
-              {months.map((m) => <option key={m} value={m}>{m}</option>)}
-            </select>
-          </div>
-        </div>
+        <PeriodSelector value={period} onChange={setPeriod} testIdPrefix="overview-period" />
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <StatChip testId="kpi-total-sales" label="Sales Rows" value={fmtInt(overview?.total_sales)} sub="Order-item rows" />
-        <StatChip testId="kpi-total-calcs" label="Calculated" value={fmtInt(overview?.total_calculations)} sub={overview?.unmapped_calculations ? `${overview.unmapped_calculations} unmapped` : "All mapped"} tone={overview?.unmapped_calculations ? "warning" : "neutral"} />
-        <StatChip testId="kpi-total-settle" label="Settlement Rows" value={fmtInt(overview?.total_settlement_rows)} sub="Marketplace-reported" />
-        <StatChip
-          testId="kpi-open-critical"
-          label="Critical Discrepancies"
-          value={fmtInt(overview?.open_critical)}
-          sub="Requires review"
-          tone={overview?.open_critical > 0 ? "critical" : "neutral"}
-        />
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+        <StatChip testId="kpi-nsv" label="Total NSV" value={fmtCurrency(kpi.total_nsv)} sub={`${fmtInt(kpi.total_orders)} orders`} onClick={() => goTo("/sales")} drillHint />
+        <StatChip testId="kpi-commission" label="Expected Commission" value={fmtCurrency(kpi.expected_commission)} sub={`${fmtPct(commPct, 2)} of NSV`} tone="negative" onClick={() => goTo("/calculations")} drillHint />
+        <StatChip testId="kpi-deductions" label="Total Deductions" value={fmtCurrency(kpi.expected_deductions)} sub="Comm + Fixed + GT + TCS/TDS" tone="negative" onClick={() => goTo("/calculations")} drillHint />
+        <StatChip testId="kpi-settlement" label="Expected Settlement" value={fmtCurrency(kpi.expected_settlement)} sub={`Margin ${fmtPct(marginPct, 1)}`} tone="positive" onClick={() => goTo("/calculations")} drillHint />
+        <StatChip testId="kpi-critical" label="Open Discrepancies" value={fmtInt(overview?.total_discrepancies || 0)} sub={`${fmtInt(overview?.open_critical || 0)} critical · ${fmtInt(overview?.open_high || 0)} high`} tone={overview?.open_critical > 0 ? "critical" : "neutral"} onClick={() => goTo("/discrepancies")} drillHint />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-        <div className="lg:col-span-2 border border-border bg-card p-5">
+        <div className="lg:col-span-2 border border-border bg-white p-5 rounded-sm">
           <div className="flex items-center justify-between">
             <div>
-              <div className="overline">Commission Summary</div>
-              <div className="text-sm mt-1">Expected Deductions vs Settlement · Margin {fmtPct(marginPct, 1)}</div>
+              <div className="overline">Sub-Category Deep Dive</div>
+              <div className="text-sm mt-1 text-slate-700">NSV vs Expected Commission — click a bar to drill</div>
             </div>
-            <Link to="/reports" className="text-xs mono text-muted-foreground hover:text-foreground inline-flex items-center gap-1" data-testid="link-view-reports">
-              View monthly report <ArrowUpRight size={12} />
-            </Link>
-          </div>
-          <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-            <div><div className="overline">Total NSV</div><div className="mono mt-1">{fmtCurrency(kpi.total_nsv)}</div></div>
-            <div><div className="overline">Commission (incl GST)</div><div className="mono mt-1 fin-neg">{fmtCurrency(kpi.expected_commission)}</div></div>
-            <div><div className="overline">GT + Fixed + Fees</div><div className="mono mt-1 fin-neg">{fmtCurrency((kpi.expected_gt_charge || 0) + (kpi.expected_fixed_fee || 0) + (kpi.expected_return_fee || 0))}</div></div>
-            <div><div className="overline">Expected Settlement</div><div className="mono mt-1 fin-pos">{fmtCurrency(kpi.expected_settlement)}</div></div>
+            <button onClick={() => goTo("/reports")} data-testid="link-view-reports" className="btn text-xs">
+              Full report <ArrowUpRight size={12} />
+            </button>
           </div>
 
-          <div className="mt-6 h-64">
+          <div className="mt-4 h-72">
             <ResponsiveContainer>
-              <BarChart data={commSum?.by_sub_category?.slice(0, 10) || []}>
-                <CartesianGrid strokeDasharray="0" stroke="#1a1a1a" />
-                <XAxis dataKey="sub_category" stroke="#9CA3AF" tick={{ fontSize: 10, fontFamily: "JetBrains Mono" }} />
-                <YAxis stroke="#9CA3AF" tick={{ fontSize: 10, fontFamily: "JetBrains Mono" }} />
-                <Tooltip contentStyle={{ background: "#0a0a0a", border: "1px solid #2a2a2a", fontFamily: "JetBrains Mono", fontSize: 11 }} />
-                <Bar dataKey="commission" fill="#EF4444" name="Commission" />
-                <Bar dataKey="gt_charge" fill="#F59E0B" name="GT Charge" />
+              <BarChart data={commSum?.by_sub_category?.slice(0, 12) || []} onClick={(e) => {
+                if (e && e.activeLabel) goTo("/calculations", { sub_category: e.activeLabel });
+              }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
+                <XAxis dataKey="sub_category" stroke="#6B7280" tick={{ fontSize: 10, fontFamily: "JetBrains Mono" }} />
+                <YAxis stroke="#6B7280" tick={{ fontSize: 10, fontFamily: "JetBrains Mono" }} />
+                <Tooltip contentStyle={{ background: "#FFFFFF", border: "1px solid #E1E4E8", fontFamily: "JetBrains Mono", fontSize: 11, borderRadius: 2 }} />
+                <Legend wrapperStyle={{ fontFamily: "JetBrains Mono", fontSize: 11 }} />
+                <Bar dataKey="nsv" fill="#2563EB" name="NSV" cursor="pointer" />
+                <Bar dataKey="commission" fill="#DC2626" name="Commission" cursor="pointer" />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        <div className="border border-border bg-card p-5">
-          <div className="overline">Reconciliation Status</div>
-          <div className="text-sm mt-1">Discrepancies by severity</div>
-          <div className="mt-4 h-48">
+        <div className="border border-border bg-white p-5 rounded-sm">
+          <div className="overline">Discrepancies by Severity</div>
+          <div className="mt-4 h-52">
             {reconSum?.by_severity?.length ? (
               <ResponsiveContainer>
                 <PieChart>
-                  <Pie data={reconSum.by_severity} dataKey="count" nameKey="severity" innerRadius={40} outerRadius={70}>
-                    {reconSum.by_severity.map((_, idx) => <Cell key={idx} fill={COLORS[idx % COLORS.length]} />)}
+                  <Pie data={reconSum.by_severity} dataKey="count" nameKey="severity" innerRadius={45} outerRadius={80}
+                    onClick={(e) => e?.severity && goTo("/discrepancies", { severity: e.severity })}
+                    cursor="pointer">
+                    {reconSum.by_severity.map((s, idx) => <Cell key={idx} fill={SEV_COLORS[s.severity] || CHART_COLORS[idx % CHART_COLORS.length]} />)}
                   </Pie>
-                  <Tooltip contentStyle={{ background: "#0a0a0a", border: "1px solid #2a2a2a", fontFamily: "JetBrains Mono", fontSize: 11 }} />
+                  <Tooltip contentStyle={{ background: "#FFFFFF", border: "1px solid #E1E4E8", fontFamily: "JetBrains Mono", fontSize: 11 }} />
                 </PieChart>
               </ResponsiveContainer>
             ) : (
-              <div className="h-full flex items-center justify-center text-xs mono text-muted-foreground">
-                No reconciliation runs yet
+              <div className="h-full flex items-center justify-center text-xs mono text-slate-400 text-center px-4">
+                Upload a settlement file and run reconciliation to see discrepancy breakdown.
               </div>
             )}
           </div>
           <div className="mt-2 space-y-1">
-            {(reconSum?.by_severity || []).map((s, i) => (
-              <div key={s.severity} className="flex items-center justify-between text-xs mono">
+            {(reconSum?.by_severity || []).map((s) => (
+              <button key={s.severity} onClick={() => goTo("/discrepancies", { severity: s.severity })}
+                className="w-full flex items-center justify-between text-xs mono px-2 py-1 hover:bg-slate-50 rounded-sm">
                 <span className="flex items-center gap-2">
-                  <span className="w-2 h-2" style={{ background: COLORS[i % COLORS.length] }} />
+                  <span className="w-2 h-2 rounded-full" style={{ background: SEV_COLORS[s.severity] }} />
                   {s.severity?.toUpperCase()}
                 </span>
-                <span>{s.count} · {fmtCurrency(s.recoverable)}</span>
-              </div>
+                <span className="text-slate-600">{s.count} · <span className="fin-pos">{fmtCurrency(s.recoverable)}</span></span>
+              </button>
             ))}
           </div>
           <div className="mt-4 border-t border-border pt-3">
@@ -141,30 +126,94 @@ export default function Overview() {
         </div>
       </div>
 
-      {reconSum?.top_discrepancies?.length ? (
-        <div className="border border-border bg-card">
-          <div className="p-4 border-b border-border flex items-center gap-2">
-            <AlertTriangle size={14} className="text-amber-500" />
-            <div className="overline">Top Recoverable — By Order</div>
+      {commSum?.by_month?.length > 1 && (
+        <div className="border border-border bg-white p-5 rounded-sm">
+          <div className="overline mb-2">Monthly Trend — Commission vs Settlement</div>
+          <div className="h-64">
+            <ResponsiveContainer>
+              <LineChart data={commSum.by_month} onClick={(e) => e?.activeLabel && goTo("/", { period_value: e.activeLabel })}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
+                <XAxis dataKey="month" stroke="#6B7280" tick={{ fontSize: 10, fontFamily: "JetBrains Mono" }} />
+                <YAxis stroke="#6B7280" tick={{ fontSize: 10, fontFamily: "JetBrains Mono" }} />
+                <Tooltip contentStyle={{ background: "#FFFFFF", border: "1px solid #E1E4E8", fontFamily: "JetBrains Mono", fontSize: 11 }} />
+                <Legend wrapperStyle={{ fontFamily: "JetBrains Mono", fontSize: 11 }} />
+                <Line type="monotone" dataKey="commission" stroke="#DC2626" name="Commission" strokeWidth={2} />
+                <Line type="monotone" dataKey="expected_settlement" stroke="#059669" name="Settlement" strokeWidth={2} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
+
+      {commSum?.by_sub_category?.length ? (
+        <div className="border border-border bg-white rounded-sm">
+          <div className="p-4 border-b border-border flex items-center justify-between">
+            <div>
+              <div className="overline">Sub-Category P&amp;L — click a row to drill</div>
+              <div className="text-xs text-slate-500 mt-1">Top 15 by NSV · sorted by margin %</div>
+            </div>
           </div>
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full text-xs">
               <thead className="grid-header">
                 <tr>
-                  <th className="text-left grid-cell">Order ID</th>
-                  <th className="text-left grid-cell">SKU</th>
-                  <th className="text-left grid-cell">Severity</th>
-                  <th className="text-left grid-cell">Reason</th>
-                  <th className="text-right grid-cell">Recoverable</th>
+                  <th className="grid-cell text-left">Sub Category</th>
+                  <th className="grid-cell text-right">Orders</th>
+                  <th className="grid-cell text-right">NSV</th>
+                  <th className="grid-cell text-right">Commission</th>
+                  <th className="grid-cell text-right">Fixed Fee</th>
+                  <th className="grid-cell text-right">GT Charge</th>
+                  <th className="grid-cell text-right">Settlement</th>
+                  <th className="grid-cell text-right">Margin %</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(commSum.by_sub_category || []).slice(0, 15).map((r) => {
+                  const margin = r.nsv ? r.expected_settlement / r.nsv : 0;
+                  return (
+                    <tr key={r.sub_category} className="grid-row drill" data-testid={`row-subcat-${r.sub_category}`}
+                        onClick={() => goTo("/calculations", { sub_category: r.sub_category })}>
+                      <td className="grid-cell drill-link">{r.sub_category}</td>
+                      <td className="grid-cell text-right">{fmtInt(r.orders)}</td>
+                      <td className="grid-cell text-right">{fmtCurrency(r.nsv)}</td>
+                      <td className="grid-cell text-right fin-neg">{fmtCurrency(r.commission)}</td>
+                      <td className="grid-cell text-right fin-neg">{fmtCurrency(r.fixed_fee)}</td>
+                      <td className="grid-cell text-right fin-neg">{fmtCurrency(r.gt_charge)}</td>
+                      <td className="grid-cell text-right fin-pos font-semibold">{fmtCurrency(r.expected_settlement)}</td>
+                      <td className={`grid-cell text-right font-semibold ${margin < 0.5 ? "sev-high" : "fin-pos"}`}>{fmtPct(margin, 1)}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ) : null}
+
+      {reconSum?.top_discrepancies?.length ? (
+        <div className="border border-border bg-white rounded-sm">
+          <div className="p-4 border-b border-border flex items-center gap-2">
+            <AlertTriangle size={14} className="text-amber-500" />
+            <div className="overline">Top Recoverable — click to drill</div>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead className="grid-header">
+                <tr>
+                  <th className="grid-cell text-left">Order ID</th>
+                  <th className="grid-cell text-left">SKU</th>
+                  <th className="grid-cell text-left">Severity</th>
+                  <th className="grid-cell text-left">Reason</th>
+                  <th className="grid-cell text-right">Recoverable</th>
                 </tr>
               </thead>
               <tbody>
                 {reconSum.top_discrepancies.map((d) => (
-                  <tr key={d.id} className="grid-row">
-                    <td className="grid-cell">{d.online_order_id}</td>
+                  <tr key={d.id} className="grid-row drill" onClick={() => goTo("/discrepancies", { search: d.online_order_id })}>
+                    <td className="grid-cell drill-link">{d.online_order_id}</td>
                     <td className="grid-cell">{d.sku}</td>
                     <td className="grid-cell"><span className={`chip chip-${d.severity}`}>{d.severity}</span></td>
-                    <td className="grid-cell text-muted-foreground text-xs">{d.reason}</td>
+                    <td className="grid-cell text-slate-500 text-xs">{d.reason}</td>
                     <td className="grid-cell text-right fin-pos">{fmtCurrency(d.recoverable)}</td>
                   </tr>
                 ))}
@@ -175,11 +224,14 @@ export default function Overview() {
       ) : null}
 
       {overview?.unmapped_calculations > 0 && (
-        <div className="border border-amber-900 bg-amber-950/20 p-4 flex items-start gap-3" data-testid="unmapped-banner">
-          <TrendingDown size={16} className="text-amber-500 mt-0.5" />
+        <div className="border border-amber-300 bg-amber-50 p-4 flex items-start gap-3 rounded-sm" data-testid="unmapped-banner">
+          <AlertTriangle size={16} className="text-amber-600 mt-0.5" />
           <div className="text-sm">
-            <div className="font-semibold text-amber-400">{fmtInt(overview.unmapped_calculations)} orders are unmapped</div>
-            <div className="text-xs text-muted-foreground mt-1">Missing commission rule / GT charge / level mapping / zone. Open the <Link to="/calculations?unmapped=1" className="underline">Calculations page</Link> to review, or edit masters in <Link to="/masters" className="underline">Commission Masters</Link>.</div>
+            <div className="font-semibold text-amber-800">{fmtInt(overview.unmapped_calculations)} orders are unmapped</div>
+            <div className="text-xs text-slate-600 mt-1">Missing commission rule / GT charge / level mapping / zone.{" "}
+              <button onClick={() => goTo("/calculations", { unmapped: "1" })} className="underline text-amber-700 font-medium">Review them</button> or{" "}
+              <button onClick={() => nav("/masters")} className="underline text-amber-700 font-medium">edit masters</button>.
+            </div>
           </div>
         </div>
       )}

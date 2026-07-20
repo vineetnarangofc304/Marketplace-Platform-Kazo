@@ -1,13 +1,4 @@
-"""Monthly Report generator — JSON aggregates + Excel export.
-
-Aggregates per-month:
-- Header KPIs (Total NSV, Expected Commission, Deductions, Settlement)
-- Breakdown by category, sub-category, zone
-- Reconciliation summary (if settlement rows exist for the month)
-- Order-level detail sheet
-- Discrepancy sheet
-- Unmapped-orders sheet (for ops to fix masters)
-"""
+"""Monthly / Quarterly / YTD / Annual Report generator — JSON aggregates + Excel export."""
 import io
 import re
 from datetime import datetime, timezone
@@ -20,6 +11,7 @@ from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import StreamingResponse
 
 from db import db
+from period_utils import parse_period, month_query
 
 router = APIRouter(tags=["reports"])
 MONTH_RE = re.compile(r"^\d{4}-\d{2}$")
@@ -42,10 +34,16 @@ async def available_months():
     return sorted(list(months))
 
 
-async def _month_aggregate(month: str) -> Dict[str, Any]:
-    # KPI (from calculations for this month)
-    calc_match = {"report_month": month}
-    kpi_pipe = [
+async def _period_aggregate(months: List[str], label: str) -> Dict[str, Any]:
+    calc_match: Dict[str, Any] = {}
+    disc_match: Dict[str, Any] = {}
+    sales_match: Dict[str, Any] = {}
+    if months:
+        calc_match["report_month"] = {"$in": months}
+        disc_match["report_month"] = {"$in": months}
+        sales_match["report_month"] = {"$in": months}
+    # KPI
+    kpi = (await db.calculations.aggregate([
         {"$match": calc_match},
         {"$group": {
             "_id": None,
@@ -61,87 +59,94 @@ async def _month_aggregate(month: str) -> Dict[str, Any]:
             "expected_settlement": {"$sum": {"$ifNull": ["$expected_settlement", 0]}},
             "unmapped_orders": {"$sum": {"$cond": ["$unmapped", 1, 0]}},
         }},
-    ]
-    kpi = await db.calculations.aggregate(kpi_pipe).to_list(1)
+    ]).to_list(1))
     kpi = kpi[0] if kpi else {}
     kpi.pop("_id", None)
-
-    # Sales-only NSV (for sales rows not yet calculated)
     sales_kpi = await db.sales.aggregate([
-        {"$match": {"report_month": month}},
+        {"$match": sales_match},
         {"$group": {"_id": None, "sales_rows": {"$sum": 1}, "sales_nsv": {"$sum": "$nsv_val"}}},
     ]).to_list(1)
     if sales_kpi:
         sales_kpi[0].pop("_id", None)
         kpi.update(sales_kpi[0])
 
-    # By category
-    by_cat = await db.calculations.aggregate([
-        {"$match": calc_match},
-        {"$group": {
-            "_id": "$breakdown.master_category",
-            "orders": {"$sum": 1},
-            "nsv": {"$sum": {"$ifNull": ["$breakdown.nsv_val", 0]}},
-            "commission": {"$sum": {"$ifNull": ["$commission_incl_gst", 0]}},
-            "fixed_fee": {"$sum": {"$ifNull": ["$fixed_fee_incl_gst", 0]}},
-            "gt_charge": {"$sum": {"$ifNull": ["$gt_charge", 0]}},
-            "expected_settlement": {"$sum": {"$ifNull": ["$expected_settlement", 0]}},
-        }},
-        {"$sort": {"nsv": -1}},
-    ]).to_list(50)
+    async def _group(field, sort="nsv", limit=100):
+        return await db.calculations.aggregate([
+            {"$match": calc_match},
+            {"$group": {
+                "_id": field,
+                "orders": {"$sum": 1},
+                "nsv": {"$sum": {"$ifNull": ["$breakdown.nsv_val", 0]}},
+                "commission": {"$sum": {"$ifNull": ["$commission_incl_gst", 0]}},
+                "fixed_fee": {"$sum": {"$ifNull": ["$fixed_fee_incl_gst", 0]}},
+                "gt_charge": {"$sum": {"$ifNull": ["$gt_charge", 0]}},
+                "expected_settlement": {"$sum": {"$ifNull": ["$expected_settlement", 0]}},
+            }},
+            {"$sort": {sort: -1}},
+            {"$limit": limit},
+        ]).to_list(limit)
 
-    by_subcat = await db.calculations.aggregate([
-        {"$match": calc_match},
-        {"$group": {
-            "_id": "$breakdown.sub_category",
-            "orders": {"$sum": 1},
-            "nsv": {"$sum": {"$ifNull": ["$breakdown.nsv_val", 0]}},
-            "commission": {"$sum": {"$ifNull": ["$commission_incl_gst", 0]}},
-            "fixed_fee": {"$sum": {"$ifNull": ["$fixed_fee_incl_gst", 0]}},
-            "gt_charge": {"$sum": {"$ifNull": ["$gt_charge", 0]}},
-            "expected_settlement": {"$sum": {"$ifNull": ["$expected_settlement", 0]}},
-        }},
-        {"$sort": {"nsv": -1}},
-    ]).to_list(100)
+    by_cat = await _group("$breakdown.master_category", limit=10)
+    by_subcat = await _group("$breakdown.sub_category", limit=100)
+    by_zone = await _group("$breakdown.zone", limit=10)
+    by_month = await _group("$report_month", limit=24)
+    by_month.sort(key=lambda x: x.get("_id") or "")
 
-    by_zone = await db.calculations.aggregate([
-        {"$match": calc_match},
-        {"$group": {
-            "_id": "$breakdown.zone",
-            "orders": {"$sum": 1},
-            "nsv": {"$sum": {"$ifNull": ["$breakdown.nsv_val", 0]}},
-            "gt_charge": {"$sum": {"$ifNull": ["$gt_charge", 0]}},
-        }},
-    ]).to_list(20)
-
-    # Recon summary
-    disc_match = {"report_month": month}
+    # Recon
     total_disc = await db.discrepancies.count_documents(disc_match)
     disc_by_sev = await db.discrepancies.aggregate([
         {"$match": disc_match},
         {"$group": {"_id": "$severity", "count": {"$sum": 1}, "recoverable": {"$sum": "$recoverable"}}},
     ]).to_list(10)
-    total_recoverable = await db.discrepancies.aggregate([
-        {"$match": disc_match},
-        {"$group": {"_id": None, "sum": {"$sum": "$recoverable"}}},
+    tr = await db.discrepancies.aggregate([
+        {"$match": disc_match}, {"$group": {"_id": None, "sum": {"$sum": "$recoverable"}}},
     ]).to_list(1)
-    total_recoverable = total_recoverable[0]["sum"] if total_recoverable else 0
+    total_recoverable = tr[0]["sum"] if tr else 0
 
     return {
-        "month": month,
+        "label": label,
+        "months": months,
         "kpi": kpi,
         "by_category": [{"category": c["_id"], **{k: v for k, v in c.items() if k != "_id"}} for c in by_cat],
         "by_sub_category": [{"sub_category": c["_id"], **{k: v for k, v in c.items() if k != "_id"}} for c in by_subcat],
         "by_zone": [{"zone": c["_id"], **{k: v for k, v in c.items() if k != "_id"}} for c in by_zone],
+        "by_month": [{"month": c["_id"], **{k: v for k, v in c.items() if k != "_id"}} for c in by_month],
         "reconciliation": {
             "total_discrepancies": total_disc,
             "total_recoverable": round(total_recoverable or 0, 2),
-            "by_severity": [
-                {"severity": s["_id"], "count": s["count"], "recoverable": round(s.get("recoverable", 0), 2)}
-                for s in disc_by_sev
-            ],
+            "by_severity": [{"severity": s["_id"], "count": s["count"], "recoverable": round(s.get("recoverable", 0), 2)} for s in disc_by_sev],
         },
     }
+
+
+async def _month_aggregate(month: str) -> Dict[str, Any]:
+    return await _period_aggregate([month], month)
+
+
+@router.get("/reports/periods")
+async def report_periods():
+    months = set()
+    async for r in db.sales.aggregate([
+        {"$match": {"report_month": {"$ne": None}}},
+        {"$group": {"_id": "$report_month"}},
+    ]):
+        months.add(r["_id"])
+    months_list = sorted(list(months))
+    years = sorted({m[:4] for m in months_list})
+    quarters = sorted({f"{m[:4]}-Q{((int(m[5:7]) - 1) // 3) + 1}" for m in months_list})
+    return {"months": months_list, "quarters": quarters, "years": years}
+
+
+@router.get("/reports/period")
+async def period_report(
+    period_type: str = Query(..., description="month|quarter|year|ytd|all"),
+    period_value: Optional[str] = Query(None, description="e.g. 2026-04 for month, 2026-Q2 for quarter, 2026 for year/ytd"),
+):
+    try:
+        months, label = parse_period(period_type, period_value)
+    except Exception as e:
+        raise HTTPException(400, f"Invalid period: {e}")
+    return await _period_aggregate(months, label)
 
 
 @router.get("/reports/monthly")

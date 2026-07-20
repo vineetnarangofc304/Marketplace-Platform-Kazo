@@ -258,13 +258,25 @@ async def list_runs():
 @router.get("/reconciliation/discrepancies")
 async def list_discrepancies(
     recon_run_id: Optional[str] = None,
+    report_month: Optional[str] = None,
+    period_type: Optional[str] = None,
+    period_value: Optional[str] = None,
     severity: Optional[str] = None,
     match_status: Optional[str] = None,
+    sub_category: Optional[str] = None,
+    zone: Optional[str] = None,
     search: Optional[str] = None,
-    limit: int = Query(200, le=1000),
+    limit: int = Query(200, le=2000),
     skip: int = 0,
+    sort_by: str = "recoverable",
+    sort_dir: str = "desc",
 ):
+    from period_utils import month_query as _mq
     q: Dict[str, Any] = {}
+    if period_type:
+        q.update(_mq(period_type, period_value))
+    elif report_month:
+        q["report_month"] = report_month
     if recon_run_id:
         q["recon_run_id"] = recon_run_id
     if severity:
@@ -277,10 +289,14 @@ async def list_discrepancies(
             {"sku": {"$regex": search, "$options": "i"}},
         ]
     total = await db.discrepancies.count_documents(q)
-    # Sort by severity then recoverable (highest first)
-    sev_order = {"critical": 0, "high": 1, "medium": 2, "low": 3}
-    docs = await db.discrepancies.find(q, {"_id": 0}).sort([("created_at", -1)]).skip(skip).limit(limit).to_list(limit)
-    docs.sort(key=lambda d: (sev_order.get(d.get("severity"), 4), -abs(float(d.get("recoverable") or 0))))
+    sort_map = {
+        "recoverable": "recoverable", "severity": "severity", "sku": "sku",
+        "order_id": "online_order_id", "created_at": "created_at",
+        "settle_variance": "settle_variance",
+    }
+    sort_field = sort_map.get(sort_by, "recoverable")
+    direction = -1 if sort_dir == "desc" else 1
+    docs = await db.discrepancies.find(q, {"_id": 0}).sort(sort_field, direction).skip(skip).limit(limit).to_list(limit)
     return {"total": total, "items": docs}
 
 
