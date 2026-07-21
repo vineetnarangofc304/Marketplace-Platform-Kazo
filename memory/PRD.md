@@ -56,6 +56,34 @@ User: "Make it production ready...no hard code no fallback. Make it ready for mo
 - Frontend: All new data-testids present and functional
 - Security: auth guard + admin-only enforcement verified end-to-end
 
+## Iteration 4 — Rebrand + Production Performance (2026-02, session 3)
+User: "Pls add this logo.. powered by fundle on all pages... remove emergent mentions everywhere... all reports taking time to load... please help adding indexes on the DB and also compound indexing on all relevant fields... pls optimise reports dashboards and DB indexes fully for this to run smoothly on Production."
+
+### Delivered in iteration 4
+- **Rebrand to Fundle**:
+  - Browser title → "KAZO Marketplace Finance · Powered by Fundle"
+  - `Powered by [fundle logo]` badge on login page (data-testid `powered-by-fundle-login`) and in the sidebar footer of every authenticated page (data-testid `powered-by-fundle-sidebar`), linking to https://fundle.ai
+  - Removed all `Emergent` references from rendered DOM: `index.html` title/description, PostHog block, `emergent-main.js` script, "Emergent Universal Key" text on `/insights`, and the dead `constants/testIds/` folder
+- **Performance — DB indexes**:
+  - Compound indexes on `sales` (report_month + sub_category / zone / order_status / txn_type)
+  - Compound indexes on `calculations` (report_month + breakdown.sub_category / master_category / zone / unmapped / expected_settlement)
+  - Compound indexes on `discrepancies` (report_month + severity, report_month + recoverable, recon_run_id + severity)
+  - Compound indexes on `recovery_cases` (report_month + status / priority, recoverable_amount desc)
+  - Compound indexes on `settlement` (report_month + online_order_id + sku)
+  - Extra indexes on `insights_briefs` and `commission_rules`
+- **Performance — parallelization**:
+  - Dashboards (`overview`, `commission-summary`, `reconciliation-summary`) now run their sub-aggregations in parallel via `asyncio.gather`
+  - Reports `_period_aggregate` runs 9 sub-queries in parallel (KPI, sales KPI, 4 group-bys, count, severity, recoverable)
+- **Performance — caching**:
+  - New `cache_utils.py`: in-memory TTL cache with tag-based invalidation
+  - 30s TTL on all hot dashboard + reports endpoints, 60s on period lists
+  - Auto-invalidation on writes: uploads (sales/settlement), delete-upload, run-calculations, run-reconciliation
+- **Performance — transport**: GZipMiddleware enabled (minimum_size=1024)
+- **Observed timings on preview**: cold 150–240ms, warm cached 106–140ms across dashboards + reports + insights + recovery
+
+### Test Results (iteration 4)
+- Testing agent verified: title/badges/anti-emergent DOM check across 11 routes, 7 endpoints cache-hot <1.5s with 2nd call ≤ 1st, GZip present, all required compound Mongo indexes exist, drill-downs regression pass. No bugs, no action items.
+
 ## Iteration 3 — Recovery Management + AI Insights (2026-02, session 3)
 User: "go ahead and complete pending tasks" — deliver Phase 6 & Phase 7 from the backlog.
 
