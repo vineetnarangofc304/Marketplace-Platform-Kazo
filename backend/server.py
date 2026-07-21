@@ -8,6 +8,7 @@ from pathlib import Path
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
+import asyncio
 import os
 import io
 import re
@@ -199,85 +200,101 @@ app.add_middleware(GZipMiddleware, minimum_size=1024)
 
 @app.on_event("startup")
 async def _startup():
-    # Indexes
-    await db.users.create_index("email", unique=True)
-    await db.users.create_index("id", unique=True)
+    """Kick off bootstrap in the background so the ASGI app becomes ready
+    immediately. K8s readiness probes must succeed while indexes / seeds
+    finish asynchronously.
+    """
+    asyncio.create_task(_bootstrap())
 
-    # Sales — filter by report_month, group by sub_category/zone/master_category, search by order/sku
-    await db.sales.create_index([("upload_id", 1)])
-    await db.sales.create_index([("online_order_id", 1), ("sku", 1)])
-    await db.sales.create_index([("order_date", 1)])
-    await db.sales.create_index([("report_month", 1)])
-    await db.sales.create_index([("report_month", 1), ("sub_category", 1)])
-    await db.sales.create_index([("report_month", 1), ("zone", 1)])
-    await db.sales.create_index([("report_month", 1), ("order_status", 1)])
-    await db.sales.create_index([("report_month", 1), ("txn_type", 1)])
 
-    # Settlement — join on order+sku, filter by report_month
-    await db.settlement.create_index([("upload_id", 1)])
-    await db.settlement.create_index([("online_order_id", 1), ("sku", 1)])
-    await db.settlement.create_index([("report_month", 1)])
-    await db.settlement.create_index([("report_month", 1), ("online_order_id", 1), ("sku", 1)])
+async def _bootstrap():
+    try:
+        # Run all index creations concurrently — much faster than serial awaits
+        # against a remote (Atlas) cluster.
+        index_specs: List[tuple[str, list, dict]] = [
+            ("users", ["email"], {"unique": True}),
+            ("users", ["id"], {"unique": True}),
+            # Sales
+            ("sales", [("upload_id", 1)], {}),
+            ("sales", [("online_order_id", 1), ("sku", 1)], {}),
+            ("sales", [("order_date", 1)], {}),
+            ("sales", [("report_month", 1)], {}),
+            ("sales", [("report_month", 1), ("sub_category", 1)], {}),
+            ("sales", [("report_month", 1), ("zone", 1)], {}),
+            ("sales", [("report_month", 1), ("order_status", 1)], {}),
+            ("sales", [("report_month", 1), ("txn_type", 1)], {}),
+            # Settlement
+            ("settlement", [("upload_id", 1)], {}),
+            ("settlement", [("online_order_id", 1), ("sku", 1)], {}),
+            ("settlement", [("report_month", 1)], {}),
+            ("settlement", [("report_month", 1), ("online_order_id", 1), ("sku", 1)], {}),
+            # Calculations
+            ("calculations", [("sales_id", 1)], {"unique": True}),
+            ("calculations", [("report_month", 1)], {}),
+            ("calculations", [("unmapped", 1)], {}),
+            ("calculations", [("report_month", 1), ("unmapped", 1)], {}),
+            ("calculations", [("report_month", 1), ("breakdown.sub_category", 1)], {}),
+            ("calculations", [("report_month", 1), ("breakdown.master_category", 1)], {}),
+            ("calculations", [("report_month", 1), ("breakdown.zone", 1)], {}),
+            ("calculations", [("report_month", 1), ("expected_settlement", -1)], {}),
+            ("calculations", [("online_order_id", 1), ("sku", 1)], {}),
+            # Discrepancies
+            ("discrepancies", [("severity", 1), ("recon_run_id", 1)], {}),
+            ("discrepancies", [("report_month", 1)], {}),
+            ("discrepancies", [("report_month", 1), ("severity", 1)], {}),
+            ("discrepancies", [("report_month", 1), ("recoverable", -1)], {}),
+            ("discrepancies", [("recon_run_id", 1), ("severity", 1)], {}),
+            ("discrepancies", [("match_status", 1)], {}),
+            ("discrepancies", [("online_order_id", 1), ("sku", 1)], {}),
+            # Uploads
+            ("uploads", [("uploaded_at", -1)], {}),
+            ("uploads", [("type", 1), ("uploaded_at", -1)], {}),
+            # Recovery
+            ("recovery_cases", [("discrepancy_id", 1)], {}),
+            ("recovery_cases", [("status", 1)], {}),
+            ("recovery_cases", [("report_month", 1)], {}),
+            ("recovery_cases", [("report_month", 1), ("status", 1)], {}),
+            ("recovery_cases", [("report_month", 1), ("priority", 1)], {}),
+            ("recovery_cases", [("recoverable_amount", -1)], {}),
+            ("recovery_notes", [("case_id", 1), ("created_at", 1)], {}),
+            ("recovery_evidence", [("case_id", 1)], {}),
+            # Insights briefs
+            ("insights_briefs", [("created_at", -1)], {}),
+            ("insights_briefs", [("period_type", 1), ("period_value", 1), ("created_at", -1)], {}),
+            # Commission masters
+            ("commission_rules", [("brand", 1), ("sub_category", 1)], {}),
+            ("commission_rules", [("is_active", 1)], {}),
+        ]
 
-    # Calculations — hot path for reports & dashboards
-    await db.calculations.create_index([("sales_id", 1)], unique=True)
-    await db.calculations.create_index([("report_month", 1)])
-    await db.calculations.create_index([("unmapped", 1)])
-    await db.calculations.create_index([("report_month", 1), ("unmapped", 1)])
-    await db.calculations.create_index([("report_month", 1), ("breakdown.sub_category", 1)])
-    await db.calculations.create_index([("report_month", 1), ("breakdown.master_category", 1)])
-    await db.calculations.create_index([("report_month", 1), ("breakdown.zone", 1)])
-    await db.calculations.create_index([("report_month", 1), ("expected_settlement", -1)])
-    await db.calculations.create_index([("online_order_id", 1), ("sku", 1)])
+        async def _mk_index(coll_name: str, keys, opts):
+            try:
+                await db[coll_name].create_index(keys, **opts)
+            except Exception as e:
+                logger.warning(f"index {coll_name}{keys}: {e}")
 
-    # Discrepancies — filter by run/month/severity, sort by recoverable
-    await db.discrepancies.create_index([("severity", 1), ("recon_run_id", 1)])
-    await db.discrepancies.create_index([("report_month", 1)])
-    await db.discrepancies.create_index([("report_month", 1), ("severity", 1)])
-    await db.discrepancies.create_index([("report_month", 1), ("recoverable", -1)])
-    await db.discrepancies.create_index([("recon_run_id", 1), ("severity", 1)])
-    await db.discrepancies.create_index([("match_status", 1)])
-    await db.discrepancies.create_index([("online_order_id", 1), ("sku", 1)])
+        await asyncio.gather(*(_mk_index(c, k, o) for c, k, o in index_specs))
 
-    # Uploads
-    await db.uploads.create_index([("uploaded_at", -1)])
-    await db.uploads.create_index([("type", 1), ("uploaded_at", -1)])
+        # Seed admin
+        existing = await db.users.find_one({"email": ADMIN_EMAIL})
+        if not existing:
+            await db.users.insert_one({
+                "id": new_id(), "email": ADMIN_EMAIL, "name": "Administrator",
+                "role": "admin", "password_hash": hash_pwd(ADMIN_PASSWORD),
+                "created_at": now_iso(),
+            })
+            logger.info(f"Seeded admin: {ADMIN_EMAIL}")
+        elif not verify_pwd(ADMIN_PASSWORD, existing["password_hash"]):
+            await db.users.update_one(
+                {"email": ADMIN_EMAIL},
+                {"$set": {"password_hash": hash_pwd(ADMIN_PASSWORD)}},
+            )
 
-    # Recovery
-    await db.recovery_cases.create_index([("discrepancy_id", 1)])
-    await db.recovery_cases.create_index([("status", 1)])
-    await db.recovery_cases.create_index([("report_month", 1)])
-    await db.recovery_cases.create_index([("report_month", 1), ("status", 1)])
-    await db.recovery_cases.create_index([("report_month", 1), ("priority", 1)])
-    await db.recovery_cases.create_index([("recoverable_amount", -1)])
-    await db.recovery_notes.create_index([("case_id", 1), ("created_at", 1)])
-    await db.recovery_evidence.create_index([("case_id", 1)])
-
-    # Insights briefs (audit log)
-    await db.insights_briefs.create_index([("created_at", -1)])
-    await db.insights_briefs.create_index([("period_type", 1), ("period_value", 1), ("created_at", -1)])
-
-    # Commission masters
-    await db.commission_rules.create_index([("brand", 1), ("sub_category", 1)])
-    await db.commission_rules.create_index([("is_active", 1)])
-
-    # Seed admin
-    existing = await db.users.find_one({"email": ADMIN_EMAIL})
-    if not existing:
-        await db.users.insert_one({
-            "id": new_id(), "email": ADMIN_EMAIL, "name": "Administrator",
-            "role": "admin", "password_hash": hash_pwd(ADMIN_PASSWORD),
-            "created_at": now_iso(),
-        })
-        logger.info(f"Seeded admin: {ADMIN_EMAIL}")
-    elif not verify_pwd(ADMIN_PASSWORD, existing["password_hash"]):
-        await db.users.update_one(
-            {"email": ADMIN_EMAIL},
-            {"$set": {"password_hash": hash_pwd(ADMIN_PASSWORD)}},
-        )
-
-    # Seed masters (default Myntra commission structure) if empty
-    await masters.seed_defaults(db)
+        # Seed masters (default Myntra commission structure) if empty
+        await masters.seed_defaults(db)
+        logger.info("Bootstrap complete")
+    except Exception as e:
+        # Never block app readiness on bootstrap errors — log and keep serving.
+        logger.exception(f"Bootstrap failed (app is still up): {e}")
 
 
 @app.on_event("shutdown")
@@ -288,3 +305,14 @@ async def _shutdown():
 @app.get("/api/health")
 async def health():
     return {"status": "ok", "time": now_iso()}
+
+
+@app.get("/health")
+async def health_root():
+    """Lightweight probe endpoint at root — some ingress paths hit / or /health."""
+    return {"status": "ok"}
+
+
+@app.get("/")
+async def root():
+    return {"service": "kazo-marketplace-finance", "status": "ok"}
