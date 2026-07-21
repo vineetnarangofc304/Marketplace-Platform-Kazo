@@ -1,0 +1,64 @@
+{
+  "summary": "Iteration 6 verification: parser now accepts negative-NSV return rows; classifier splits Sales+DTO (as 'sales') vs Return+DTO ('return_dto'). All key backend + math + aggregate + frontend regression checks pass.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter6_returns.py",
+    "/app/test_reports/pytest/iter6.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "calculations.py stores nsv_val inside the 'breakdown' sub-doc but not as a top-level field on the calculation document. UI/search consumers that expect top-level nsv_val should be checked; if not needed, fine, but this is worth documenting.",
+    "The review request expected that BA030AAB-E147-4FA2-847F-8B119D06AEC1 would produce 2 calc rows (Sales+DTO and Return+DTO). Verified in mongo: only 1 sales row exists for that online_order_id (txn_type=Sales, order_status=DTO, nsv=6490). There is NO Return+DTO row in the source data for this order, so 1 calc row is correct — the expected-2 was a misdescription in the prompt, NOT a system bug. Return+DTO mechanism itself works correctly (5,443 rows produced overall)."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iter6_returns.py"
+  ],
+  "success_rate": {"backend": "100% (11/11 after fixture fix)", "frontend": "100%"},
+  "test_credentials": "admin@kazo.com / admin123",
+  "seed_data_creation": "None. Read-side verification only, per instructions (recalc already executed by main agent).",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "verification_details": {
+    "sales_total": 21614,
+    "calculations_total": 21614,
+    "sales_months_2026-04": 21614,
+    "order_type_distribution": {
+      "sales": 12246,
+      "return_dto": 5443,
+      "rto": 3705,
+      "internal_cancel": 128,
+      "return": 92,
+      "sum": 21614
+    },
+    "financial_aggregate_expected_settlement": {
+      "sales": 14690173.02,
+      "return_dto": -9797946.70,
+      "return": -260676.37,
+      "rto": 0.0,
+      "internal_cancel": 0.0,
+      "grand_total": 4631549.95
+    },
+    "math_checks": {
+      "sales_sample": "nsv_after_gt = |nsv|-|gt|, commission_incl_gst = nsv_after_gt*pct*1.18, expected_settlement matches within 0.10 - PASS",
+      "return_dto_sample": "commission/gt/tcs/tds=0, return_fee==fixed_fee_incl_gst, nsv_after_gt=-|nsv|, expected_settlement = -|nsv| - return_fee - PASS",
+      "return_sample": "nsv_val<0, commission_incl_gst<=0, return_fee>0 - PASS",
+      "rto/internal_cancel_sample": "all fees & expected_settlement == 0, unmapped=False - PASS"
+    },
+    "frontend_checks": {
+      "sales_page_shows_21614": true,
+      "calculations_page_shows_21614": true,
+      "insights_health_score_200": true,
+      "recovery_loads": true,
+      "login_admin_ok": true
+    }
+  },
+  "context_for_next_testing_agent": "Backend calc docs store nsv_val inside `breakdown` subdocument only (no top-level field). If future tests need it top-level, either update the writer or read from breakdown. BA030AAB test order has only a single Sales+DTO source row — no Return+DTO counterpart exists in the April file, so 1 calc row is expected. Test file at /app/backend/tests/test_iter6_returns.py is the regression suite for this iteration."
+}

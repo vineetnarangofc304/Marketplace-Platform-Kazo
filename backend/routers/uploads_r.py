@@ -209,9 +209,8 @@ def _parse_sales_xlsx(content: bytes) -> Dict[str, Any]:
             if not rec.get("online_order_id") or not rec.get("sku") or rec["sku"] == "-":
                 rejected.append({"row_no": r_no, "reason": "Missing/placeholder Online Order ID or SKU"})
                 continue
-            if rec.get("nsv_val", 0) < 0:
-                rejected.append({"row_no": r_no, "reason": "Negative NSV value"})
-                continue
+            # Note: Returns come with negative NSV / QTY — accept them; the calculation
+            # engine sign-normalizes based on txn_type/order_status.
             accepted.append(rec)
         except Exception as e:
             rejected.append({"row_no": r_no, "reason": f"Parse error: {e}"})
