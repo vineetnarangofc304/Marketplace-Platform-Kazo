@@ -1,0 +1,23 @@
+{
+  "summary": "Iteration 7: Return Velocity widget + order_type filter. All 10 backend pytest tests passed. Frontend Overview shows the return-velocity-panel with correct headline (44.4%), correct Dresses top row (58.6% velocity, ₹88,599 leakage), row click drills to /calculations with all 4 URL params, drill button navigates with order_type=return_dto, calc page shows 5,443 return-DTO rows. No regressions on overview/commission-summary/recon-summary/health-score. Fundle badge and AI Insights both intact.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_return_velocity.py",
+    "/app/test_reports/pytest/iter7.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Overview.jsx is now 290 lines with many sections — still readable but approaching split threshold (KPI grid, subcat deep dive, monthly trend, return velocity, top recoverable, unmapped banner). Consider extracting <ReturnVelocityPanel/> into its own component for future maintainability.",
+    "return-velocity data-testid uses r.sub_category.replace(/\\s+/g,'-') — works for single-word categories but subcategories with special chars (e.g., '&', '/') will still produce awkward testids. Consider slugify to keep selectors stable.",
+    "Backend return_velocity endpoint applies allowDiskUse=True but shares cache tag 'calculations' which is fine; the cache key includes the full match dict — a period_value change correctly busts the cache."
+  ],
+  "updated_files": ["/app/backend/tests/test_return_velocity.py"],
+  "success_rate": {"backend": "100% (10/10)", "frontend": "100% (all flows verified)"},
+  "test_credentials": "admin@kazo.com / admin123",
+  "seed_data_creation": "None — used existing seeded 21,614 calc rows for 2026-04.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Iteration 7 feature (Return Velocity) is fully working. Backend endpoint /api/dashboard/return-velocity returns exact expected magnitudes: sales=12246, return_dto=5443, velocity_pct=0.4445, total_fixed_fee_leakage≈285046. Dresses is the top row. Frontend row testid pattern is 'rv-row-<sub>' with spaces replaced by dashes.",
+  "rca of the issue": "N/A — no bugs found."
+}

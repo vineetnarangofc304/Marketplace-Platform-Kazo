@@ -474,6 +474,7 @@ async def list_calculations(
     sub_category: Optional[str] = None,
     master_category: Optional[str] = None,
     zone: Optional[str] = None,
+    order_type: Optional[str] = None,   # sales | return_dto | return | rto | internal_cancel
     severity_flag: Optional[str] = None,  # 'unmapped' or 'mapped'
     unmapped_only: bool = False,
     limit: int = Query(200, le=2000),
@@ -496,6 +497,8 @@ async def list_calculations(
         q["breakdown.master_category"] = master_category
     if zone:
         q["breakdown.zone"] = zone
+    if order_type:
+        q["order_type"] = order_type
     if unmapped_only or severity_flag == "unmapped":
         q["unmapped"] = True
     if severity_flag == "mapped":

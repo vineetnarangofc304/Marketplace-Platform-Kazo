@@ -5,7 +5,7 @@ import StatChip from "@/components/StatChip";
 import PeriodSelector from "@/components/PeriodSelector";
 import { fmtCurrency, fmtInt, fmtPct } from "@/lib/format";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell, CartesianGrid, Legend } from "recharts";
-import { AlertTriangle, ArrowUpRight } from "lucide-react";
+import { AlertTriangle, ArrowUpRight, RotateCcw } from "lucide-react";
 
 const SEV_COLORS = { critical: "#DC2626", high: "#EA580C", medium: "#CA8A04", low: "#0284C7" };
 const CHART_COLORS = ["#2563EB", "#059669", "#D97706", "#DC2626", "#7C3AED", "#DB2777"];
@@ -16,12 +16,14 @@ export default function Overview() {
   const [overview, setOverview] = useState(null);
   const [commSum, setCommSum] = useState(null);
   const [reconSum, setReconSum] = useState(null);
+  const [returnVel, setReturnVel] = useState(null);
 
   useEffect(() => {
     const params = { period_type: period.period_type, period_value: period.period_value || undefined };
     api.get("/dashboard/overview", { params }).then((r) => setOverview(r.data));
     api.get("/dashboard/commission-summary", { params }).then((r) => setCommSum(r.data));
     api.get("/dashboard/reconciliation-summary", { params }).then((r) => setReconSum(r.data));
+    api.get("/dashboard/return-velocity", { params: { ...params, top: 12 } }).then((r) => setReturnVel(r.data));
   }, [period.period_type, period.period_value]);
 
   const kpi = commSum?.kpi || {};
@@ -232,6 +234,54 @@ export default function Overview() {
               <button onClick={() => goTo("/calculations", { unmapped: "1" })} className="underline text-amber-700 font-medium">Review them</button> or{" "}
               <button onClick={() => nav("/masters")} className="underline text-amber-700 font-medium">edit masters</button>.
             </div>
+          </div>
+        </div>
+      )}
+
+      {returnVel?.overall && (returnVel.overall.sales_orders > 0 || returnVel.overall.return_dto_orders > 0) && (
+        <div className="border border-border bg-white p-4 rounded-sm" data-testid="return-velocity-panel">
+          <div className="flex items-start justify-between gap-3 flex-wrap">
+            <div>
+              <div className="overline flex items-center gap-1"><RotateCcw size={12} /> Return Velocity</div>
+              <div className="text-lg font-semibold text-slate-900 mt-1">
+                {fmtPct(returnVel.overall.velocity_pct, 1)} of sales orders flipped to Return-DTO
+              </div>
+              <div className="text-xs text-slate-500 mono mt-1">
+                {fmtInt(returnVel.overall.return_dto_orders)} return-DTO / {fmtInt(returnVel.overall.sales_orders)} sales · Fixed-fee leakage {fmtCurrency(returnVel.overall.total_fixed_fee_leakage)}
+              </div>
+            </div>
+            <button className="btn text-xs" data-testid="btn-drill-return-dto" onClick={() => goTo("/calculations", { order_type: "return_dto" })}>
+              Drill to return-DTO rows <ArrowUpRight size={12} />
+            </button>
+          </div>
+          <div className="mt-4 overflow-auto max-h-96">
+            <table className="w-full text-xs">
+              <thead className="grid-header sticky top-0 z-10">
+                <tr>
+                  <th className="grid-cell text-left">Sub-Category</th>
+                  <th className="grid-cell text-right">Sales Orders</th>
+                  <th className="grid-cell text-right">Return-DTO</th>
+                  <th className="grid-cell text-right">Velocity</th>
+                  <th className="grid-cell text-right">Fixed-Fee Leakage</th>
+                  <th className="grid-cell text-right">Sales NSV</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(returnVel.by_sub_category || []).map((r) => (
+                  <tr key={r.sub_category} className="grid-row drill" data-testid={`rv-row-${(r.sub_category || "").replace(/\s+/g,"-")}`}
+                      onClick={() => goTo("/calculations", { sub_category: r.sub_category, order_type: "return_dto" })}>
+                    <td className="grid-cell drill-link">{r.sub_category}</td>
+                    <td className="grid-cell text-right mono">{fmtInt(r.orders)}</td>
+                    <td className="grid-cell text-right mono">{fmtInt(r.return_dto_orders)}</td>
+                    <td className="grid-cell text-right mono font-semibold" style={{ color: r.velocity_pct >= 0.5 ? "#DC2626" : r.velocity_pct >= 0.3 ? "#EA580C" : "#0284C7" }}>
+                      {fmtPct(r.velocity_pct, 1)}
+                    </td>
+                    <td className="grid-cell text-right fin-neg font-semibold">{fmtCurrency(r.fixed_fee_leakage)}</td>
+                    <td className="grid-cell text-right mono text-slate-500">{fmtCurrency(r.sales_nsv)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       )}

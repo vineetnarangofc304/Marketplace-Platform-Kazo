@@ -207,3 +207,87 @@ async def available_periods():
         return {"months": months_list, "quarters": quarters, "years": years}
 
     return await get_or_set("periods", 60, _load, tag="periods")
+
+
+@router.get("/dashboard/return-velocity")
+async def return_velocity(
+    report_month: Optional[str] = None,
+    period_type: Optional[str] = None,
+    period_value: Optional[str] = None,
+    top: int = 15,
+):
+    """% of orders that flipped from Sales to Return-DTO, by sub-category.
+
+    fixed_fee_leakage = sum of fixed_fee_incl_gst on return_dto rows (that's the
+    net loss for a DTO order — the seller keeps NSV but pays the fixed fee).
+    """
+    q = _period_filter(period_type, period_value, report_month)
+    cache_key = f"return-velocity::{q}::{top}"
+
+    async def _load():
+        pipeline = [
+            {"$match": q},
+            {"$group": {
+                "_id": "$breakdown.sub_category",
+                "orders": {"$sum": {"$cond": [{"$eq": ["$order_type", "sales"]}, 1, 0]}},
+                "return_dto_orders": {"$sum": {"$cond": [{"$eq": ["$order_type", "return_dto"]}, 1, 0]}},
+                "return_orders": {"$sum": {"$cond": [{"$eq": ["$order_type", "return"]}, 1, 0]}},
+                "rto_orders": {"$sum": {"$cond": [{"$eq": ["$order_type", "rto"]}, 1, 0]}},
+                "fixed_fee_leakage": {"$sum": {"$cond": [
+                    {"$eq": ["$order_type", "return_dto"]},
+                    {"$ifNull": ["$fixed_fee_incl_gst", 0]},
+                    0,
+                ]}},
+                "sales_nsv": {"$sum": {"$cond": [
+                    {"$eq": ["$order_type", "sales"]},
+                    {"$ifNull": ["$breakdown.nsv_val", 0]},
+                    0,
+                ]}},
+            }},
+            {"$match": {"_id": {"$ne": None}}},
+            {"$addFields": {
+                "velocity_pct": {
+                    "$cond": [
+                        {"$gt": ["$orders", 0]},
+                        {"$divide": ["$return_dto_orders", "$orders"]},
+                        0,
+                    ],
+                },
+            }},
+            {"$sort": {"fixed_fee_leakage": -1}},
+            {"$limit": top},
+        ]
+        rows = [{"sub_category": r["_id"], **{k: v for k, v in r.items() if k != "_id"}}
+                async for r in db.calculations.aggregate(pipeline, allowDiskUse=True)]
+
+        totals_pipe = [
+            {"$match": q},
+            {"$group": {
+                "_id": "$order_type",
+                "count": {"$sum": 1},
+                "fixed_fee": {"$sum": {"$ifNull": ["$fixed_fee_incl_gst", 0]}},
+            }},
+        ]
+        totals: Dict[str, Any] = {}
+        async for r in db.calculations.aggregate(totals_pipe):
+            totals[r["_id"]] = {"count": r["count"], "fixed_fee": r["fixed_fee"]}
+
+        sales_count = (totals.get("sales") or {}).get("count", 0)
+        return_dto_count = (totals.get("return_dto") or {}).get("count", 0)
+        overall_velocity = (return_dto_count / sales_count) if sales_count else 0
+        total_fixed_fee_leakage = (totals.get("return_dto") or {}).get("fixed_fee", 0)
+
+        return {
+            "overall": {
+                "sales_orders": sales_count,
+                "return_dto_orders": return_dto_count,
+                "return_orders": (totals.get("return") or {}).get("count", 0),
+                "rto_orders": (totals.get("rto") or {}).get("count", 0),
+                "internal_cancel_orders": (totals.get("internal_cancel") or {}).get("count", 0),
+                "velocity_pct": overall_velocity,
+                "total_fixed_fee_leakage": total_fixed_fee_leakage,
+            },
+            "by_sub_category": rows,
+        }
+
+    return await get_or_set(cache_key, CACHE_TTL, _load, tag="calculations")

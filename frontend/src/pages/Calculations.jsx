@@ -21,6 +21,7 @@ export default function Calculations() {
     sub_category: searchParams.get("sub_category") || "",
     master_category: searchParams.get("master_category") || "",
     zone: searchParams.get("zone") || "",
+    order_type: searchParams.get("order_type") || "",
     severity_flag: searchParams.get("unmapped") === "1" ? "unmapped" : "",
   });
   const [sort, setSort] = useState({ by: "settlement", dir: "desc" });
@@ -34,6 +35,7 @@ export default function Calculations() {
       sub_category: filters.sub_category || undefined,
       master_category: filters.master_category || undefined,
       zone: filters.zone || undefined,
+      order_type: filters.order_type || undefined,
       severity_flag: filters.severity_flag || undefined,
       sort_by: sort.by, sort_dir: sort.dir,
       limit: 500,
@@ -42,7 +44,7 @@ export default function Calculations() {
     setItems(data.items);
     setTotal(data.total);
   };
-  useEffect(() => { load(); /* eslint-disable-next-line */ }, [period.period_type, period.period_value, filters.sub_category, filters.master_category, filters.zone, filters.severity_flag, sort.by, sort.dir]);
+  useEffect(() => { load(); /* eslint-disable-next-line */ }, [period.period_type, period.period_value, filters.sub_category, filters.master_category, filters.zone, filters.order_type, filters.severity_flag, sort.by, sort.dir]);
 
   // Debounced search
   useEffect(() => {
