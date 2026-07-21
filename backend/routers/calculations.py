@@ -147,8 +147,41 @@ def _extract_report_month(sale: Dict[str, Any]) -> Optional[str]:
     return None
 
 
+def _classify_order(order_status: Optional[str], txn_type: Optional[str]) -> str:
+    """Classify an order-item row into one of:
+        sales | return | dto | rto | internal_cancel
+    Rules (per business):
+      - order_status == 'RTO'                 → rto            (all fees nullified)
+      - order_status == 'Internal Cancellation' → internal_cancel (all fees nullified)
+      - order_status == 'DTO'                 → dto            (only fixed_fee applies as return fee)
+      - txn_type contains 'return'            → return         (signed / deducted)
+      - else                                  → sales          (standard settlement)
+    Matching is case-insensitive.
+    """
+    os_ = (order_status or "").strip().upper()
+    tt_ = (txn_type or "").strip().lower()
+    if os_ == "RTO":
+        return "rto"
+    if os_ == "INTERNAL CANCELLATION":
+        return "internal_cancel"
+    if os_ == "DTO":
+        return "dto"
+    if "return" in tt_:
+        return "return"
+    return "sales"
+
+
 def compute_expected(sale: Dict[str, Any], masters: Dict[str, Any]) -> Dict[str, Any]:
-    """Strictly compute expected charges. Missing rules → None + unmapped_reasons."""
+    """Strictly compute expected charges. Missing rules → None + unmapped_reasons.
+
+    Business rules (2026-07 revision):
+      - Base for commission / TCS / TDS = NSV − GT amount = NSV-after-GT
+      - RTO / Internal Cancellation orders → all fees nullified (settlement = 0)
+      - DTO orders → only Fixed Fee (incl GST) applies, counted as Return Fee.
+        Everything else = 0. Settlement = −|NSV| − Fixed Fee.
+      - Return txn_type → NSV signed negative; commission / GT / fixed fee /
+        TCS / TDS still compute on |NSV_after_GT| but with sign flipped.
+    """
     reasons: List[str] = []
     qty_raw = sale.get("qty") or 0
     try:
@@ -191,92 +224,140 @@ def compute_expected(sale: Dict[str, Any], masters: Dict[str, Any]) -> Dict[str,
     if not zone:
         reasons.append(f"Zone '{zone_raw}' not recognized and no default configured")
 
+    order_type = _classify_order(sale.get("order_status"), sale.get("txn_type"))
+    is_return = order_type in ("return", "dto")
+
     breakdown: Dict[str, Any] = {
         "isp": round(isp, 2), "qty": qty, "nsv_val": round(nsv_val, 2),
         "sub_category": sub_category, "master_category": master_cat,
         "zone": zone, "level": level,
+        "order_type": order_type,
         "report_month": _extract_report_month(sale),
     }
 
-    # Commission
-    commission_base = None
-    commission_gst = None
-    commission_incl_gst = None
-    commission_pct = None
-    crule = None
-    if master_cat and sub_category:
-        crule = _match_commission_rule(masters["commission_rules"], master_cat, sub_category, isp)
-    if crule:
-        commission_pct = float(crule["commission_pct"])
-        commission_base = nsv_val * commission_pct
-        commission_gst = commission_base * masters["gst_rate"]
-        commission_incl_gst = commission_base + commission_gst
-    else:
+    # Match all masters up-front so the drawer can show them even for RTO / cancel.
+    crule = _match_commission_rule(masters["commission_rules"], master_cat, sub_category, isp) if (master_cat and sub_category) else None
+    ff = _match_fixed_fee(masters["fixed_fees"], isp)
+    gt_cell = _match_gt_charge(masters["gt_charges"], sub_category, level, isp) if (sub_category and level) else None
+    return_fee_cell = _match_return_fee(masters["return_fees"], level, zone) if (level and zone) else None
+
+    commission_pct = float(crule["commission_pct"]) if crule else None
+    fixed_fee = float(ff["fixed_fee"]) if ff else None
+    fixed_fee_gst = (fixed_fee * masters["gst_rate"]) if fixed_fee is not None else None
+    fixed_fee_incl_gst = (fixed_fee + fixed_fee_gst) if fixed_fee is not None else None
+    gt_unit = float(gt_cell["charge"]) if gt_cell else None
+    gt_total = (gt_unit * qty) if gt_unit is not None else None
+    return_fee_master = float(return_fee_cell["fee"]) if return_fee_cell else None
+
+    # Reason accounting (per component missing) — only applies for order types that need them
+    if order_type in ("sales", "return") and crule is None:
         reasons.append(f"No commission rule for {master_cat}/{sub_category} @ ISP ₹{isp}")
+    if order_type in ("sales", "return", "dto") and ff is None:
+        reasons.append(f"No fixed fee slab for ISP ₹{isp}")
+    if order_type in ("sales", "return") and gt_cell is None:
+        reasons.append(f"No GT charge for {sub_category} / {level} @ ISP ₹{isp}")
+    if order_type == "return" and return_fee_cell is None:
+        reasons.append(f"No return fee for level={level} zone={zone}")
+
     breakdown["commission_rule"] = {
         "id": crule.get("id") if crule else None,
         "commission_pct": commission_pct,
         "price_range": crule.get("price_range") if crule else None,
         "commission_model": crule.get("commission_model") if crule else None,
     }
-
-    # Fixed fee
-    ff = _match_fixed_fee(masters["fixed_fees"], isp)
-    fixed_fee = float(ff["fixed_fee"]) if ff else None
-    fixed_fee_gst = (fixed_fee * masters["gst_rate"]) if fixed_fee is not None else None
-    fixed_fee_incl_gst = (fixed_fee + fixed_fee_gst) if fixed_fee is not None else None
-    if ff is None:
-        reasons.append(f"No fixed fee slab for ISP ₹{isp}")
     breakdown["fixed_fee_slab"] = {
         "id": ff.get("id") if ff else None,
         "label": ff.get("label") if ff else None,
         "fixed_fee": fixed_fee,
     }
-
-    # GT charge
-    gt_cell = None
-    gt_unit = None
-    gt_total = None
-    if sub_category and level:
-        gt_cell = _match_gt_charge(masters["gt_charges"], sub_category, level, isp)
-    if gt_cell:
-        gt_unit = float(gt_cell["charge"])
-        gt_total = gt_unit * qty
-    else:
-        reasons.append(f"No GT charge for {sub_category} / {level} @ ISP ₹{isp}")
     breakdown["gt_charge_cell"] = {
         "id": gt_cell.get("id") if gt_cell else None,
         "level": level, "price_range": gt_cell.get("price_range") if gt_cell else None,
         "unit_charge": gt_unit, "qty": qty,
     }
-
-    # Return fee (applicable only when txn is return / order cancelled)
-    txn_type = (sale.get("txn_type") or "").lower()
-    order_status = (sale.get("order_status") or "").lower()
-    is_return = "return" in txn_type or "return" in order_status or "cancel" in order_status
-    return_fee_cell = _match_return_fee(masters["return_fees"], level, zone) if (is_return and level and zone) else None
-    return_fee = float(return_fee_cell["fee"]) if return_fee_cell else (0.0 if not is_return else None)
-    if is_return and return_fee is None:
-        reasons.append(f"No return fee for level={level} zone={zone}")
     breakdown["return_fee_cell"] = {
         "id": return_fee_cell.get("id") if return_fee_cell else None,
-        "zone": zone, "level": level, "fee": return_fee, "applied": is_return,
+        "zone": zone, "level": level, "fee": return_fee_master,
+        "applied": order_type in ("return",),
     }
 
-    # TCS/TDS (on NSV) — always calculable if NSV known
-    tcs = nsv_val * masters["tcs_rate"]
-    tds = nsv_val * masters["tds_rate"]
-
-    # Totals — computed only from resolved components (missing → excluded)
-    components = [commission_incl_gst, fixed_fee_incl_gst, gt_total, return_fee, tcs, tds]
+    # ---- Apply order-type-specific arithmetic ----
+    commission_base = commission_gst = commission_incl_gst = None
+    gt_charge_final = None
+    return_fee_final = None
+    tcs = tds = None
+    nsv_after_gt = None
     total_deductions = None
     expected_settlement = None
-    if all(x is not None for x in components):
-        total_deductions = sum(components)
-        if is_return:
-            expected_settlement = -nsv_val + (commission_incl_gst or 0) + (return_fee or 0)
+
+    if order_type in ("rto", "internal_cancel"):
+        # Everything nullified
+        commission_base = commission_gst = commission_incl_gst = 0.0
+        fixed_fee = fixed_fee_gst = fixed_fee_incl_gst = 0.0
+        gt_charge_final = 0.0
+        return_fee_final = 0.0
+        tcs = tds = 0.0
+        nsv_after_gt = 0.0
+        total_deductions = 0.0
+        expected_settlement = 0.0
+        # RTO / Internal cancel should not carry unmapped flags
+        reasons = []
+    elif order_type == "dto":
+        # Only fixed_fee applies, and counts as return fee
+        commission_base = commission_gst = commission_incl_gst = 0.0
+        gt_charge_final = 0.0
+        tcs = tds = 0.0
+        nsv_after_gt = -abs(nsv_val)  # customer refunded
+        if fixed_fee_incl_gst is not None:
+            return_fee_final = fixed_fee_incl_gst
+            total_deductions = return_fee_final
+            expected_settlement = nsv_after_gt - return_fee_final
         else:
-            expected_settlement = nsv_val - total_deductions
+            return_fee_final = None
+    elif order_type == "return":
+        # Return: signed NSV, all components reversed (except return fee, a new charge)
+        signed_nsv = -abs(nsv_val)
+        if gt_total is not None:
+            gt_charge_final = -gt_total  # GT reversed
+            nsv_after_gt = signed_nsv - gt_charge_final  # signed_nsv + gt_total
+        else:
+            gt_charge_final = None
+        if commission_pct is not None and nsv_after_gt is not None:
+            commission_base = nsv_after_gt * commission_pct
+            commission_gst = commission_base * masters["gst_rate"]
+            commission_incl_gst = commission_base + commission_gst
+        if fixed_fee is not None:
+            fixed_fee = -fixed_fee
+            fixed_fee_gst = -(fixed_fee_gst or 0)
+            fixed_fee_incl_gst = -(fixed_fee_incl_gst or 0)
+        if nsv_after_gt is not None:
+            tcs = nsv_after_gt * masters["tcs_rate"]
+            tds = nsv_after_gt * masters["tds_rate"]
+        return_fee_final = return_fee_master or 0.0
+        parts = [commission_incl_gst, fixed_fee_incl_gst, gt_charge_final, return_fee_final, tcs, tds]
+        if all(x is not None for x in parts) and nsv_after_gt is not None:
+            total_deductions = sum(parts)
+            expected_settlement = nsv_after_gt - total_deductions
+    else:  # sales
+        if gt_total is not None:
+            gt_charge_final = gt_total
+            nsv_after_gt = nsv_val - gt_total
+        else:
+            nsv_after_gt = None
+        if commission_pct is not None and nsv_after_gt is not None:
+            commission_base = nsv_after_gt * commission_pct
+            commission_gst = commission_base * masters["gst_rate"]
+            commission_incl_gst = commission_base + commission_gst
+        if nsv_after_gt is not None:
+            tcs = nsv_after_gt * masters["tcs_rate"]
+            tds = nsv_after_gt * masters["tds_rate"]
+        return_fee_final = 0.0
+        parts = [commission_incl_gst, fixed_fee_incl_gst, gt_charge_final, tcs, tds]
+        if all(x is not None for x in parts) and nsv_after_gt is not None:
+            total_deductions = sum(parts) + return_fee_final
+            expected_settlement = nsv_after_gt - total_deductions
+
+    breakdown["nsv_after_gt"] = None if nsv_after_gt is None else round(nsv_after_gt, 2)
 
     def _round(v):
         return None if v is None else round(v, 2)
@@ -289,12 +370,14 @@ def compute_expected(sale: Dict[str, Any], masters: Dict[str, Any]) -> Dict[str,
         "fixed_fee": _round(fixed_fee),
         "fixed_fee_gst": _round(fixed_fee_gst),
         "fixed_fee_incl_gst": _round(fixed_fee_incl_gst),
-        "gt_charge": _round(gt_total),
-        "return_fee": _round(return_fee),
+        "gt_charge": _round(gt_charge_final),
+        "return_fee": _round(return_fee_final),
         "tcs": _round(tcs),
         "tds": _round(tds),
+        "nsv_after_gt": _round(nsv_after_gt),
         "total_deductions": _round(total_deductions),
         "expected_settlement": _round(expected_settlement),
+        "order_type": order_type,
         "is_return": is_return,
         "unmapped": len(reasons) > 0,
         "unmapped_reasons": reasons,
@@ -407,9 +490,11 @@ async def list_calculations(
     if severity_flag == "mapped":
         q["unmapped"] = {"$ne": True}
     if search:
+        import re as _re
+        s = _re.escape(search.strip())
         q["$or"] = [
-            {"online_order_id": {"$regex": search, "$options": "i"}},
-            {"sku": {"$regex": search, "$options": "i"}},
+            {"online_order_id": {"$regex": s, "$options": "i"}},
+            {"sku": {"$regex": s, "$options": "i"}},
         ]
     total = await db.calculations.count_documents(q)
     sort_map = {

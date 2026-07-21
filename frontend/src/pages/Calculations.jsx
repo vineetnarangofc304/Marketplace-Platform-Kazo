@@ -44,6 +44,13 @@ export default function Calculations() {
   };
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [period.period_type, period.period_value, filters.sub_category, filters.master_category, filters.zone, filters.severity_flag, sort.by, sort.dir]);
 
+  // Debounced search
+  useEffect(() => {
+    const t = setTimeout(() => { load(); }, 400);
+    return () => clearTimeout(t);
+    /* eslint-disable-next-line */
+  }, [search]);
+
   const runAll = async () => {
     setRunning(true);
     try {

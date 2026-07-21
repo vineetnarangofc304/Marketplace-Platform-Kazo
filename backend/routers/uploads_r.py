@@ -12,6 +12,10 @@ from pydantic import BaseModel
 from db import db
 from cache_utils import invalidate as invalidate_cache
 
+
+def _regex_escape(s: str) -> str:
+    return re.escape(s)
+
 router = APIRouter(tags=["uploads"])
 
 
@@ -465,10 +469,11 @@ async def list_sales(
     if txn_type:
         q["txn_type"] = txn_type
     if search:
+        s = _regex_escape(search.strip())
         q["$or"] = [
-            {"online_order_id": {"$regex": search, "$options": "i"}},
-            {"sku": {"$regex": search, "$options": "i"}},
-            {"sales_invoice_no": {"$regex": search, "$options": "i"}},
+            {"online_order_id": {"$regex": s, "$options": "i"}},
+            {"sku": {"$regex": s, "$options": "i"}},
+            {"sales_invoice_no": {"$regex": s, "$options": "i"}},
         ]
     total = await db.sales.count_documents(q)
     sort_map = {

@@ -42,6 +42,13 @@ export default function SalesLedger() {
   };
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [period.period_type, period.period_value, filters.sub_category, filters.zone, filters.order_status, filters.txn_type, sort.by, sort.dir]);
 
+  // Debounced search: fire 400ms after user stops typing (also on manual Enter).
+  useEffect(() => {
+    const t = setTimeout(() => { load(); }, 400);
+    return () => clearTimeout(t);
+    /* eslint-disable-next-line */
+  }, [search]);
+
   const onSort = (key) => setSort((s) => nextDir(s.by, s.dir, key));
 
   const openDrawer = async (row) => {

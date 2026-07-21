@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import api, { formatApiError } from "@/lib/api";
 import { toast } from "sonner";
-import { Save, Plus, Trash2 } from "lucide-react";
+import { Save, Plus, Trash2, Download, Upload, FileSpreadsheet } from "lucide-react";
 import { fmtPct } from "@/lib/format";
 
 const TABS = [
@@ -17,14 +17,77 @@ const TABS = [
 
 export default function Masters() {
   const [tab, setTab] = useState("commission");
+  const [importBusy, setImportBusy] = useState(false);
+
+  const exportMasters = async () => {
+    try {
+      const res = await api.get("/masters/export", { responseType: "blob" });
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `kazo-commission-masters-${new Date().toISOString().slice(0, 10)}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      toast.success("Masters exported");
+    } catch (e) { toast.error(formatApiError(e.response?.data?.detail)); }
+  };
+
+  const importMasters = async (file, mode) => {
+    if (!file) return;
+    if (!window.confirm(`Import "${file.name}" in ${mode.toUpperCase()} mode? ${mode === "replace" ? "This will WIPE and re-load each sheet." : "This will UPSERT rows by id."}`)) return;
+    setImportBusy(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const { data } = await api.post(`/masters/import?mode=${mode}`, fd, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      const total = (data.sheets || []).reduce((s, x) => s + (x.count || 0), 0);
+      toast.success(`Imported ${total} rows across ${(data.sheets || []).length} sheets`);
+    } catch (e) {
+      toast.error(formatApiError(e.response?.data?.detail));
+    } finally { setImportBusy(false); }
+  };
+
   return (
     <div className="p-6 space-y-4" data-testid="masters-page">
-      <div>
-        <div className="overline">Configuration</div>
-        <h1 className="text-2xl font-semibold tracking-tight mt-1">Commission Masters</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Configure Myntra&apos;s complete commission structure. All calculations reference the active rules.
-        </p>
+      <div className="flex items-start justify-between flex-wrap gap-3">
+        <div>
+          <div className="overline">Configuration</div>
+          <h1 className="text-2xl font-semibold tracking-tight mt-1">Commission Masters</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Configure Myntra&apos;s complete commission structure. All calculations reference the active rules.
+          </p>
+        </div>
+        <div className="flex items-center gap-2 flex-wrap">
+          <button data-testid="btn-export-masters" onClick={exportMasters} className="btn">
+            <Download size={12} /> Download config
+          </button>
+          <label className="btn cursor-pointer" data-testid="btn-import-masters-replace">
+            <Upload size={12} /> {importBusy ? "Importing…" : "Upload (replace)"}
+            <input
+              data-testid="input-import-masters-replace"
+              type="file"
+              accept=".xlsx"
+              className="hidden"
+              disabled={importBusy}
+              onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; importMasters(f, "replace"); }}
+            />
+          </label>
+          <label className="btn cursor-pointer" data-testid="btn-import-masters-merge">
+            <FileSpreadsheet size={12} /> Upload (merge)
+            <input
+              data-testid="input-import-masters-merge"
+              type="file"
+              accept=".xlsx"
+              className="hidden"
+              disabled={importBusy}
+              onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; importMasters(f, "merge"); }}
+            />
+          </label>
+        </div>
       </div>
 
       <div className="border-b border-border flex gap-1 overflow-x-auto">

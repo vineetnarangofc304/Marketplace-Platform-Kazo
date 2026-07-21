@@ -8,9 +8,9 @@ import json
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from pydantic import BaseModel, Field
 
 from db import db
@@ -381,4 +381,148 @@ async def reset_defaults(_user=Depends(require_admin)):
     await db.return_fees.delete_many({})
     await db.subcat_levels.delete_many({})
     await seed_defaults(db)
+    from cache_utils import invalidate as _inv
+    _inv()
     return {"ok": True, "message": "Masters reseeded from KAZO Myntra source file"}
+
+
+# ---------- Configuration Export / Import ----------
+_EXPORT_SPEC = [
+    ("commission_rules", "Commission Rules",
+     ["id", "brand", "master_category", "sub_category", "gender", "lower_limit", "upper_limit",
+      "price_range", "commission_model", "commission_pct", "active"]),
+    ("fixed_fees", "Fixed Fee",
+     ["id", "aisp_lower", "aisp_upper", "label", "fixed_fee", "active"]),
+    ("gt_charges", "GT Charges",
+     ["id", "sub_category", "level", "price_range", "price_lower", "price_upper", "charge", "active"]),
+    ("return_fees", "Return Fee",
+     ["id", "level", "zone", "fee", "active"]),
+    ("subcat_levels", "Sub-Cat Levels",
+     ["id", "sub_category", "level"]),
+    ("tolerances", "Tolerance",
+     ["absolute_inr", "percentage", "materiality_inr"]),
+    ("tax_rates", "Tax Rates",
+     ["gst_rate", "tcs_rate", "tds_rate"]),
+    ("settlement_settings", "Settlement Config",
+     ["default_zone_when_missing", "treat_dash_as_missing_zone", "apply_default_zone"]),
+]
+
+
+@router.get("/masters/export")
+async def export_masters():
+    """Download all commission masters as a single multi-sheet Excel workbook."""
+    import io
+    import openpyxl
+    from openpyxl.styles import Font, PatternFill
+    from fastapi.responses import StreamingResponse
+
+    wb = openpyxl.Workbook()
+    wb.remove(wb.active)
+    header_fill = PatternFill("solid", fgColor="1F2937")
+    header_font = Font(bold=True, color="FFFFFF")
+
+    for coll_name, sheet_name, cols in _EXPORT_SPEC:
+        docs = await db[coll_name].find({}, {"_id": 0}).to_list(50000)
+        ws = wb.create_sheet(sheet_name)
+        for i, c in enumerate(cols, start=1):
+            cell = ws.cell(row=1, column=i, value=c)
+            cell.fill = header_fill
+            cell.font = header_font
+        for r, doc in enumerate(docs, start=2):
+            for i, c in enumerate(cols, start=1):
+                v = doc.get(c)
+                if isinstance(v, (list, dict)):
+                    v = str(v)
+                ws.cell(row=r, column=i, value=v)
+        for i, c in enumerate(cols, start=1):
+            ws.column_dimensions[openpyxl.utils.get_column_letter(i)].width = max(14, min(40, len(c) + 4))
+
+    buf = io.BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+    now = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M")
+    return StreamingResponse(
+        buf,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f'attachment; filename="kazo-commission-masters-{now}.xlsx"'},
+    )
+
+
+@router.post("/masters/import")
+async def import_masters(
+    file: UploadFile = File(...),
+    mode: str = "replace",  # replace | merge
+    _user=Depends(require_admin),
+):
+    """Upload the Excel produced by /masters/export to bulk-update masters.
+
+    mode='replace' wipes each collection before inserting (safer for full syncs).
+    mode='merge'  upserts by id (or by natural key if id is blank).
+    """
+    from fastapi import UploadFile as _  # noqa: F401 (make sure symbol is bound)
+    import io
+    import openpyxl
+    from cache_utils import invalidate as _inv
+
+    if mode not in ("replace", "merge"):
+        raise HTTPException(400, "mode must be 'replace' or 'merge'")
+
+    raw = await file.read()
+    try:
+        wb = openpyxl.load_workbook(io.BytesIO(raw), read_only=True, data_only=True)
+    except Exception as e:
+        raise HTTPException(400, f"Not a valid Excel file: {e}")
+
+    report: Dict[str, Any] = {"mode": mode, "sheets": []}
+    for coll_name, sheet_name, cols in _EXPORT_SPEC:
+        if sheet_name not in wb.sheetnames:
+            report["sheets"].append({"sheet": sheet_name, "skipped": True, "reason": "not present"})
+            continue
+        ws = wb[sheet_name]
+        rows = list(ws.iter_rows(values_only=True))
+        if not rows:
+            report["sheets"].append({"sheet": sheet_name, "skipped": True, "reason": "empty"})
+            continue
+        header = [str(h).strip() if h is not None else "" for h in rows[0]]
+        col_idx = {c: header.index(c) for c in cols if c in header}
+        if not col_idx:
+            report["sheets"].append({"sheet": sheet_name, "skipped": True, "reason": "no matching columns"})
+            continue
+
+        docs: List[Dict[str, Any]] = []
+        for r in rows[1:]:
+            if not r or all(v is None for v in r):
+                continue
+            doc: Dict[str, Any] = {}
+            for c, i in col_idx.items():
+                v = r[i]
+                if isinstance(v, str):
+                    v = v.strip()
+                doc[c] = v
+            # Ensure id
+            if not doc.get("id") and coll_name not in ("tolerances", "tax_rates", "settlement_settings"):
+                doc["id"] = _uid()
+            docs.append(doc)
+
+        if coll_name in ("tolerances", "tax_rates", "settlement_settings"):
+            # Singleton documents — take the first row and upsert
+            if docs:
+                await db[coll_name].delete_many({})
+                await db[coll_name].insert_one(docs[0])
+            report["sheets"].append({"sheet": sheet_name, "singleton": True, "count": 1 if docs else 0})
+            continue
+
+        if mode == "replace":
+            await db[coll_name].delete_many({})
+            if docs:
+                await db[coll_name].insert_many(docs)
+            report["sheets"].append({"sheet": sheet_name, "mode": "replace", "count": len(docs)})
+        else:
+            upserted = 0
+            for d in docs:
+                await db[coll_name].update_one({"id": d["id"]}, {"$set": d}, upsert=True)
+                upserted += 1
+            report["sheets"].append({"sheet": sheet_name, "mode": "merge", "count": upserted})
+
+    _inv()
+    return {"ok": True, **report}
