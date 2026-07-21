@@ -21,6 +21,7 @@ from typing import Optional, List, Dict, Any, Literal
 
 from fastapi import FastAPI, APIRouter, HTTPException, Depends, UploadFile, File, Request, Response, Query, status
 from starlette.middleware.cors import CORSMiddleware
+from starlette.middleware.gzip import GZipMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel, Field, EmailStr
 from bson import ObjectId
@@ -193,6 +194,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(GZipMiddleware, minimum_size=1024)
 
 
 @app.on_event("startup")
@@ -200,25 +202,64 @@ async def _startup():
     # Indexes
     await db.users.create_index("email", unique=True)
     await db.users.create_index("id", unique=True)
+
+    # Sales — filter by report_month, group by sub_category/zone/master_category, search by order/sku
     await db.sales.create_index([("upload_id", 1)])
     await db.sales.create_index([("online_order_id", 1), ("sku", 1)])
     await db.sales.create_index([("order_date", 1)])
     await db.sales.create_index([("report_month", 1)])
+    await db.sales.create_index([("report_month", 1), ("sub_category", 1)])
+    await db.sales.create_index([("report_month", 1), ("zone", 1)])
+    await db.sales.create_index([("report_month", 1), ("order_status", 1)])
+    await db.sales.create_index([("report_month", 1), ("txn_type", 1)])
+
+    # Settlement — join on order+sku, filter by report_month
     await db.settlement.create_index([("upload_id", 1)])
     await db.settlement.create_index([("online_order_id", 1), ("sku", 1)])
     await db.settlement.create_index([("report_month", 1)])
+    await db.settlement.create_index([("report_month", 1), ("online_order_id", 1), ("sku", 1)])
+
+    # Calculations — hot path for reports & dashboards
     await db.calculations.create_index([("sales_id", 1)], unique=True)
     await db.calculations.create_index([("report_month", 1)])
     await db.calculations.create_index([("unmapped", 1)])
+    await db.calculations.create_index([("report_month", 1), ("unmapped", 1)])
+    await db.calculations.create_index([("report_month", 1), ("breakdown.sub_category", 1)])
+    await db.calculations.create_index([("report_month", 1), ("breakdown.master_category", 1)])
+    await db.calculations.create_index([("report_month", 1), ("breakdown.zone", 1)])
+    await db.calculations.create_index([("report_month", 1), ("expected_settlement", -1)])
+    await db.calculations.create_index([("online_order_id", 1), ("sku", 1)])
+
+    # Discrepancies — filter by run/month/severity, sort by recoverable
     await db.discrepancies.create_index([("severity", 1), ("recon_run_id", 1)])
     await db.discrepancies.create_index([("report_month", 1)])
+    await db.discrepancies.create_index([("report_month", 1), ("severity", 1)])
+    await db.discrepancies.create_index([("report_month", 1), ("recoverable", -1)])
+    await db.discrepancies.create_index([("recon_run_id", 1), ("severity", 1)])
+    await db.discrepancies.create_index([("match_status", 1)])
+    await db.discrepancies.create_index([("online_order_id", 1), ("sku", 1)])
+
+    # Uploads
     await db.uploads.create_index([("uploaded_at", -1)])
+    await db.uploads.create_index([("type", 1), ("uploaded_at", -1)])
+
+    # Recovery
     await db.recovery_cases.create_index([("discrepancy_id", 1)])
     await db.recovery_cases.create_index([("status", 1)])
     await db.recovery_cases.create_index([("report_month", 1)])
+    await db.recovery_cases.create_index([("report_month", 1), ("status", 1)])
+    await db.recovery_cases.create_index([("report_month", 1), ("priority", 1)])
+    await db.recovery_cases.create_index([("recoverable_amount", -1)])
     await db.recovery_notes.create_index([("case_id", 1), ("created_at", 1)])
     await db.recovery_evidence.create_index([("case_id", 1)])
+
+    # Insights briefs (audit log)
     await db.insights_briefs.create_index([("created_at", -1)])
+    await db.insights_briefs.create_index([("period_type", 1), ("period_value", 1), ("created_at", -1)])
+
+    # Commission masters
+    await db.commission_rules.create_index([("brand", 1), ("sub_category", 1)])
+    await db.commission_rules.create_index([("is_active", 1)])
 
     # Seed admin
     existing = await db.users.find_one({"email": ADMIN_EMAIL})

@@ -10,6 +10,7 @@ from fastapi import APIRouter, File, HTTPException, Query, UploadFile
 from pydantic import BaseModel
 
 from db import db
+from cache_utils import invalidate as invalidate_cache
 
 router = APIRouter(tags=["uploads"])
 
@@ -251,6 +252,8 @@ async def upload_sales(file: UploadFile = File(...)):
     }
     await db.uploads.insert_one({**upload_doc})
 
+    invalidate_cache()
+
     return {
         "upload_id": upload_id,
         "accepted_count": total_accepted,
@@ -384,6 +387,9 @@ async def upload_settlement(file: UploadFile = File(...)):
     }
     await db.uploads.insert_one(upload_doc)
 
+    invalidate_cache("periods")
+    invalidate_cache("overview")
+
     return {
         "upload_id": upload_id,
         "accepted_count": len(parsed["accepted"]),
@@ -416,6 +422,7 @@ async def delete_upload(upload_id: str):
         if sales_ids:
             await db.calculations.delete_many({"sales_id": {"$in": sales_ids}})
     await db.uploads.delete_one({"id": upload_id})
+    invalidate_cache()  # nuke all — sales/calc/disc caches all potentially stale
     return {"ok": True}
 
 

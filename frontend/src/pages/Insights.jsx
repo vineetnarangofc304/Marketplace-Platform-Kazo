@@ -134,7 +134,7 @@ export default function Insights() {
           <div>
             <div className="overline flex items-center gap-1"><Sparkles size={12} /> Morning Finance Brief</div>
             <div className="text-sm text-slate-500 mt-1">
-              AI-generated narrative summarizing the numbers above. Produced by Claude Sonnet 4.6 via Emergent Universal Key.
+              AI-generated narrative summarizing the numbers above. Never fabricated — quotes only real numbers from your uploads.
             </div>
           </div>
           <div className="flex items-center gap-2">

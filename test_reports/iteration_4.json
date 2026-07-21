@@ -1,0 +1,23 @@
+{
+  "summary": "Rebrand + performance pass verified end-to-end. Title, Fundle badges (login + sidebar on all 10 authenticated pages), zero 'Emergent' occurrences in rendered DOM text on 11 routes, 7 required endpoints cache-hot <1.5s with 2nd call not slower than 1st, GZip active, all required compound MongoDB indexes present, login regression + KPI drill-down still work.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_rebrand_perf.py",
+    "/app/test_reports/pytest/iter4_perf.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Fundle logo asset is hosted under a customer-assets subdomain that still contains the substring 'emergentagent' in its hostname. This is not visible DOM text so does not violate the rebrand requirement, but if strict brand hygiene is required, consider re-hosting the logo under a fundle.ai (or KAZO) CDN and updating the src in both Login.jsx and Layout.jsx.",
+    "cache_utils.py in-memory TTL cache is per-process — safe for single-worker uvicorn but will show inconsistent responses across workers in a multi-worker production deploy. Document or switch to Redis before scaling out."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_rebrand_perf.py (new)"
+  ],
+  "success_rate": {"backend": "100% (11/11)", "frontend": "100% (all routes, badges, KPI drill-down)"},
+  "test_credentials": "admin@kazo.com / admin123",
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "iteration_4 validated rebrand (Fundle) + perf pass. Backend pytest file at /app/backend/tests/test_rebrand_perf.py covers latency, cache warm-up, gzip, and /api/reports/{periods,months}. MongoDB compound indexes on calculations, discrepancies, recovery_cases, sales all present. Frontend UI probed all 11 routes for the 'Emergent' word (0 hits) and both powered-by-fundle-* testids (all present, fundle.ai href, correct image). Login form uses email+password (admin@kazo.com/admin123). If further UI regressions needed, use existing data-testids: nav-*, login-*, powered-by-fundle-{login,sidebar}."
+}

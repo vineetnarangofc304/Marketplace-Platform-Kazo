@@ -64,6 +64,21 @@ export default function Layout({ children }) {
             <LogOut size={12} /> Sign out
           </button>
         </div>
+        <a
+          href="https://fundle.ai"
+          target="_blank"
+          rel="noopener noreferrer"
+          data-testid="powered-by-fundle-sidebar"
+          className="flex items-center justify-center gap-2 py-3 bg-slate-900 hover:bg-slate-800 transition-colors border-t border-slate-800"
+          title="Powered by Fundle"
+        >
+          <span className="text-[9px] mono uppercase tracking-widest text-slate-400">Powered by</span>
+          <img
+            src="https://customer-assets-v7afamib.emergentagent.net/job_commission-hub-156/artifacts/f3pobwkf_fundle_logo-white-min-382x100.png"
+            alt="Fundle"
+            className="h-4 w-auto"
+          />
+        </a>
       </aside>
 
       <main className="flex-1 min-w-0 flex flex-col">

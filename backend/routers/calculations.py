@@ -15,6 +15,7 @@ from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
 
 from db import db
+from cache_utils import invalidate as invalidate_cache
 
 router = APIRouter(tags=["calculations"])
 
@@ -359,6 +360,8 @@ async def run_calculations(payload: RunCalcIn):
     if batch:
         await db.calculations.insert_many(batch)
         processed += len(batch)
+
+    invalidate_cache()
 
     return {
         "processed": processed,

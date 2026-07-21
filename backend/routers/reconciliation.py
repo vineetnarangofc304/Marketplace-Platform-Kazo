@@ -246,6 +246,14 @@ async def run_reconciliation(payload: RunReconIn):
     }
     await db.recon_runs.insert_one({**run_doc})
 
+    # Invalidate cached aggregates so freshly-created discrepancies show up
+    try:
+        from cache_utils import invalidate as _inv
+        _inv("discrepancies")
+        _inv("overview")
+    except Exception:
+        pass
+
     return {**run_doc, "discrepancies_sample": sample}
 
 

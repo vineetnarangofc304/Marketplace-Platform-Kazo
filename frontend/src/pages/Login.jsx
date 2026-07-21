@@ -58,7 +58,7 @@ export default function Login() {
         <div className="text-[10px] mono text-slate-400 uppercase tracking-widest">© KAZO · Rev 2026.02</div>
       </div>
 
-      <div className="flex-1 flex items-center justify-center px-6 py-10 bg-slate-50/40">
+      <div className="flex-1 flex items-center justify-center px-6 py-10 bg-slate-50/40 flex-col">
         <form onSubmit={submit} className="w-full max-w-sm bg-white p-8 border border-border rounded-sm" data-testid="login-form">
           <div className="overline mb-2">Sign In</div>
           <h2 className="text-2xl font-semibold tracking-tight">Marketplace Command Center</h2>
@@ -84,6 +84,21 @@ export default function Login() {
             <div className="text-xs mono text-slate-500">admin@kazo.com · admin123</div>
           </div>
         </form>
+        <a
+          href="https://fundle.ai"
+          target="_blank"
+          rel="noopener noreferrer"
+          data-testid="powered-by-fundle-login"
+          className="mt-6 inline-flex items-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 transition-colors rounded-sm"
+          title="Powered by Fundle"
+        >
+          <span className="text-[10px] mono uppercase tracking-widest text-slate-400">Powered by</span>
+          <img
+            src="https://customer-assets-v7afamib.emergentagent.net/job_commission-hub-156/artifacts/f3pobwkf_fundle_logo-white-min-382x100.png"
+            alt="Fundle"
+            className="h-5 w-auto"
+          />
+        </a>
       </div>
     </div>
   );
