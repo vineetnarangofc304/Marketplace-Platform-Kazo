@@ -56,6 +56,16 @@ User: "Make it production ready...no hard code no fallback. Make it ready for mo
 - Frontend: All new data-testids present and functional
 - Security: auth guard + admin-only enforcement verified end-to-end
 
+## Iteration 7 — Return Velocity widget on CEO Overview (2026-07-21)
+
+User approved the iteration 6 suggestion. Added:
+- **New endpoint** `GET /api/dashboard/return-velocity?period_type&period_value&top` returns `{overall: {sales_orders, return_dto_orders, return_orders, rto_orders, internal_cancel_orders, velocity_pct, total_fixed_fee_leakage}, by_sub_category: [{sub_category, orders, return_dto_orders, velocity_pct, fixed_fee_leakage, sales_nsv, ...}]}`. Sorted by fixed-fee leakage desc.
+- **New backend filter** `GET /api/calculations?order_type=return_dto|sales|return|rto|internal_cancel` — enables drill-through.
+- **Overview panel** `data-testid='return-velocity-panel'` — headline "X% of sales orders flipped to Return-DTO", plus table with row-level drill (each row → `/calculations?sub_category=&order_type=return_dto&period=...`). Colored velocity heatmap (blue/orange/red bands).
+- **April 2026 data**: 44.4% overall velocity, ₹2.85L fixed-fee leakage. Worst offenders: Dresses (58.6%, ₹88,599), Trousers (55.5%, ₹16,563), Shirts (53.6%, ₹36,838).
+
+Test agent iteration_7 PASS — no bugs, no action items.
+
 ## Iteration 6 — Return rows dropped by parser (2026-07-21)
 Reported: "the original April sales file also had return orders. those seem to have not got processed."
 
