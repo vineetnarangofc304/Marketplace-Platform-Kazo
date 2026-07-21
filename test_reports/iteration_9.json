@@ -1,0 +1,39 @@
+{
+  "summary": "Verified CORS spec-compliance fix + async bcrypt + inline admin seed. All 10 backend regression tests pass. Cold-start login (first request 230ms after supervisor restart) returns 200. Frontend login redirects in ~0.3s, Fundle badge visible on /login and sidebar. No CORS blocks on dashboard/calculations/masters/insights/recovery endpoints.",
+  "backend_issues": { "critical": [], "minor": [] },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      { "screen": "Dashboard (Overview)", "issues": ["Recharts warnings: 'width(-1) and height(-1) of chart should be greater than 0' — chart container has zero dimensions on initial paint; cosmetic but should get minHeight/aspect ratio"] }
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_login_cors_regression.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "test_results": {
+    "cors_preflight_fundlezone_origin": "PASS — access-control-allow-origin echoed as https://kazob2b.fundlezone.com (NOT '*'), allow-credentials: true",
+    "cors_preflight_random_origin": "PASS — origin https://example.com echoed back correctly (regex .*)",
+    "login_valid_credentials": "PASS — 200 in <1s with token+user",
+    "login_invalid_credentials": "PASS — 401 in <1s",
+    "concurrent_5_logins_no_stall": "PASS — slowest of 5 concurrent < 2s, confirming asyncio.to_thread offloads bcrypt",
+    "cold_start_login": "PASS — first login after `supervisorctl restart backend` returned 200 in 0.23s (inline seed confirmed)",
+    "authenticated_endpoints": "PASS — /api/dashboard/overview, /api/calculations, /api/masters/export, /api/insights/health-score, /api/recovery/summary all return 200 through public URL",
+    "frontend_login_flow": "PASS — redirect off /login in 0.3s, no error banners, Fundle badges visible on both /login and sidebar (verified via screenshot)"
+  },
+  "action_items": [
+    "Optional: fix Recharts container dimensions warning on Overview dashboard (add minHeight or aspect ratio)"
+  ],
+  "critical_code_review_comments": [
+    "CORS regex '.*' + allow_credentials=true means any site can send authenticated requests to the API. For a finance app this is a security concern — recommend restricting CORS_ORIGINS env var to an explicit allowlist in production (fundlezone.com + preview URL).",
+    "set_cookie has secure=False (server.py line 143) — cookies work on HTTP but should be secure=True in production (https). Consider driving from env var."
+  ],
+  "updated_files": ["/app/backend/tests/test_login_cors_regression.py"],
+  "success_rate": { "backend": "100% (10/10)", "frontend": "100% (login flow)" },
+  "test_credentials": "admin@kazo.com / admin123 (from /app/memory/test_credentials.md)",
+  "seed_data_creation": "None — used existing seeded admin user",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Backend at localhost:8001 is authoritative for CORS testing (Cloudflare on preview strips headers). Test file /app/backend/tests/test_login_cors_regression.py covers preflight, login speed, concurrent logins, cold-start seed, and downstream authenticated endpoints. Reuse for regression."
+}

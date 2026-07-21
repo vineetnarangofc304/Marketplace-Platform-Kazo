@@ -59,11 +59,19 @@ def hash_pwd(pw: str) -> str:
     return bcrypt.hashpw(pw.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
 
 
+async def hash_pwd_async(pw: str) -> str:
+    return await asyncio.to_thread(hash_pwd, pw)
+
+
 def verify_pwd(pw: str, h: str) -> bool:
     try:
         return bcrypt.checkpw(pw.encode("utf-8"), h.encode("utf-8"))
     except Exception:
         return False
+
+
+async def verify_pwd_async(pw: str, h: str) -> bool:
+    return await asyncio.to_thread(verify_pwd, pw, h)
 
 
 def create_token(user_id: str, email: str, role: str) -> str:
@@ -128,7 +136,7 @@ class UserOut(BaseModel):
 async def login(payload: LoginIn, response: Response):
     email = payload.email.strip().lower()
     user = await db.users.find_one({"email": email})
-    if not user or not verify_pwd(payload.password, user["password_hash"]):
+    if not user or not await verify_pwd_async(payload.password, user["password_hash"]):
         raise HTTPException(401, "Invalid credentials")
     token = create_token(user["id"], user["email"], user["role"])
     response.set_cookie(
@@ -185,25 +193,58 @@ app.include_router(reports.router, prefix="/api", dependencies=[Depends(current_
 app.include_router(recovery.router, prefix="/api", dependencies=[Depends(current_user)])
 app.include_router(insights.router, prefix="/api", dependencies=[Depends(current_user)])
 
-# CORS
-_origins = os.environ.get("CORS_ORIGINS", "*")
-_allow = ["*"] if _origins.strip() == "*" else [o.strip() for o in _origins.split(",")]
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=_allow,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# CORS — when allow_credentials=True, the spec forbids allow_origins=["*"].
+# We honour the CORS_ORIGINS env var when it's an explicit list, but if it's "*"
+# we fall back to allow_origin_regex=".*" which reflects the caller's origin
+# (satisfying browsers even with credentials).
+_origins_raw = os.environ.get("CORS_ORIGINS", "*").strip()
+if _origins_raw == "*" or not _origins_raw:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origin_regex=".*",
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+        expose_headers=["Content-Disposition"],
+    )
+else:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=[o.strip() for o in _origins_raw.split(",")],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+        expose_headers=["Content-Disposition"],
+    )
 app.add_middleware(GZipMiddleware, minimum_size=1024)
 
 
 @app.on_event("startup")
 async def _startup():
-    """Kick off bootstrap in the background so the ASGI app becomes ready
-    immediately. K8s readiness probes must succeed while indexes / seeds
-    finish asynchronously.
+    """Seed the admin user inline (blocks readiness briefly, but very fast),
+    then kick off the rest of bootstrap (indexes + masters) in the background
+    so K8s readiness probes succeed within seconds.
     """
+    # 1) Seed / rehash admin inline so login is available from the first request.
+    try:
+        existing = await db.users.find_one({"email": ADMIN_EMAIL})
+        if not existing:
+            await db.users.insert_one({
+                "id": new_id(), "email": ADMIN_EMAIL, "name": "Administrator",
+                "role": "admin", "password_hash": await hash_pwd_async(ADMIN_PASSWORD),
+                "created_at": now_iso(),
+            })
+            logger.info(f"Seeded admin inline: {ADMIN_EMAIL}")
+        elif not await verify_pwd_async(ADMIN_PASSWORD, existing["password_hash"]):
+            await db.users.update_one(
+                {"email": ADMIN_EMAIL},
+                {"$set": {"password_hash": await hash_pwd_async(ADMIN_PASSWORD)}},
+            )
+            logger.info(f"Rehashed admin inline: {ADMIN_EMAIL}")
+    except Exception as e:
+        logger.exception(f"Inline admin seed failed (deferring to background): {e}")
+
+    # 2) Kick off the rest of bootstrap in the background.
     asyncio.create_task(_bootstrap())
 
 
@@ -279,15 +320,16 @@ async def _bootstrap():
         if not existing:
             await db.users.insert_one({
                 "id": new_id(), "email": ADMIN_EMAIL, "name": "Administrator",
-                "role": "admin", "password_hash": hash_pwd(ADMIN_PASSWORD),
+                "role": "admin", "password_hash": await hash_pwd_async(ADMIN_PASSWORD),
                 "created_at": now_iso(),
             })
             logger.info(f"Seeded admin: {ADMIN_EMAIL}")
-        elif not verify_pwd(ADMIN_PASSWORD, existing["password_hash"]):
+        elif not await verify_pwd_async(ADMIN_PASSWORD, existing["password_hash"]):
             await db.users.update_one(
                 {"email": ADMIN_EMAIL},
-                {"$set": {"password_hash": hash_pwd(ADMIN_PASSWORD)}},
+                {"$set": {"password_hash": await hash_pwd_async(ADMIN_PASSWORD)}},
             )
+            logger.info(f"Rehashed admin password: {ADMIN_EMAIL}")
 
         # Seed masters (default Myntra commission structure) if empty
         await masters.seed_defaults(db)
