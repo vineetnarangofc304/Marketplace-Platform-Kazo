@@ -258,11 +258,11 @@ def compute_expected(sale: Dict[str, Any], masters: Dict[str, Any]) -> Dict[str,
     # Reason accounting (per component missing) — only applies for order types that need them
     if order_type in ("sales", "return") and crule is None:
         reasons.append(f"No commission rule for {master_cat}/{sub_category} @ ISP ₹{isp}")
-    if order_type in ("sales", "return", "return_dto") and ff is None:
+    if order_type in ("sales", "return") and ff is None:
         reasons.append(f"No fixed fee slab for ISP ₹{isp}")
     if order_type in ("sales", "return") and gt_cell is None:
         reasons.append(f"No GT charge for {sub_category} / {level} @ ISP ₹{isp}")
-    if order_type == "return" and return_fee_cell is None:
+    if order_type in ("return", "return_dto") and return_fee_cell is None:
         reasons.append(f"No return fee for level={level} zone={zone}")
 
     breakdown["commission_rule"] = {
@@ -284,7 +284,7 @@ def compute_expected(sale: Dict[str, Any], masters: Dict[str, Any]) -> Dict[str,
     breakdown["return_fee_cell"] = {
         "id": return_fee_cell.get("id") if return_fee_cell else None,
         "zone": zone, "level": level, "fee": return_fee_master,
-        "applied": order_type in ("return",),
+        "applied": order_type in ("return", "return_dto"),
     }
 
     # ---- Apply order-type-specific arithmetic ----
@@ -309,14 +309,16 @@ def compute_expected(sale: Dict[str, Any], masters: Dict[str, Any]) -> Dict[str,
         # RTO / Internal cancel should not carry unmapped flags
         reasons = []
     elif order_type == "return_dto":
-        # Return + DTO: only fixed_fee applies, counted as return fee.
+        # Return + DTO: ONLY the Return Fee applies (from the Return Fee_TABLE by
+        # Level + Zone — NOT the Fixed Fee). All other components zero out.
         # NSV in the source file is already negative for these rows — normalize.
         commission_base = commission_gst = commission_incl_gst = 0.0
+        fixed_fee = fixed_fee_gst = fixed_fee_incl_gst = 0.0
         gt_charge_final = 0.0
         tcs = tds = 0.0
         nsv_after_gt = -abs(nsv_val)  # signed refund
-        if fixed_fee_incl_gst is not None:
-            return_fee_final = fixed_fee_incl_gst
+        if return_fee_master is not None:
+            return_fee_final = return_fee_master
             total_deductions = return_fee_final
             expected_settlement = nsv_after_gt - return_fee_final
         else:

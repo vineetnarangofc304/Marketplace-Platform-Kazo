@@ -1,0 +1,25 @@
+{
+  "summary": "Iteration 8: Return-DTO now uses Return Fee master (Level x Zone) and drawer UI shows base+GST separately. 6/6 backend pytest passed. Frontend drawer labels verified on both /sales and /calculations pages.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_return_dto_fix.py",
+    "/app/test_reports/pytest/iter8.xml"
+  ],
+  "action_items": [
+    "OPTIONAL rename: /api/dashboard/return-velocity 'total_fixed_fee_leakage' aggregation still sums fixed_fee_incl_gst on return_dto rows. Since those are now 0, the widget will show ₹0. This is a downstream (expected) consequence of the Return-DTO fix, not a bug. Consider renaming the widget metric to 'total_return_fee_leakage' aggregating return_fee to keep the KPI meaningful.",
+    "The Calculations page LIST view still shows column headers 'Comm (incl GST)' and 'Fixed' — these are correct for the table (they show final effective amounts) but ensure consistency with drawer terminology if the business prefers ex-GST throughout."
+  ],
+  "critical_code_review_comments": [
+    "compute_expected() in /app/backend/routers/calculations.py is 220 lines with distinct branches for sales/return/return_dto/rto/internal_cancel. Consider extracting each branch into helpers (e.g., _compute_sales, _compute_return_dto) for testability.",
+    "return_dto branch currently produces unmapped=True when return_fee_cell is missing (level/zone unresolved). Verified: for a Level 1/Zonal row (order DFC4F34A…) return_fee=112 exactly matches master."
+  ],
+  "updated_files": ["/app/backend/tests/test_return_dto_fix.py", "/app/test_reports/iteration_8.json"],
+  "success_rate": {"backend": "100% (6/6)", "frontend": "100% (drawer labels + math verified on both pages)"},
+  "test_credentials": "admin@kazo.com / admin123",
+  "seed_data_creation": "None — used pre-existing recalculated data.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Iteration 8 bugfix verified: (a) sum(return_fee on return_dto)=~₹658k (was ₹285k fixed_fee) — within 600k-720k range; (b) sum(fixed_fee_incl_gst on return_dto)=0 as required; (c) Sales settlement sum ≈ ₹14.69M unchanged; (d) RTO/Internal Cancel settlement = 0. Drawer labels on /sales and /calculations both use the exact 10-row order requested. Known Return-DTO order DFC4F34A-58F6-40EA-9AA1-2C13EB9F2140 → return_fee=112, settlement=-758 (verified). Return Velocity 'total_fixed_fee_leakage' now shows ₹0 (expected).",
+  "rca of the issue": "N/A — no bugs found in this iteration."
+}

@@ -173,10 +173,12 @@ export default function SalesLedger() {
                   <div className="overline mb-2">Expected Calculation</div>
                   <table className="w-full text-xs mono border border-border">
                     <tbody>
-                      {[["Commission (incl GST)", calc.commission_incl_gst, "neg"],
-                        ["Fixed Fee (incl GST)", calc.fixed_fee_incl_gst, "neg"],
-                        ["GT Charge", calc.gt_charge, "neg"],
-                        ["Return Fee", calc.return_fee, "neg"],
+                      {[["Commission (ex GST)", calc.commission_base, "neg"],
+                        ["GST on Commission (18%)", calc.commission_gst, "neg"],
+                        ["Fixed Fee (ex GST)", calc.fixed_fee, "neg"],
+                        ["GST on Fixed Fee (18%)", calc.fixed_fee_gst, "neg"],
+                        ["GT Charge (incl GST)", calc.gt_charge, "neg"],
+                        ["Return Fee (Level/Zone)", calc.return_fee, "neg"],
                         ["TCS", calc.tcs, "neg"], ["TDS", calc.tds, "neg"],
                         ["Total Deductions", calc.total_deductions, "neg", true],
                         ["Expected Settlement", calc.expected_settlement, "pos", true]].map(([k, v, tone, bold]) => (

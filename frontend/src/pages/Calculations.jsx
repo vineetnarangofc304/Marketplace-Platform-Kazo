@@ -246,14 +246,12 @@ function CalcDrawer({ data, onClose }) {
               <table className="w-full text-xs mono border border-border">
                 <tbody>
                   {[
-                    ["Commission (base)", c.commission_base, ""],
-                    ["Commission GST 18%", c.commission_gst, "neg"],
-                    ["Commission (incl GST)", c.commission_incl_gst, "neg", true],
-                    ["Fixed Fee", c.fixed_fee, ""],
-                    ["Fixed Fee GST 18%", c.fixed_fee_gst, "neg"],
-                    ["Fixed Fee (incl GST)", c.fixed_fee_incl_gst, "neg", true],
+                    ["Commission base (ex GST)", c.commission_base, "neg"],
+                    ["GST on Commission (18%)", c.commission_gst, "neg"],
+                    ["Fixed Fee (ex GST)", c.fixed_fee, "neg"],
+                    ["GST on Fixed Fee (18%)", c.fixed_fee_gst, "neg"],
                     ["GT Charge (incl GST)", c.gt_charge, "neg"],
-                    ["Return Fee", c.return_fee, "neg"],
+                    ["Return Fee (Level/Zone)", c.return_fee, "neg"],
                     ["TCS", c.tcs, "neg"],
                     ["TDS", c.tds, "neg"],
                     ["Total Deductions", c.total_deductions, "neg", true],
