@@ -56,6 +56,22 @@ User: "Make it production ready...no hard code no fallback. Make it ready for mo
 - Frontend: All new data-testids present and functional
 - Security: auth guard + admin-only enforcement verified end-to-end
 
+## Iteration 9 — Production login "long wait then fails" (2026-07-21)
+User: login on production https://kazob2b.fundlezone.com hangs then errors with "Something went wrong. Please try again."
+
+### Root causes
+1. **CORS spec violation** — server had `allow_origins=["*"]` **and** `allow_credentials=True`. Per CORS spec, `Access-Control-Allow-Origin: *` is invalid when credentials are used, so browsers reject the response. Frontend sends `withCredentials:true`, so cross-origin requests silently failed.
+2. **bcrypt blocks the event loop** — `bcrypt.checkpw` / `bcrypt.hashpw` are CPU-bound (~250 ms). Being called directly inside `async def login` stalls every concurrent request behind it.
+3. **Admin seed in background** — since we moved bootstrap to a background task in iteration 4, the very first login attempt after a cold pod restart could race the seed and 401.
+
+### Delivered
+- **CORS**: middleware now uses `allow_origin_regex=".*"` when `CORS_ORIGINS="*"`. Response reflects the caller's origin + `access-control-allow-credentials: true` — spec compliant.
+- **Async bcrypt**: new `hash_pwd_async` / `verify_pwd_async` wrap the bcrypt calls in `asyncio.to_thread` so the event loop stays free. Login now handles concurrent requests without stacking.
+- **Inline admin seed**: `@app.on_event("startup")` seeds/rehashes admin **inline** (fast — one Atlas round-trip + at most one bcrypt hash), then kicks off the rest of bootstrap (40+ indexes + masters) in the background. Login is available from the very first request after a pod restart.
+
+### Test Results (iteration 9)
+- `testing_agent_v3_fork` iteration_9 PASS. 10/10 backend regressions. Cold-start login within 230 ms of supervisor restart returns 200. Frontend login redirects in ~0.3 s. No CORS blocks. Zero bugs.
+
 ## Iteration 8 — Return-DTO fix + drawer base+GST split (2026-07-21)
 User: (1) "commission & fixed fee should always be before GST for all calc"; (2) "return fee logic is based on the tables attached.. its coming same as fixed fee, while it has to come based on tables attached".
 
