@@ -56,6 +56,33 @@ User: "Make it production ready...no hard code no fallback. Make it ready for mo
 - Frontend: All new data-testids present and functional
 - Security: auth guard + admin-only enforcement verified end-to-end
 
+## Iteration 6 — Return rows dropped by parser (2026-07-21)
+Reported: "the original April sales file also had return orders. those seem to have not got processed."
+
+### Root cause
+The raw file has 21,614 rows: 14,219 with `txn_type='Sales'` and **7,395 with `txn_type='Return'`**. Every return row has a **negative NSV / QTY** (Myntra's convention for reversals). The sales parser rejected all rows with `nsv_val < 0`, silently dropping the 7,395 return rows. Additionally, the previous classifier tagged both Sales+DTO and Return+DTO as `dto` — after importing returns, this would have double-counted refunds.
+
+### Delivered in iteration 6
+- **Parser** (`uploads_r._parse_sales_xlsx`): removed the negative-NSV rejection so Return rows import cleanly.
+- **Classifier** (`_classify_order`): now emits **5 order types**:
+  - `sales` — everything with `txn_type='Sales'` and no RTO/InternalCancellation status (includes Sales+DTO — the original sale record for a DTO order)
+  - `return_dto` — `txn_type='Return' AND order_status='DTO'` — applies only Fixed Fee (incl GST) as Return Fee
+  - `return` — any other `txn_type='Return'` (e.g. Return+Delivered, Return+Status NF) — sign-flipped with return fee from (level, zone) matrix
+  - `rto` — any `order_status='RTO'` (Sales+RTO or Return+RTO) — all fees nullified
+  - `internal_cancel` — any `order_status='Internal Cancellation'` — all fees nullified
+- **compute_expected**: the `sales` branch now uses `abs(nsv_val)` (defensive); `return_dto` branch mirrors the old `dto` branch (fixed fee only). Net-effect for a DTO order across both Sales and Return rows = seller loses one fixed fee — matches the user's spec exactly.
+- **Data reload**: uploaded raw file → 21,614 accepted / 0 rejected; recalculated all → distribution matches expected exact counts.
+
+### Test Results (iteration 6)
+- 21,614 sales rows imported (was 14,219; +7,395 returns now processed)
+- Order-type distribution: sales=12,246 · return_dto=5,443 · rto=3,705 · internal_cancel=128 · return=92 (sums to 21,614 ✓)
+- Aggregate April expected settlement: **₹4,631,550** (previously ₹16,575,054 which was inflated because returns weren't offsetting)
+  - Sales: +₹14,690,173
+  - Return DTO: −₹9,797,947
+  - Return: −₹260,676
+  - RTO / Internal Cancel: 0
+- `testing_agent_v3_fork` iteration_6 PASS — no bugs, no action items.
+
 ## Iteration 5 — Bug-fix punchlist from CEO (2026-07-21)
 Reported items:
 1. NSV − GT amount = NSV-after-GT; all downstream calculations to use this base
