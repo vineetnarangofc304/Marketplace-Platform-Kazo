@@ -7,7 +7,7 @@ import pytest
 import requests
 import openpyxl
 
-BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://commission-hub-156.preview.emergentagent.com").rstrip("/")
+BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://ledger-dashboard-13.preview.emergentagent.com").rstrip("/")
 ADMIN_EMAIL = "admin@kazo.com"
 ADMIN_PASSWORD = "admin123"
 

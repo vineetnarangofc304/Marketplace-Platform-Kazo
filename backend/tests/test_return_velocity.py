@@ -12,7 +12,7 @@ import pytest
 import requests
 
 BASE_URL = (os.environ.get("REACT_APP_BACKEND_URL")
-            or "https://commission-hub-156.preview.emergentagent.com").rstrip("/")
+            or "https://ledger-dashboard-13.preview.emergentagent.com").rstrip("/")
 API = f"{BASE_URL}/api"
 PERIOD = ("month", "2026-04")
 

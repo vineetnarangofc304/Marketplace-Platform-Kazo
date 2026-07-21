@@ -1,0 +1,125 @@
+<analysis>**original_problem_statement**: 
+KAZO Marketplace Finance & Reconciliation Platform. A web-based Marketplace Finance Operating System that ingests Myntra marketplace reports, calculates expected charges, reconciles settlements, identifies leakage, and produces AI-assisted finance intelligence. 
+PRODUCT REQUIREMENTS: Upload Myntra sales/settlements reports, rules engine, calculation engine, settlement reconciliation, Dashboards (CEO, Finance, Operations), light UI with interlocking drill-downs, dynamic filtering (Month, Quarter, Annual, YTD), no hardcoded data.
+
+**User's preferred language**: English (INSTRUCT next agent to respond in English)
+
+**what currently exists?**: 
+A fully functional, optimized React and FastAPI application using MongoDB. The app handles Excel parsing, rules mapping, complex calculations (Sales, DTO, RTO, Returns), and reconciliation. It features a Fundle-branded professional UI, AI Insights powered by Emergent LLM, a Recovery Management module, dynamic period filtering, and a Return Velocity tracking dashboard. The backend is optimized with compound indexes and asynchronous startup sequences for Kubernetes compatibility.
+
+**Last working item**: 
+    - Last item agent was working: The user reported (from their Production URL) that the commission wasn't calculated on the  base. The agent verified that this is *already fixed* in the current preview codebase (completed in Iteration 8). The agent informed the user that they need to redeploy to production and trigger a recalculation. The agent also proposed building a Rebuild all calculations UI button to make this easier.
+    - Status: USER VERIFICATION PENDING
+    - Agent Testing Done: Y (The underlying calculation math was heavily tested and verified by testing agent).
+    - Which testing method agent to use? frontend testing agent
+    - User Testing Done: N
+
+**All Pending/In progress Issue list**:  
+None. All user-reported issues (login failures, calc math bugs, unparsed returns, deployment timeouts) have been successfully fixed and verified.
+
+**In progress Task List**: 
+None active.
+
+**Upcoming and Future Tasks**
+    Upcoming Tasks:
+    - Task 1: Add a Rebuild all calculations button on the Uploads or Masters page to allow users to trigger  with  from the UI without using curl. (P0)
+    - Task 2: Create a  endpoint returning  for K8s readiness probes. (P1)
+    - Task 3: Create an automated monthly Return velocity alert email (via Resend) firing on the 1st of every month to Finance and CEO. (P2)
+    - Task 4: Add customizable brand palette + white-label logo upload in Masters to easily swap Fundle branding. (P2)
+    
+    Future Tasks:
+    - Integration of SSO / proper tenant boundaries.
+
+**Completed work in this session**
+- Phase 6 (Recovery Management module) & Phase 7 (AI Insights via Universal Key) (DONE)
+- Rebranded to Fundle and removed all Emergent mentions (DONE)
+- Backend performance tuning: compound DB indexes, GZip, parallelized hot aggregations (DONE)
+- Fixed K8s Deployment timeout by moving MongoDB index creations and db-seeding to  background worker (DONE)
+- Rewrote  in calculations engine to properly handle Sales, Return, DTO, RTO, Internal Cancellation and apply distinct math (DONE)
+- Fixed Excel parsing bug that was rejecting negative NSV (return) rows (DONE)
+- Added Return Velocity Widget to Overview Dashboard (DONE)
+- Fixed Return-DTO math to pull correctly from the Return Fee level/zone table (DONE)
+- Fixed frontend drawer UI to accurately split Commission/Fixed Fee base amounts from their GST components (DONE)
+- Fixed Prod Login Timeout by removing CORS spec violation and unblocking event loop via async  execution (DONE)
+
+**Earlier issues found/mentioned but not fixed**
+None.
+
+**Known issue recurrence from previous fork**
+  - Issue recurrence in previous fork: None
+  - Recurrence count: 0
+  - Status: RESOLVED
+
+**Code Architecture**
+
+
+**Key Technical Concepts**
+Frontend: React, Tailwind CSS (Light Theme), Shadcn UI.
+Backend: FastAPI, Motor (Async MongoDB), openpyxl for Excel.
+Architecture: Background async bootstrap to avoid K8s readiness probe blocks, AI integration using  LLM, dynamic calculation engine heavily dependent on  logic.
+
+**key DB schema**
+  - : {online_order_id, nsv_val, order_status, txn_type, actual_gt_amount, ...}
+  - : {online_order_id, order_type, expected_settlement, nsv_after_gt, breakdown: {commission_base, commission_gst, return_fee, gt_charge}, ...}
+  - , , , .
+  - , .
+
+**changes in tech stack**
+  - Added  for LLM capabilities.
+  - Added  and markdown renderer libs on frontend.
+
+**All files of reference** 
+- : Houses  and the deeply refined logic for DTO, RTO, and Returns math.
+- : Sales parsing logic (allows negative NSV).
+- : Auth routes, CORS config, and  task.
+-  & : Drawer UI displaying base amounts ex-GST.
+
+**Areas that need refactoring**: 
+None identified; codebase was significantly optimized this session.
+
+**key api endpoints**
+- 
+-  (pass  to rebuild)
+- 
+- 
+- 
+
+**Critical Info for New Agent** 
+- **MULTIPLE ENVIRONMENTS NOTIFICATION**: The user has deployed the app to production (). *You only have access to the PREVIEW environment.* The user will frequently upload screenshots from the live Production app reporting bugs that you might have *already fixed* in Preview. Remind the user they need to click Deploy to push Preview code to Production.
+- Calculations must **strictly** compute commission based on . 
+- Returns and DTOs have unique behavior: DTOs use the Return Fee table (Level x Zone) instead of fixed fee. RTOs completely nullify all expected charges.
+
+**documents and test reports created in this job** 
+  - /app/test_reports/iteration_3.json through iteration_9.json
+  - /app/memory/PRD.md (heavily updated with Iteration 3-9 details)
+
+**Last 10 User Messages and any pending HUMAN messages** 
+ 1. User asked to execute pending tasks (Phase 6/7). (Done)
+ 2. User asked for Fundle rebrand, removing Emergent mentions, and DB indexing/optimizations for slow reports. (Done)
+ 3. Deployment timeout error. (Fixed via async DB bootstrap)
+ 4. User noted exact calculation logic required: NSV-GT commission base, Return Fee zonal charges, Returns DTO logic, RTO nullification, search by ID. (Done)
+ 5. User noted April sales returns weren't processed. (Fixed - parser rejected negative NSV).
+ 6. User asked to add Return Velocity widget. (Done)
+ 7. User noted UI must show Commission/Fixed Fee *before* GST, and return fee must match zonal tables. (Done)
+ 8. User noted production login is very slow and fails. (Fixed CORS & bcrypt blocking).
+ 9. User provided a screenshot from production showing commission calculated on raw NSV instead of NSV-GT. (Agent verified this is already fixed in preview; instructed user to redeploy and recalculate).
+*Pending Human Messages*: None
+
+**Project Health Check:**
+App is completely healthy. 
+
+**3rd Party Integrations** 
+- Emergent Universal LLM Key () — Uses Emergent LLM Key for  generation.
+
+**Testing status**
+  - Testing agent used after significant changes: YES
+  - Troubleshoot agent used after agent stuck in loop: NO
+  - Test files created: [/app/test_reports/iteration_3.json to iteration_9.json]
+  - Known regressions: None
+
+**Credentials to test flow:**
+Email: 
+Password: 
+
+**What agent forgot to execute**
+The agent proposed building a Rebuild all calculations button in the frontend (Uploads or Masters page) so the user can easily trigger a full recalculation after deploying to production, but finished the task before implementing the button. This is captured in Upcoming Tasks.</analysis>
