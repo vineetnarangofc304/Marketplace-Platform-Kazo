@@ -56,6 +56,37 @@ User: "Make it production ready...no hard code no fallback. Make it ready for mo
 - Frontend: All new data-testids present and functional
 - Security: auth guard + admin-only enforcement verified end-to-end
 
+## Iteration 5 — Bug-fix punchlist from CEO (2026-07-21)
+Reported items:
+1. NSV − GT amount = NSV-after-GT; all downstream calculations to use this base
+2. Return transactions to be deducted (signed negative)
+3. Search by Order ID not working
+4. Commission Masters — download / upload option for configuration
+5. Return Fee zonal charges to be considered
+6. Sub-category → GTA charges level master
+7. Return DTO — only fixed charges applied as return fee
+8. RTO / Internal Cancellation — all fees nullified
+
+### Delivered in iteration 5
+- **Calculation engine rewrite (`compute_expected` + new `_classify_order`)**:
+  - `order_type` ∈ {sales, return, dto, rto, internal_cancel} — classified by `order_status` (exact 'RTO' / 'Internal Cancellation' / 'DTO') and `txn_type` (contains 'return')
+  - `nsv_after_gt = nsv_val − gt_charge` for sales; sign-flipped for returns/DTO
+  - Commission base, TCS, TDS all computed on `nsv_after_gt` (previously used raw NSV)
+  - **DTO**: only Fixed Fee (incl GST) applies, counted as Return Fee; everything else 0; expected_settlement = −|NSV| − FixedFeeInclGST
+  - **RTO / Internal Cancellation**: every fee = 0; expected_settlement = 0; no unmapped flag
+  - **Return**: all component signs reversed, plus return_fee (positive) from the (level, zone) matrix
+  - New `nsv_after_gt` field in `breakdown` and top-level for reporting
+- **Search fixes**:
+  - Regex-escape `search` param on `/api/sales` and `/api/calculations` so UUIDs / meta-chars don't 500
+  - Debounced search (400 ms) on both `SalesLedger.jsx` and `Calculations.jsx` — fires on every keystroke, not just Enter
+- **Commission Masters download/upload**:
+  - New `GET /api/masters/export` → single multi-sheet Excel with 8 sheets: Commission Rules, Fixed Fee, GT Charges, Return Fee, Sub-Cat Levels, Tolerance, Tax Rates, Settlement Config
+  - New `POST /api/masters/import?mode=replace|merge` — round-trips the exported file; wipes/upserts collections; auto-invalidates cache
+  - Masters page: `Download config` / `Upload (replace)` / `Upload (merge)` buttons with confirmation prompt
+
+### Test Results (iteration 5)
+- `testing_agent_v3_fork` iteration_5 → PASS. Verified DTO math (−6561.98 for the ₹6490 handbag test row), sales math (NSV-after-GT commission base), RTO/internal-cancel nullification, order-type classification on 14,219 rows, search-by-fragment on both Sales and Calculations, Masters download → import roundtrip (replace + merge). No bugs.
+
 ## Iteration 4 — Rebrand + Production Performance (2026-02, session 3)
 User: "Pls add this logo.. powered by fundle on all pages... remove emergent mentions everywhere... all reports taking time to load... please help adding indexes on the DB and also compound indexing on all relevant fields... pls optimise reports dashboards and DB indexes fully for this to run smoothly on Production."
 
