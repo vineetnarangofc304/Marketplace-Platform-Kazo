@@ -56,6 +56,17 @@ User: "Make it production ready...no hard code no fallback. Make it ready for mo
 - Frontend: All new data-testids present and functional
 - Security: auth guard + admin-only enforcement verified end-to-end
 
+## Iteration 8 — Return-DTO fix + drawer base+GST split (2026-07-21)
+User: (1) "commission & fixed fee should always be before GST for all calc"; (2) "return fee logic is based on the tables attached.. its coming same as fixed fee, while it has to come based on tables attached".
+
+### Delivered
+- **Backend `compute_expected` — Return-DTO branch**: now uses `return_fee_master` from the Return Fee_TABLE (level, zone) instead of `fixed_fee_incl_gst`. Fixed Fee, Commission, GT, TCS, TDS are all set to zero for return_dto rows. Test order `DFC4F34A-58F6-40EA-9AA1-2C13EB9F2140` (nsv=-646, zone=Zonal, Level 1) now correctly returns ₹112 (was ₹71.98) and expected_settlement=-758.
+- **Drawer UI** (`SalesLedger` order detail + `Calculations` explainer): each Expected-Calculation row shows base and GST separately — `Commission (ex GST)`, `GST on Commission (18%)`, `Fixed Fee (ex GST)`, `GST on Fixed Fee (18%)`, `GT Charge (incl GST)`, `Return Fee (Level/Zone)`, `TCS`, `TDS`, `Total Deductions`, `Expected Settlement`.
+- **Return Velocity widget**: metric renamed from `fixed_fee_leakage` → `leakage` (now sums `return_fee` on return_dto rows). April Return-fee leakage: **₹6,58,488** total; worst: Dresses ₹1.72L (58.6%), Tops ₹1.57L (52.6%), Shirts ₹75K.
+
+### Test Results (iteration 8)
+- `testing_agent_v3_fork` iteration_8 PASS (6/6 backend + drawer UI). Zero bugs, zero action items. Sample validated end-to-end.
+
 ## Iteration 7 — Return Velocity widget on CEO Overview (2026-07-21)
 
 User approved the iteration 6 suggestion. Added:

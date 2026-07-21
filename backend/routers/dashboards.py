@@ -233,9 +233,9 @@ async def return_velocity(
                 "return_dto_orders": {"$sum": {"$cond": [{"$eq": ["$order_type", "return_dto"]}, 1, 0]}},
                 "return_orders": {"$sum": {"$cond": [{"$eq": ["$order_type", "return"]}, 1, 0]}},
                 "rto_orders": {"$sum": {"$cond": [{"$eq": ["$order_type", "rto"]}, 1, 0]}},
-                "fixed_fee_leakage": {"$sum": {"$cond": [
+                "leakage": {"$sum": {"$cond": [
                     {"$eq": ["$order_type", "return_dto"]},
-                    {"$ifNull": ["$fixed_fee_incl_gst", 0]},
+                    {"$ifNull": ["$return_fee", 0]},
                     0,
                 ]}},
                 "sales_nsv": {"$sum": {"$cond": [
@@ -254,7 +254,7 @@ async def return_velocity(
                     ],
                 },
             }},
-            {"$sort": {"fixed_fee_leakage": -1}},
+            {"$sort": {"leakage": -1}},
             {"$limit": top},
         ]
         rows = [{"sub_category": r["_id"], **{k: v for k, v in r.items() if k != "_id"}}
@@ -265,17 +265,17 @@ async def return_velocity(
             {"$group": {
                 "_id": "$order_type",
                 "count": {"$sum": 1},
-                "fixed_fee": {"$sum": {"$ifNull": ["$fixed_fee_incl_gst", 0]}},
+                "return_fee": {"$sum": {"$ifNull": ["$return_fee", 0]}},
             }},
         ]
         totals: Dict[str, Any] = {}
         async for r in db.calculations.aggregate(totals_pipe):
-            totals[r["_id"]] = {"count": r["count"], "fixed_fee": r["fixed_fee"]}
+            totals[r["_id"]] = {"count": r["count"], "return_fee": r["return_fee"]}
 
         sales_count = (totals.get("sales") or {}).get("count", 0)
         return_dto_count = (totals.get("return_dto") or {}).get("count", 0)
         overall_velocity = (return_dto_count / sales_count) if sales_count else 0
-        total_fixed_fee_leakage = (totals.get("return_dto") or {}).get("fixed_fee", 0)
+        total_leakage = (totals.get("return_dto") or {}).get("return_fee", 0)
 
         return {
             "overall": {
@@ -285,7 +285,7 @@ async def return_velocity(
                 "rto_orders": (totals.get("rto") or {}).get("count", 0),
                 "internal_cancel_orders": (totals.get("internal_cancel") or {}).get("count", 0),
                 "velocity_pct": overall_velocity,
-                "total_fixed_fee_leakage": total_fixed_fee_leakage,
+                "total_leakage": total_leakage,
             },
             "by_sub_category": rows,
         }

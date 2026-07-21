@@ -247,7 +247,7 @@ export default function Overview() {
                 {fmtPct(returnVel.overall.velocity_pct, 1)} of sales orders flipped to Return-DTO
               </div>
               <div className="text-xs text-slate-500 mono mt-1">
-                {fmtInt(returnVel.overall.return_dto_orders)} return-DTO / {fmtInt(returnVel.overall.sales_orders)} sales · Fixed-fee leakage {fmtCurrency(returnVel.overall.total_fixed_fee_leakage)}
+                {fmtInt(returnVel.overall.return_dto_orders)} return-DTO / {fmtInt(returnVel.overall.sales_orders)} sales · Return-fee leakage {fmtCurrency(returnVel.overall.total_leakage)}
               </div>
             </div>
             <button className="btn text-xs" data-testid="btn-drill-return-dto" onClick={() => goTo("/calculations", { order_type: "return_dto" })}>
@@ -262,7 +262,7 @@ export default function Overview() {
                   <th className="grid-cell text-right">Sales Orders</th>
                   <th className="grid-cell text-right">Return-DTO</th>
                   <th className="grid-cell text-right">Velocity</th>
-                  <th className="grid-cell text-right">Fixed-Fee Leakage</th>
+                  <th className="grid-cell text-right">Return-Fee Leakage</th>
                   <th className="grid-cell text-right">Sales NSV</th>
                 </tr>
               </thead>
@@ -276,7 +276,7 @@ export default function Overview() {
                     <td className="grid-cell text-right mono font-semibold" style={{ color: r.velocity_pct >= 0.5 ? "#DC2626" : r.velocity_pct >= 0.3 ? "#EA580C" : "#0284C7" }}>
                       {fmtPct(r.velocity_pct, 1)}
                     </td>
-                    <td className="grid-cell text-right fin-neg font-semibold">{fmtCurrency(r.fixed_fee_leakage)}</td>
+                    <td className="grid-cell text-right fin-neg font-semibold">{fmtCurrency(r.leakage)}</td>
                     <td className="grid-cell text-right mono text-slate-500">{fmtCurrency(r.sales_nsv)}</td>
                   </tr>
                 ))}
