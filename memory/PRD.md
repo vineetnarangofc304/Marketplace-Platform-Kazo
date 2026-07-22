@@ -226,4 +226,23 @@ User: "go ahead and complete pending tasks" — deliver Phase 6 & Phase 7 from t
 - SSO / stricter tenant boundaries
 
 ## Test Credentials
-- **Admin**: `admin@kazo.com` / `admin123`
+- **Admin (Kazo tenant)**: `admin@kazo.com` / `admin123`
+- **Admin (Fundle marketing/demo)**: `admin@fundle.ai` / `admin123`
+
+## Iteration 10 — Fundle Marketing Assets (2026-07)
+User: "now need a nicely done video that explains the problem, the solution and everything that we have delve roped here.. and a PDF document too that defines the solution and its features to start sharing with customers. All content should be actual. Fundle logo & branding — Kazo is a customer, so present as product of Fundle.ai. Emphasise AI insights. Voice-over via OpenAI TTS. All LLMs via Emergent LLM Key."
+
+### Delivered
+- **Full UI rebranding** for user-visible strings: sidebar title, header caption, login card, footer copyright, page title — all now say "Fundle Finance OS" (internal localStorage keys `kazo_token`/`kazo_user` unchanged to avoid breaking sessions).
+- **Marketing pipeline** at `/app/marketing/` with fully-scripted narration (`narration.json`), TTS generator (`generate_tts.py`), Playwright screenshotter (`capture_screenshots.py`), PIL slide builder (`build_slides.py`), ffmpeg video assembler (`build_video.py`), and ReportLab PDF builder (`build_pdf.py`).
+- **Product Video** — 3-min 16-sec MP4, 1920×1080, ~5.2 MB. 10 chapters: Hook → Why broken → Solution → Ingest → Masters → Calculations → Reconciliation → Recovery → AI Insights → CTA. OpenAI TTS `onyx` voice (tts-1-hd) via Emergent LLM Key. Real preview screenshots. Available at `/app/frontend/public/fundle_finance_os.mp4` and `${REACT_APP_BACKEND_URL}/fundle_finance_os.mp4`.
+- **Product Brochure PDF** — 8 pages landscape A4, 532 KB. Fundle branded cover, industry problem stats, six-pillar overview, three product deep-dive spreads (Ingest, Rule Engine + Calc, Reconcile + Recover + AI), and CTA page with **clickable WhatsApp cards** (Abhinav Khanna +91 99105 30372, Anmol Berry +91 98995 33604) and clickable `fundle.ai` link. Available at `/app/frontend/public/fundle_finance_os_brochure.pdf` and `${REACT_APP_BACKEND_URL}/fundle_finance_os_brochure.pdf`.
+- **Fundle admin account** created (`admin@fundle.ai` / `admin123`) so marketing screenshots show a clean sidebar without Kazo email.
+
+### Assets Location
+- `/app/marketing/output/fundle_finance_os.mp4` (source, master copy)
+- `/app/marketing/output/fundle_finance_os_brochure.pdf` (source, master copy)
+- `/app/marketing/scripts/` — all generation scripts, re-runnable
+- `/app/marketing/audio/` — 10 OpenAI TTS mp3 segments
+- `/app/marketing/slides/` — 10 rendered 1920×1080 slides
+- `/app/marketing/screenshots/` — real Playwright captures of Preview

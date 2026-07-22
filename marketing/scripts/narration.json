@@ -1,0 +1,78 @@
+{
+  "brand": "Fundle Finance OS",
+  "tagline": "Marketplace Reconciliation. Reimagined.",
+  "voice": "onyx",
+  "model": "tts-1-hd",
+  "segments": [
+    {
+      "id": "01_hook",
+      "title": "The Silent Leakage Problem",
+      "visual": "intro_problem",
+      "text": "Every year, Direct-to-Consumer brands selling on Myntra, Amazon and Flipkart lose between three and seven percent of their revenue to invisible commission leakage. Miscalculated commissions. Unbilled returns. Misapplied logistics charges. Duplicate deductions. For a brand doing one hundred crores a year, that is up to seven crores of pure margin, evaporating silently, month after month, into settlement files no one has the time to audit.",
+      "_duration": 27.864
+    },
+    {
+      "id": "02_why_hard",
+      "title": "Why Reconciliation Is Broken",
+      "visual": "why_hard",
+      "text": "The settlement statement from a marketplace is not a bill. It is a data dump. Tens of thousands of order lines, dozens of fee components, changing commission slabs, zone-based logistics, quarterly rate cards. Excel breaks. Finance teams give up. Leakage becomes the cost of doing business. Until now.",
+      "_duration": 18.864
+    },
+    {
+      "id": "03_solution",
+      "title": "Meet Fundle Finance OS",
+      "visual": "solution_reveal",
+      "text": "Meet Fundle Finance OS. The marketplace reconciliation platform built for finance and operations teams who refuse to accept leakage. Purpose-built, enterprise-grade, and powered by artificial intelligence. Every rupee accounted for. Every deduction verified. Every discrepancy tracked to recovery.",
+      "_duration": 18.888
+    },
+    {
+      "id": "04_ingest",
+      "title": "Ingest & Canonicalise",
+      "visual": "uploads",
+      "text": "Upload raw sales and settlement Excel reports in seconds. Fundle's proprietary parser ingests tens of thousands of order lines, handling positive and negative net sale values, returns, DTOs, RTOs and internal cancellations. It normalises SKUs, categories, zones and sub-category levels into a single canonical sales ledger, ready for calculation.",
+      "_duration": 21.912
+    },
+    {
+      "id": "05_masters",
+      "title": "No-Code Rule Engine",
+      "visual": "masters",
+      "text": "Configure commission slabs, GT logistics charges, fixed fees, and zone-based return fees through a no-code master editor. Import from Excel. Export for audit. No engineers required. Every rule is versioned, every change is traceable. Finance owns the logic, end to end.",
+      "_duration": 16.8
+    },
+    {
+      "id": "06_calc",
+      "title": "Calculation Engine",
+      "visual": "calculations",
+      "text": "Fundle calculates expected settlement for every single order. Commission on net sale value after GT. Fixed fees by item price slab. Return fees by level and zone. Strict rule matching, no fallbacks, no dummy defaults. Every calculation is fully drill-through, audit-ready, and split into pre-GST and GST components exactly the way your finance team needs it.",
+      "_duration": 22.656
+    },
+    {
+      "id": "07_recon",
+      "title": "Reconciliation & Discrepancies",
+      "visual": "reconciliation",
+      "text": "Fundle reconciles actual settlements against expected values with configurable tolerances. Discrepancies surface first, ranked by financial impact, ageing, and severity. From ten crore settlement files to a focused shortlist of what your team must recover this week.",
+      "_duration": 17.04
+    },
+    {
+      "id": "08_recovery",
+      "title": "Recovery Case Management",
+      "visual": "recovery",
+      "text": "Every rupee of leakage becomes a trackable recovery case. Status, priority, evidence attachments, notes, recovered amounts, and full audit trail. Nothing gets forgotten. Nothing gets lost between spreadsheets and inboxes. Recovery becomes a process, not a hope.",
+      "_duration": 16.296
+    },
+    {
+      "id": "09_ai",
+      "title": "AI-Powered Financial Intelligence",
+      "visual": "insights",
+      "text": "And then, Fundle's AI Insights Engine. Powered by frontier large language models, it reads your entire reconciliation dataset and generates plain-English briefs. Health scores. Return velocity alerts. Category-level margin decay. Root-cause narratives your CFO can act on in minutes. Finance intelligence, on autopilot.",
+      "_duration": 20.112
+    },
+    {
+      "id": "10_cta",
+      "title": "Reclaim What Is Yours",
+      "visual": "cta",
+      "text": "Fundle Finance OS. Stop leaking. Start reconciling. Visit fundle dot ai, or reach out on WhatsApp to Abhinav Khanna, or Anmol Berry. Reclaim what is yours.",
+      "_duration": 9.72
+    }
+  ]
+}

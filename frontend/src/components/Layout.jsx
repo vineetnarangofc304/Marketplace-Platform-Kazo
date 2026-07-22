@@ -28,10 +28,10 @@ export default function Layout({ children }) {
       <aside className="w-56 border-r border-border bg-white flex flex-col shrink-0">
         <div className="px-5 py-5 border-b border-border">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold rounded-sm">K</div>
+            <div className="w-8 h-8 bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold rounded-sm">F</div>
             <div>
-              <div className="text-sm font-semibold tracking-tight">KAZO Finance</div>
-              <div className="overline">Marketplace OS</div>
+              <div className="text-sm font-semibold tracking-tight">Fundle Finance OS</div>
+              <div className="overline">Marketplace Recon</div>
             </div>
           </div>
         </div>
@@ -87,7 +87,7 @@ export default function Layout({ children }) {
             {loc.pathname === "/" ? "Overview / Command Center" : loc.pathname.slice(1).replace(/\//g, " / ")}
           </div>
           <div className="text-xs mono text-slate-500">
-            Myntra · KAZO · {new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
+            Myntra · Fundle Finance OS · {new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
           </div>
         </header>
         <div className="flex-1 overflow-auto">{children}</div>

@@ -137,7 +137,7 @@ function SettlementConfig() {
         </label>
         <label className="flex items-center gap-2">
           <input type="checkbox" checked={!!s.treat_dash_as_missing_zone} onChange={(e) => setS({ ...s, treat_dash_as_missing_zone: e.target.checked })} data-testid="input-dash-as-missing" />
-          <span className="text-xs">Treat &quot;-&quot; as missing zone (recommended for KAZO Myntra files)</span>
+          <span className="text-xs">Treat &quot;-&quot; as missing zone (recommended for Myntra files)</span>
         </label>
         <label className="flex items-center gap-2">
           <input type="checkbox" checked={!!s.apply_default_zone} onChange={(e) => setS({ ...s, apply_default_zone: e.target.checked })} data-testid="input-apply-default-zone" />

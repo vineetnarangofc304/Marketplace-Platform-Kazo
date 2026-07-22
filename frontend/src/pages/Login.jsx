@@ -33,8 +33,8 @@ export default function Login() {
     <div className="min-h-screen w-full flex bg-background text-foreground">
       <div className="hidden md:flex flex-1 relative bg-white border-r border-border p-10 flex-col justify-between">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold rounded-sm">K</div>
-          <div className="text-sm tracking-tight font-semibold">KAZO Marketplace Finance</div>
+          <div className="w-8 h-8 bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold rounded-sm">F</div>
+          <div className="text-sm tracking-tight font-semibold">Fundle Finance OS</div>
         </div>
         <div className="max-w-md">
           <div className="overline mb-3">Enterprise Reconciliation OS</div>
@@ -55,14 +55,14 @@ export default function Login() {
             ))}
           </div>
         </div>
-        <div className="text-[10px] mono text-slate-400 uppercase tracking-widest">© KAZO · Rev 2026.02</div>
+        <div className="text-[10px] mono text-slate-400 uppercase tracking-widest">© Fundle.ai · Rev 2026.02</div>
       </div>
 
       <div className="flex-1 flex items-center justify-center px-6 py-10 bg-slate-50/40 flex-col">
         <form onSubmit={submit} className="w-full max-w-sm bg-white p-8 border border-border rounded-sm" data-testid="login-form">
           <div className="overline mb-2">Sign In</div>
           <h2 className="text-2xl font-semibold tracking-tight">Marketplace Command Center</h2>
-          <p className="mt-2 text-sm text-slate-500">Use your KAZO Finance credentials to continue.</p>
+          <p className="mt-2 text-sm text-slate-500">Use your Fundle Finance credentials to continue.</p>
 
           <div className="mt-8">
             <label className="overline block mb-2">Email</label>
