@@ -51,12 +51,8 @@ def fill_bg(c, color=DEEP):
 
 
 def grid_overlay(c):
-    c.setStrokeColor(HexColor("#1A2030"))
-    c.setLineWidth(0.15)
-    for x in range(0, int(PW), 24):
-        c.line(x, 0, x, PH)
-    for y in range(0, int(PH), 24):
-        c.line(0, y, PW, y)
+    # Grids removed per user feedback — keep function as a no-op so callers still work.
+    return
 
 
 def draw_logo(c, x, y, height=14 * mm):

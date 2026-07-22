@@ -62,19 +62,20 @@ def paste_logo(img, x, y, height=48):
 def base_dark():
     img = Image.new("RGBA", (W, H), BG_DEEP + (255,))
     d = ImageDraw.Draw(img)
-    # radial-ish gradient using overlaid ellipses
+    # radial-ish gradient using overlaid ellipses — no grid overlay
     grad = Image.new("RGBA", (W, H), BG_DEEP + (255,))
     gd = ImageDraw.Draw(grad)
-    for r, a in [(1400, 22), (1000, 30), (600, 40)]:
-        gd.ellipse((W // 2 - r, H // 2 - r, W // 2 + r, H // 2 + r), fill=(28, 40, 70, a))
-    grad = grad.filter(ImageFilter.GaussianBlur(80))
+    for r, a in [(1600, 22), (1200, 30), (700, 42), (350, 55)]:
+        gd.ellipse((W // 2 - r, H // 2 - r, W // 2 + r, H // 2 + r), fill=(30, 44, 78, a))
+    grad = grad.filter(ImageFilter.GaussianBlur(90))
     img = Image.alpha_composite(img, grad)
-    # thin grid lines
-    d = ImageDraw.Draw(img)
-    for gx in range(0, W, 96):
-        d.line([(gx, 0), (gx, H)], fill=(255, 255, 255, 6), width=1)
-    for gy in range(0, H, 96):
-        d.line([(0, gy), (W, gy)], fill=(255, 255, 255, 6), width=1)
+    # subtle diagonal noise/scan lines (very low alpha)
+    lines = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    ld = ImageDraw.Draw(lines)
+    for gy in range(0, H, 3):
+        ld.line([(0, gy), (W, gy)], fill=(255, 255, 255, 3), width=1)
+    lines = lines.filter(ImageFilter.GaussianBlur(0.5))
+    img = Image.alpha_composite(img, lines)
     return img
 
 
@@ -89,28 +90,28 @@ def slide_intro_problem(text):
     img = base_dark()
     d = ImageDraw.Draw(img)
     # eyebrow
-    d.text((160, 200), "THE SILENT LEAKAGE PROBLEM", font=F("mono", 24), fill=ACCENT)
-    d.line([(160, 250), (500, 250)], fill=ACCENT, width=2)
-    # Big headline
-    title = "3% to 7% of your\nmarketplace revenue\nis silently leaking."
-    y = 300
-    for ln in title.split("\n"):
-        d.text((160, y), ln, font=F("bold", 92), fill=TEXT_MAIN)
-        y += 108
-    # Right column - stat cards
-    stats = [
-        ("₹7 Cr", "Annual leakage on a\n₹100 Cr D2C business", ACCENT),
-        ("21,614", "Order lines processed\nin one settlement file", ACCENT_2),
-        ("< 60 sec", "Fundle parse + calc\nper Myntra report", ACCENT),
-    ]
-    sx = 1200
-    sy = 260
-    for big, sub, col in stats:
-        d.rectangle([(sx, sy), (sx + 560, sy + 170)], outline=DIVIDER, width=1)
-        d.text((sx + 30, sy + 24), big, font=F("bold", 68), fill=col)
-        for i, ln in enumerate(sub.split("\n")):
-            d.text((sx + 30, sy + 110 + i * 26), ln, font=F("reg", 22), fill=TEXT_MUTED)
-        sy += 200
+    d.text((160, 220), "THE SILENT LEAKAGE PROBLEM", font=F("mono", 24), fill=ACCENT)
+    d.line([(160, 264), (500, 264)], fill=ACCENT, width=2)
+    # Big headline — crisper
+    d.text((160, 320), "3% to 7%", font=F("bold", 168), fill=TEXT_MAIN)
+    d.text((160, 490), "of your marketplace", font=F("reg", 54), fill=TEXT_MUTED)
+    d.text((160, 555), "revenue is leaking.", font=F("bold", 62), fill=TEXT_MAIN)
+    d.text((160, 660), "Miscalculated commissions.  Unbilled returns.", font=F("reg", 26), fill=TEXT_MUTED)
+    d.text((160, 700), "Misapplied logistics.  Every month. Every marketplace.", font=F("italic", 26), fill=TEXT_MUTED)
+
+    # Right column - 2 dominant stats
+    sx = 1230
+    # ₹7 Cr
+    d.rectangle([(sx, 340), (sx + 560, 500)], outline=ACCENT, width=1)
+    d.text((sx + 30, 355), "₹ 7 Cr", font=F("bold", 84), fill=ACCENT)
+    d.text((sx + 30, 458), "Est. annual leakage on a", font=F("reg", 20), fill=TEXT_MUTED)
+    d.text((sx + 30, 480), "₹100 Cr D2C business", font=F("reg", 20), fill=TEXT_MUTED)
+    # < 60 sec
+    d.rectangle([(sx, 530), (sx + 560, 690)], outline=ACCENT_2, width=1)
+    d.text((sx + 30, 545), "< 60 sec", font=F("bold", 84), fill=ACCENT_2)
+    d.text((sx + 30, 648), "Fundle parses your full", font=F("reg", 20), fill=TEXT_MUTED)
+    d.text((sx + 30, 670), "monthly report end-to-end", font=F("reg", 20), fill=TEXT_MUTED)
+
     brand_footer(img)
     return img
 
@@ -244,24 +245,21 @@ def main():
     narr = json.loads((ROOT / "scripts" / "narration.json").read_text())
 
     product_map = {
-        "04_ingest":   ("uploads",         "CHAPTER 04 · INGEST",          "Uploads & Canonical Sales Ledger",  "Positive & negative NSV. Returns, DTOs, RTOs, cancellations — all normalised.", "21,614 lines · < 60s"),
-        "05_masters":  ("masters",         "CHAPTER 05 · MASTERS",         "No-Code Rule Engine",                "Commission slabs · GT logistics · fixed fees · zone-level return fees.",         "173 rules · Excel I/O"),
-        "06_calc":     ("calculations",    "CHAPTER 06 · CALCULATIONS",    "Expected Fee Engine",                "Commission on NSV – GT. Pre-GST + GST split. Strict matching. No fallbacks.",     "Drill-through · audit-ready"),
-        "07_recon":    ("reconciliation",  "CHAPTER 07 · RECONCILIATION",  "Discrepancies, Ranked",              "Component-level match. Configurable tolerances. Sorted by financial impact.",     "Actual vs Expected"),
-        "08_recovery": ("recovery",        "CHAPTER 08 · RECOVERY",        "Case Management",                    "Status · priority · evidence · notes · recovered amount · audit trail.",           "Nothing gets lost"),
-        "09_ai":       ("insights",        "CHAPTER 09 · AI INSIGHTS",     "Financial Intelligence, on Autopilot", "Health scores · return velocity · margin decay · plain-English narratives.",   "Frontier LLM · Emergent"),
+        "03_ingest":   ("uploads",         "CHAPTER 03  ·  INGEST",         "Ingest & Canonical Sales Ledger",     "Sales, returns, DTOs, RTOs and cancellations — all normalised into one ledger.", "21,614 lines · < 60 sec"),
+        "04_masters":  ("masters",         "CHAPTER 04  ·  MASTERS",        "No-Code Rule Engine",                  "Commission · GT logistics · fixed fees · zone-level return fees — you own the logic.", "Excel round-trip"),
+        "05_calc":     ("calculations",    "CHAPTER 05  ·  CALCULATIONS",   "Expected Fee Engine",                  "Commission on NSV − GT. Pre-GST + GST split. Strict matching. No fallbacks.",     "Drill-through · audit-ready"),
+        "06_recon":    ("reconciliation",  "CHAPTER 06  ·  RECONCILIATION", "Reconciliation Engine",                "Component-level match. Configurable tolerances. Ranked by financial impact.",     "Actual vs Expected"),
+        "07_recovery": ("recovery",        "CHAPTER 07  ·  RECOVERY",       "Recovery Case Management",             "Status · priority · evidence · notes · recovered amount · full audit trail.",     "Nothing gets lost"),
+        "08_ai":       ("insights",        "CHAPTER 08  ·  AI INSIGHTS",    "Financial Intelligence, on Autopilot", "Health scores · mapping · leakage · margin · recovery · morning briefs.",         "Powered by frontier LLMs"),
     }
 
     for seg in narr["segments"]:
         sid = seg["id"]
-        vis = seg["visual"]
         if sid == "01_hook":
             save(slide_intro_problem(seg["text"]), sid)
-        elif sid == "02_why_hard":
-            save(slide_why_hard(), sid)
-        elif sid == "03_solution":
+        elif sid == "02_solution":
             save(slide_solution(), sid)
-        elif sid == "10_cta":
+        elif sid == "09_cta":
             save(slide_cta(), sid)
         elif sid in product_map:
             shot, chap, title, sub, callout = product_map[sid]

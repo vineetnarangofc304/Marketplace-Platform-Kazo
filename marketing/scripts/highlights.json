@@ -1,0 +1,36 @@
+{
+  "_notes": "Coordinates are on the final 1920x1080 slide. Screenshots are placed at sx=80, sy=120, scale=0.9167 from original 1920x1080. Times are seconds relative to segment start. color: gold=#F0B429, cyan=#63B3ED, mint=#38D97F",
+  "03_ingest": [
+    {"t": 2.5,  "d": 6.0, "x": 263, "y": 265, "w": 614, "h": 165, "color": "gold", "label": "SALES REPORT"},
+    {"t": 6.5,  "d": 6.0, "x": 887, "y": 265, "w": 614, "h": 165, "color": "cyan", "label": "SETTLEMENT REPORT"},
+    {"t": 13.0, "d": 5.5, "x": 263, "y": 462, "w": 1237, "h": 90, "color": "gold", "label": "UPLOAD HISTORY"},
+    {"t": 17.0, "d": 4.8, "x": 1015, "y": 500, "w": 130, "h": 45, "color": "mint", "label": "21,614 ACCEPTED"}
+  ],
+  "04_masters": [
+    {"t": 2.5,  "d": 5.0, "x": 263, "y": 235, "w": 630, "h": 40, "color": "gold", "label": "6 RULE TABLES"},
+    {"t": 7.5,  "d": 6.0, "x": 263, "y": 285, "w": 1237, "h": 100, "color": "cyan", "label": "NO-CODE EDITOR"},
+    {"t": 13.5, "d": 6.0, "x": 1170, "y": 337, "w": 350, "h": 500, "color": "gold", "label": "EDIT COMMISSION %"},
+    {"t": 19.5, "d": 6.5, "x": 1093, "y": 180, "w": 420, "h": 45, "color": "mint", "label": "EXCEL ROUND-TRIP"}
+  ],
+  "05_calc": [
+    {"t": 2.5,  "d": 5.0, "x": 758, "y": 355, "w": 82, "h": 460, "color": "gold", "label": "NSV BASE"},
+    {"t": 7.5,  "d": 5.0, "x": 852, "y": 355, "w": 158, "h": 460, "color": "cyan", "label": "COMMISSION"},
+    {"t": 12.5, "d": 5.0, "x": 1119, "y": 355, "w": 145, "h": 460, "color": "gold", "label": "DEDUCTIONS"},
+    {"t": 17.5, "d": 5.0, "x": 1263, "y": 355, "w": 165, "h": 460, "color": "mint", "label": "EXPECTED PAYOUT"}
+  ],
+  "06_recon": [
+    {"t": 2.0, "d": 5.5, "x": 1385, "y": 210, "w": 145, "h": 40, "color": "gold", "label": "RUN RECONCILIATION"},
+    {"t": 8.0, "d": 6.5, "x": 263, "y": 340, "w": 1237, "h": 120, "color": "cyan", "label": "RANKED BY IMPACT"}
+  ],
+  "07_recovery": [
+    {"t": 2.0,  "d": 4.5, "x": 263, "y": 248, "w": 225, "h": 85, "color": "gold", "label": "OPEN CASES"},
+    {"t": 6.0,  "d": 4.5, "x": 511, "y": 248, "w": 248, "h": 85, "color": "cyan", "label": "TOTAL RECOVERABLE"},
+    {"t": 10.0, "d": 4.5, "x": 777, "y": 248, "w": 225, "h": 85, "color": "mint", "label": "RECOVERED"},
+    {"t": 13.5, "d": 3.5, "x": 1313, "y": 205, "w": 156, "h": 40, "color": "gold", "label": "AUTO-CREATE CASES"}
+  ],
+  "08_ai": [
+    {"t": 2.0,  "d": 6.0, "x": 263, "y": 245, "w": 405, "h": 285, "color": "mint", "label": "HEALTH SCORE 83.3"},
+    {"t": 8.0,  "d": 7.0, "x": 694, "y": 245, "w": 820, "h": 175, "color": "cyan", "label": "MAPPING · LEAKAGE · MARGIN · RECOVERY"},
+    {"t": 15.0, "d": 6.0, "x": 1385, "y": 570, "w": 145, "h": 40, "color": "gold", "label": "GENERATE MORNING BRIEF"}
+  ]
+}
