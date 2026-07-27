@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, useCallback } from "react";
 import api from "@/lib/api";
+import { useAuth } from "@/context/AuthContext";
 
 const PortalContext = createContext(null);
 
@@ -7,6 +8,7 @@ const STORAGE_KEY = "fundle_portal";
 const DEFAULT_CODE = "all";
 
 export function PortalProvider({ children }) {
+  const { user } = useAuth();
   const [portals, setPortals] = useState([]);
   const [portalCode, setPortalCodeState] = useState(() => localStorage.getItem(STORAGE_KEY) || DEFAULT_CODE);
   const [loading, setLoading] = useState(false);
@@ -23,9 +25,10 @@ export function PortalProvider({ children }) {
     }
   }, []);
 
+  // Reload whenever auth user changes (login / logout). Covers "empty after login" bug.
   useEffect(() => {
-    if (localStorage.getItem("kazo_token")) load();
-  }, [load]);
+    if (user) load(); else setPortals([]);
+  }, [user, load]);
 
   const setPortalCode = useCallback((code) => {
     const val = (code || DEFAULT_CODE).toLowerCase();

@@ -66,6 +66,14 @@ async def get_portal(code: str):
     return doc
 
 
+@router.post("/portals/reset-defaults")
+async def reset_portals(user=Depends(require_role("admin"))):
+    await db.portals.delete_many({})
+    docs = [{**p, "created_at": _now_iso(), "updated_at": _now_iso()} for p in PORTALS_SEED]
+    await db.portals.insert_many(docs)
+    return {"reseeded": len(docs), "codes": [p["code"] for p in PORTALS_SEED]}
+
+
 @router.post("/portals/{code}")
 async def upsert_portal(code: str, payload: PortalUpsert, user=Depends(require_role("admin"))):
     code = code.lower().strip()
@@ -74,11 +82,3 @@ async def upsert_portal(code: str, payload: PortalUpsert, user=Depends(require_r
     r = await db.portals.update_one({"code": code}, {"$set": update, "$setOnInsert": {"code": code, "created_at": _now_iso()}}, upsert=True)
     doc = await db.portals.find_one({"code": code}, {"_id": 0})
     return {"upserted": bool(r.upserted_id), "portal": doc}
-
-
-@router.post("/portals/reset-defaults")
-async def reset_portals(user=Depends(require_role("admin"))):
-    await db.portals.delete_many({})
-    docs = [{**p, "created_at": _now_iso(), "updated_at": _now_iso()} for p in PORTALS_SEED]
-    await db.portals.insert_many(docs)
-    return {"reseeded": len(docs), "codes": [p["code"] for p in PORTALS_SEED]}

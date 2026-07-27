@@ -225,6 +225,33 @@ User: "go ahead and complete pending tasks" — deliver Phase 6 & Phase 7 from t
 - Multi-entity / multi-GST support
 - SSO / stricter tenant boundaries
 
+## Iteration 11 — Multi-Marketplace Portals (2026-07)
+User uploaded `All Portal_Commercial -AI.xlsx` with rate cards for **Amazon, AJIO (Direct Ship), Nykaa, Tata Cliq, Flipkart**. Instruction: "the marketplaces and their rules should be in the masters.. all reports should have marketplace filters.. upload should allow selection of which marketplace and ingest data.. pls build".
+
+### Delivered
+- **Backend**
+  - `data_portals_seed.py` — parsed rate cards for all 5 portals + Myntra (fee heads T1..T5, case matrix Delivered/DTO/RTO/InternalCancel × each fee head)
+  - `routers/portals.py` — GET /api/portals, GET /api/portals/{code}, POST /api/portals/{code} (admin), POST /api/portals/reset-defaults (admin)
+  - Bootstrap seeds portals collection on first run + back-fills `portal='myntra'` on 21,614 existing sales, uploads, calculations
+  - `POST /api/uploads/sales` and `POST /api/uploads/settlement` now accept `?portal=` query param
+  - `GET /api/uploads` and `GET /api/sales` accept `?portal=` filter (value 'all' or missing = no filter)
+- **Frontend**
+  - `context/PortalContext.jsx` — global portal state, reloads on auth-user change (login/logout)
+  - `components/PortalSwitcher.jsx` — dropdown in header (All Portals + 6 portals)
+  - `pages/Masters.jsx` — new **Portals** tab (first, default). Left list of 6 portals with LIVE / SOON badges + row counts. Right pane shows rate card (T1..T5 with Sale/Return/Unit) + case-type matrix (color-coded: Charged=green, Again Charged=orange, Reversal=blue, All null=grey). Editable label per fee head. Status dropdown. Reset-to-defaults button
+  - `pages/Uploads.jsx` — Ingest-portal button bar (Myntra default; others show SOON badge). Non-Myntra portals show a warning banner "parser is on our roadmap". Upload History now has a Portal column
+- **Data-testids** — portal-switcher, portal-switcher-select, portal-option-{code}, portals-master, portal-item-{code}, portal-status-{code}, ingest-portal-{code}, btn-reset-portals
+
+### Bugs found & fixed by testing agent (iter_10)
+- Route ordering: `/portals/reset-defaults` was shadowed by `/portals/{code}` → moved literal above catch-all (fixed)
+- `PortalContext` didn't reload after login → now watches AuthContext `user` state (fixed)
+- Tests: 13/15 pytest pass initially; both fixed and re-verified via curl (reset-defaults returns `{"reseeded": 6}`)
+
+### Known limitations (roadmap)
+- Non-Myntra upload parsers not yet implemented — Amazon / AJIO / Nykaa / Tata Cliq / Flipkart files can be uploaded and are tagged with the correct `portal`, but parsing may be partial until each portal's native parser is built. Warning banner is shown in the UI
+- Non-Myntra calculation engine not yet implemented — the calc router still uses Myntra-specific formulas
+- Category-level Flipkart commission rate card requires an external upload (per Excel notes)
+
 ## Test Credentials
 - **Admin (Kazo tenant)**: `admin@kazo.com` / `admin123`
 - **Admin (Fundle marketing/demo)**: `admin@fundle.ai` / `admin123`
