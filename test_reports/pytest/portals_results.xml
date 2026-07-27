@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="15" time="2.113" timestamp="2026-07-27T10:24:55.942897+00:00" hostname="agent-env-96c67881-f682-4a2e-8f8b-2ac5788d9e31"><testcase classname="tests.test_portals.TestPortalFiltering" name="test_sales_backfilled_with_myntra" time="0.600" /><testcase classname="tests.test_portals.TestPortalsCRUD" name="test_list_portals_returns_6" time="0.740" /><testcase classname="tests.test_portals.TestPortalFiltering" name="test_sales_filter_myntra" time="0.138" /><testcase classname="tests.test_portals.TestPortalFiltering" name="test_sales_filter_amazon_empty" time="0.170" /><testcase classname="tests.test_portals.TestPortalsCRUD" name="test_get_single_portal" time="0.124" /><testcase classname="tests.test_portals.TestPortalsCRUD" name="test_get_unknown_portal_404" time="0.096" /><testcase classname="tests.test_portals.TestPortalFiltering" name="test_sales_filter_all_is_no_filter" time="0.235" /><testcase classname="tests.test_portals.TestPortalsCRUD" name="test_upsert_portal_notes_persists" time="0.201" /><testcase classname="tests.test_portals.TestPortalFiltering" name="test_uploads_filter_myntra" time="0.167" /><testcase classname="tests.test_portals.TestPortalsCRUD" name="test_upsert_portal_requires_admin" time="0.098" /><testcase classname="tests.test_portals.TestPortalsCRUD" name="test_reset_defaults" time="0.096"><failure message="assert 422 == 200&#10; +  where 422 = &lt;Response [422]&gt;.status_code">backend/tests/test_portals.py:72: in test_reset_defaults
+    assert r.status_code == 200
+E   assert 422 == 200
+E    +  where 422 = &lt;Response [422]&gt;.status_code</failure></testcase><testcase classname="tests.test_portals.TestPortalFiltering" name="test_uploads_no_filter_returns_all" time="0.095" /><testcase classname="tests.test_portals.TestRegression" name="test_dashboard_overview_still_200" time="0.105" /><testcase classname="tests.test_portals.TestRegression" name="test_calculations_list_still_works" time="0.112" /><testcase classname="tests.test_portals.TestRegression" name="test_openapi_upload_accepts_portal_param" time="0.102"><failure message="requests.exceptions.JSONDecodeError: Expecting value: line 1 column 1 (char 0)">/root/.venv/lib/python3.11/site-packages/requests/models.py:1116: in json
+    return complexjson.loads(self.text, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/json/__init__.py:346: in loads
+    return _default_decoder.decode(s)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/json/decoder.py:337: in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/json/decoder.py:355: in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+E   json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+
+During handling of the above exception, another exception occurred:
+backend/tests/test_portals.py:149: in test_openapi_upload_accepts_portal_param
+    spec = r.json()
+           ^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/requests/models.py:1120: in json
+    raise RequestsJSONDecodeError(e.msg, e.doc, e.pos)
+E   requests.exceptions.JSONDecodeError: Expecting value: line 1 column 1 (char 0)</failure></testcase></testsuite></testsuites>

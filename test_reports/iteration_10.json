@@ -1,0 +1,87 @@
+{
+  "summary": "Tested multi-marketplace Portals feature (backend + frontend). Backend: 13/15 pytest tests pass. Portals seeded (6), CRUD works, sales/uploads filters by portal, existing sales back-filled with portal='myntra'. Frontend: Masters Portals tab, PortalSwitcher, Uploads portal picker & warning banner all render correctly with proper data-testids. Two critical bugs found: (1) POST /api/portals/reset-defaults returns 422 due to FastAPI route-ordering (caught by /portals/{code}); (2) PortalContext only fetches portals if token exists at PortalProvider mount — after login the switcher shows only 'All Portals' until user hits F5.",
+  "backend_issues": {
+    "critical": [
+      {
+        "endpoint": "POST /api/portals/reset-defaults",
+        "issue": "Returns 422 'Field required (body)'. Route is shadowed by POST /api/portals/{code} which is declared earlier in routers/portals.py. FastAPI matches path params before literals when the parametrized route is registered first — so 'reset-defaults' is treated as a portal code and the empty body fails PortalUpsert validation. Fix: move @router.post('/portals/reset-defaults') ABOVE @router.post('/portals/{code}') in /app/backend/routers/portals.py (lines 69-84).",
+        "priority": "HIGH"
+      }
+    ],
+    "minor": [
+      {
+        "endpoint": "GET /openapi.json",
+        "issue": "Not exposed on public preview URL (returns HTML index). Cannot verify OpenAPI portal param via public URL; source inspection of uploads_r.py confirms portal query param is present."
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {
+        "flow": "PortalSwitcher after login",
+        "issue": "PortalProvider.useEffect only calls load() if localStorage.getItem('kazo_token') is truthy AT MOUNT TIME. Since PortalProvider wraps <BrowserRouter/> and mounts BEFORE the user logs in, the token is null, load() is skipped, and no re-fetch is triggered after successful login. Result: PortalSwitcher shows only 'All Portals' option and Masters > Portals tab shows an empty list until the user manually refreshes the page (F5). Fix: reload portals whenever the auth token becomes available — e.g. listen to a login event, watch localStorage token, or reload from the login handler / an AuthContext.",
+        "affected_selectors": ["[data-testid=portal-switcher-select]", "[data-testid=portals-master]", "[data-testid^=portal-item-]"]
+      }
+    ],
+    "design_issues": [
+      {
+        "screen": "Overview dashboard",
+        "issues": ["Recharts width(-1)/height(-1) warnings still present (carryover from iter 9)"]
+      }
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_portals.py",
+    "/app/test_reports/pytest/portals_results.xml"
+  ],
+  "test_results": {
+    "backend": {
+      "list_portals_6": "PASS — 6 portals with myntra live + 5 coming_soon, fee_heads & case_matrix present",
+      "get_single_portal": "PASS",
+      "get_unknown_portal_404": "PASS",
+      "upsert_portal_persists": "PASS — POST /api/portals/ajio with notes marker persists via subsequent GET",
+      "upsert_requires_admin": "PASS — 401/403 without auth",
+      "reset_defaults": "FAIL — 422 (route-ordering bug, see critical)",
+      "sales_backfilled_myntra": "PASS — every row has portal=myntra",
+      "sales_filter_myntra": "PASS",
+      "sales_filter_amazon_empty": "PASS — 0 items / total 0",
+      "sales_filter_all_no_filter": "PASS — same total as no param",
+      "uploads_filter_myntra": "PASS",
+      "uploads_no_filter": "PASS",
+      "dashboard_overview_regression": "PASS — Myntra calcs unchanged",
+      "calculations_regression": "PASS",
+      "openapi_upload_portal_param": "SKIP-FAIL — /openapi.json not on preview URL (HTML), source verified manually"
+    },
+    "frontend": {
+      "portal_switcher_header_all_pages": "PASS after F5 — All 7 options (all + 6 portals) present; localStorage 'fundle_portal' persists selection",
+      "portal_switcher_after_login_only": "FAIL — only 'All Portals' option until page reload (integration bug above)",
+      "masters_portals_tab_default": "PASS after F5 — Portals tab is first & default; all 6 portal-item-* testids present; btn-reset-portals present",
+      "masters_amazon_detail": "PASS — clicking portal-item-amazon shows portal-status-amazon dropdown, T1/T2 rate card (Commission %, Logistic %), and full case-type matrix (Delivered/DTO/RTO/InternalCancel × T1/T2 with Charged/Reversal/Again Charged/All null cells)",
+      "uploads_ingest_picker": "PASS — 6 ingest-portal-* buttons render; Amazon click activates it, updates drop-zone label to 'AMAZON · SALES DATA', shows warning banner 'Amazon parser is on our roadmap...'",
+      "uploads_history_portal_column": "PASS — Portal column shows 'MYNTRA' badge for the existing 21,614-row sales upload"
+    }
+  },
+  "action_items": [
+    "HIGH: In /app/backend/routers/portals.py, move the @router.post('/portals/reset-defaults') handler above @router.post('/portals/{code}') so FastAPI matches the literal path first. Currently returns 422.",
+    "HIGH: In /app/frontend/src/context/PortalContext.jsx, portals are only fetched if token exists at mount. Add a mechanism to refetch after login — options: (a) call reload() from the login submit handler, (b) subscribe to a storage/auth event, (c) run the effect whenever the token in localStorage changes. Without this, the PortalSwitcher / Masters Portals tab is empty for the entire session until the user manually refreshes.",
+    "LOW: Consider serving /openapi.json publicly (or /docs) for API introspection."
+  ],
+  "critical_code_review_comments": [
+    "Route ordering pitfall: FastAPI matches routes in registration order — always declare literal paths (e.g. /reset-defaults, /export) BEFORE catch-all path params (/{code}). This class of bug will resurface for any future admin actions on portals; consider grouping them under a distinct sub-prefix like /portals/actions/reset.",
+    "PortalContext depends on a global localStorage token check inside a useEffect with only [load] deps — this is racy with the login flow. A first-class AuthContext that exposes the current user/token as React state would remove the need for storage polling and give PortalProvider a proper dependency to re-fetch on.",
+    "PortalUpsert accepts arbitrary fee_heads / case_matrix as List[Dict] with no schema validation — an admin PUT can corrupt a portal's rate card silently. Consider stricter Pydantic models.",
+    "GET /api/portals runs 2 count_documents() per portal (12 extra queries). For 6 portals it's fine; if this grows, batch via aggregation."
+  ],
+  "updated_files": ["/app/backend/tests/test_portals.py"],
+  "success_rate": {"backend": "87% (13/15)", "frontend": "83% (5/6 UI checks; PortalSwitcher fails until page reload)"},
+  "test_credentials": "admin@kazo.com / admin123 (from /app/memory/test_credentials.md)",
+  "seed_data_creation": "None — used seeded portals + existing 21,614 back-filled sales rows. Reset test was neutralised by the 422 failure (no accidental data loss).",
+  "retest_needed": true,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Test file /app/backend/tests/test_portals.py covers portals CRUD, portal filters on sales/uploads, and calc regression. After main agent fixes route-ordering + PortalContext token bootstrap, rerun test_portals.py (expect 15/15) and re-verify PortalSwitcher populates immediately after login without page reload. The two open bugs are the only blockers; everything else (rate-card table, case matrix, ingest picker, warning banner, portal filter query on APIs) is working end-to-end.",
+  "rca_of_the_issues": {
+    "reset_defaults_422": "FastAPI resolves routes in the order they are added to the router. In routers/portals.py, @router.post('/portals/{code}') is declared at L69-76, then @router.post('/portals/reset-defaults') at L79-84. A POST to /api/portals/reset-defaults therefore matches the {code} route first (with code='reset-defaults'), and because the request body is empty, Pydantic's PortalUpsert body validation raises 422 'Field required'. Reproduction: `curl -X POST $URL/api/portals/reset-defaults -H \"Authorization: Bearer <admin>\"` → 422. Mitigation: move the reset-defaults handler above the {code} handler.",
+    "portal_switcher_empty_until_reload": "PortalProvider's useEffect fires once on mount with `if (localStorage.getItem('kazo_token')) load();`. PortalProvider is mounted at App root before login, so token is null and load() is skipped. After login, no dependency changes (deps=[load] which is memoised) so the effect never re-runs. Reproduction: fresh incognito → /login → sign in → wait → open PortalSwitcher → only 'All Portals' shown → F5 → all 7 options appear. Mitigation: expose an authenticated flag from AuthContext (or watch a token state) and re-run load() when it flips true; or call reload() explicitly from the login success handler."
+  }
+}

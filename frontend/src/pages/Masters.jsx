@@ -5,6 +5,7 @@ import { Save, Plus, Trash2, Download, Upload, FileSpreadsheet } from "lucide-re
 import { fmtPct } from "@/lib/format";
 
 const TABS = [
+  { id: "portals", label: "Portals" },
   { id: "commission", label: "Commission Rules" },
   { id: "fixed", label: "Fixed Fee" },
   { id: "gt", label: "GT (Logistics)" },
@@ -16,7 +17,7 @@ const TABS = [
 ];
 
 export default function Masters() {
-  const [tab, setTab] = useState("commission");
+  const [tab, setTab] = useState("portals");
   const [importBusy, setImportBusy] = useState(false);
 
   const exportMasters = async () => {
@@ -103,6 +104,7 @@ export default function Masters() {
         ))}
       </div>
 
+      {tab === "portals" && <PortalsMaster />}
       {tab === "commission" && <CommissionRules />}
       {tab === "fixed" && <FixedFees />}
       {tab === "gt" && <GTCharges />}
@@ -113,6 +115,197 @@ export default function Masters() {
       {tab === "tax" && <TaxRatesConfig />}
     </div>
   );
+}
+
+function PortalsMaster() {
+  const [portals, setPortals] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selected, setSelected] = useState(null);
+  const [saving, setSaving] = useState(false);
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const { data } = await api.get("/portals");
+      setPortals(data);
+      if (!selected && data.length) setSelected(data[0].code);
+    } finally { setLoading(false); }
+  };
+  useEffect(() => { load(); /* eslint-disable-next-line */ }, []);
+
+  const active = portals.find((p) => p.code === selected);
+
+  const save = async (patch) => {
+    if (!active) return;
+    setSaving(true);
+    try {
+      await api.post(`/portals/${active.code}`, patch);
+      toast.success(`${active.name} saved`);
+      await load();
+    } catch (e) { toast.error(formatApiError(e.response?.data?.detail)); }
+    finally { setSaving(false); }
+  };
+
+  const resetDefaults = async () => {
+    if (!window.confirm("Reset all portals to factory defaults? Any custom edits will be lost.")) return;
+    try {
+      await api.post("/portals/reset-defaults");
+      toast.success("Portals reset to defaults");
+      await load();
+    } catch (e) { toast.error(formatApiError(e.response?.data?.detail)); }
+  };
+
+  if (loading) return <div className="text-xs mono text-slate-500 py-10">Loading portals…</div>;
+
+  return (
+    <div className="mt-4 grid gap-4 lg:grid-cols-[220px_1fr]" data-testid="portals-master">
+      {/* Portal list */}
+      <div className="border border-border rounded-sm overflow-hidden bg-white">
+        <div className="px-3 py-2 border-b border-border overline flex items-center justify-between">
+          <span>Marketplaces ({portals.length})</span>
+          <button onClick={resetDefaults} className="text-[10px] mono uppercase text-slate-500 hover:text-slate-900" data-testid="btn-reset-portals">Reset</button>
+        </div>
+        <div className="flex flex-col">
+          {portals.map((p) => (
+            <button
+              key={p.code}
+              onClick={() => setSelected(p.code)}
+              data-testid={`portal-item-${p.code}`}
+              className={`px-3 py-2.5 text-left border-l-2 text-sm ${selected === p.code ? "border-primary bg-slate-50 font-medium" : "border-transparent hover:bg-slate-50"}`}
+            >
+              <div className="flex items-center gap-2">
+                <span className="text-sm truncate flex-1">{p.name}</span>
+                {p.status === "live" ? (
+                  <span className="text-[9px] mono uppercase bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-sm px-1.5 py-px">LIVE</span>
+                ) : (
+                  <span className="text-[9px] mono uppercase bg-amber-50 text-amber-700 border border-amber-200 rounded-sm px-1.5 py-px">SOON</span>
+                )}
+              </div>
+              <div className="overline mt-1">{p.sales_count?.toLocaleString?.("en-IN") || 0} rows</div>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Portal detail */}
+      {active && (
+        <div className="space-y-4 min-w-0">
+          <div className="border border-border rounded-sm bg-white p-4">
+            <div className="flex items-start justify-between gap-4 flex-wrap">
+              <div>
+                <div className="overline">{active.code.toUpperCase()}</div>
+                <h2 className="text-xl font-semibold tracking-tight mt-1">{active.name}</h2>
+                <p className="text-sm text-slate-500 mt-1 max-w-2xl">{active.notes}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <select
+                  value={active.status}
+                  onChange={(e) => save({ status: e.target.value })}
+                  className="text-xs mono uppercase px-2 py-1.5 border border-border rounded-sm bg-white"
+                  data-testid={`portal-status-${active.code}`}
+                >
+                  <option value="live">Live</option>
+                  <option value="coming_soon">Coming Soon</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Rate card / fee heads */}
+          <div className="border border-border rounded-sm bg-white overflow-hidden">
+            <div className="px-4 py-2.5 border-b border-border flex items-center justify-between">
+              <div className="overline">Fee heads · Rate card</div>
+              <div className="text-[10px] mono text-slate-500 uppercase tracking-widest">T-1 … T-5</div>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead className="bg-slate-50 text-slate-500 mono uppercase">
+                  <tr>
+                    <th className="text-left px-3 py-2 w-16">Key</th>
+                    <th className="text-left px-3 py-2">Label</th>
+                    <th className="text-right px-3 py-2 w-32">Sale</th>
+                    <th className="text-right px-3 py-2 w-32">Return</th>
+                    <th className="text-left px-3 py-2 w-24">Unit</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(active.fee_heads || []).map((f, i) => (
+                    <tr key={i} className="border-t border-border hover:bg-slate-50/50">
+                      <td className="px-3 py-2 mono font-semibold">{f.key}</td>
+                      <td className="px-3 py-2">
+                        <input
+                          defaultValue={f.label}
+                          onBlur={(e) => {
+                            if (e.target.value === f.label) return;
+                            const next = [...active.fee_heads];
+                            next[i] = { ...f, label: e.target.value };
+                            save({ fee_heads: next });
+                          }}
+                          className="w-full bg-transparent border-b border-transparent focus:border-slate-400 outline-none py-0.5"
+                          data-testid={`fh-${active.code}-${f.key}-label`}
+                        />
+                      </td>
+                      <td className="px-3 py-2 text-right mono">{fmtValue(f.sale, f.unit)}</td>
+                      <td className="px-3 py-2 text-right mono">{fmtValue(f.return, f.unit)}</td>
+                      <td className="px-3 py-2 mono text-slate-500">{f.unit}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Case matrix */}
+          <div className="border border-border rounded-sm bg-white overflow-hidden">
+            <div className="px-4 py-2.5 border-b border-border">
+              <div className="overline">Case-type × Fee behaviour</div>
+              <div className="text-xs text-slate-500 mt-1">How each fee head behaves across order lifecycles.</div>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead className="bg-slate-50 text-slate-500 mono uppercase">
+                  <tr>
+                    <th className="text-left px-3 py-2 w-40">Case Type</th>
+                    {(active.fee_heads || []).map((f) => (
+                      <th key={f.key} className="text-left px-3 py-2">{f.key}<span className="text-slate-400 normal-case ml-2 font-normal">{f.label}</span></th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {["Delivered", "DTO", "RTO", "InternalCancel"].map((ct) => (
+                    <tr key={ct} className="border-t border-border">
+                      <td className="px-3 py-2 mono font-medium">{ct}</td>
+                      {(active.fee_heads || []).map((f) => {
+                        const v = active.case_matrix?.[ct]?.[f.key] || "-";
+                        const tone =
+                          v.includes("Charged") ? "text-emerald-700" :
+                          v.includes("Again")   ? "text-orange-700" :
+                          v.includes("Reversal") ? "text-blue-700" :
+                          v.includes("null") ? "text-slate-400" : "text-slate-700";
+                        return <td key={f.key} className={`px-3 py-2 mono ${tone}`}>{v}</td>;
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div className="text-[11px] mono text-slate-400 uppercase tracking-widest">
+            {saving ? "Saving…" : `${active.updated_at ? "Updated " + new Date(active.updated_at).toLocaleString("en-IN") : ""}`}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function fmtValue(v, unit) {
+  if (v === null || v === undefined || v === "-") return "-";
+  if (typeof v === "string") return v;
+  if (unit === "pct") return `${(v * 100).toFixed(2)}%`;
+  if (unit === "flat_inr") return `₹${v}`;
+  return String(v);
 }
 
 function SettlementConfig() {

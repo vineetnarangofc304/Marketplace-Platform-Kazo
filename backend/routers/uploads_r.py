@@ -219,7 +219,8 @@ def _parse_sales_xlsx(content: bytes) -> Dict[str, Any]:
 
 
 @router.post("/uploads/sales")
-async def upload_sales(file: UploadFile = File(...)):
+async def upload_sales(file: UploadFile = File(...), portal: str = Query("myntra")):
+    portal = (portal or "myntra").strip().lower()
     if not file.filename.lower().endswith((".xlsx", ".xls")):
         raise HTTPException(400, "Only .xlsx files are supported")
     content = await file.read()
@@ -238,6 +239,7 @@ async def upload_sales(file: UploadFile = File(...)):
                 "id": _uid(), "upload_id": upload_id,
                 "uploaded_at": _iso(),
                 "source_file": file.filename,
+                "portal": portal,
             })
             if d.get("report_month"):
                 months[d["report_month"]] = months.get(d["report_month"], 0) + 1
@@ -252,6 +254,7 @@ async def upload_sales(file: UploadFile = File(...)):
         "rejections_sample": parsed["rejected"][:50],
         "months": months,
         "status": "processed",
+        "portal": portal,
     }
     await db.uploads.insert_one({**upload_doc})
 
@@ -359,7 +362,8 @@ def _parse_settlement_xlsx(content: bytes) -> Dict[str, Any]:
 
 
 @router.post("/uploads/settlement")
-async def upload_settlement(file: UploadFile = File(...)):
+async def upload_settlement(file: UploadFile = File(...), portal: str = Query("myntra")):
+    portal = (portal or "myntra").strip().lower()
     if not file.filename.lower().endswith((".xlsx", ".xls")):
         raise HTTPException(400, "Only .xlsx files are supported")
     content = await file.read()
@@ -375,6 +379,7 @@ async def upload_settlement(file: UploadFile = File(...)):
                 "id": _uid(), "upload_id": upload_id,
                 "uploaded_at": _iso(),
                 "source_file": file.filename,
+                "portal": portal,
             })
             docs.append(d)
         for i in range(0, len(docs), 1000):
@@ -387,6 +392,7 @@ async def upload_settlement(file: UploadFile = File(...)):
         "rejected_count": len(parsed["rejected"]),
         "rejections_sample": parsed["rejected"][:50],
         "status": "processed",
+        "portal": portal,
     }
     await db.uploads.insert_one(upload_doc)
 
@@ -404,10 +410,12 @@ async def upload_settlement(file: UploadFile = File(...)):
 
 
 @router.get("/uploads")
-async def list_uploads(kind: Optional[str] = Query(None)):
+async def list_uploads(kind: Optional[str] = Query(None), portal: Optional[str] = Query(None)):
     q = {}
     if kind:
         q["type"] = kind
+    if portal and portal.lower() != "all":
+        q["portal"] = portal.lower()
     docs = await db.uploads.find(q, {"_id": 0}).sort("uploaded_at", -1).to_list(200)
     return docs
 
@@ -435,6 +443,7 @@ async def list_sales(
     report_month: Optional[str] = None,
     period_type: Optional[str] = None,
     period_value: Optional[str] = None,
+    portal: Optional[str] = None,
     search: Optional[str] = None,
     zone: Optional[str] = None,
     category: Optional[str] = None,
@@ -453,6 +462,8 @@ async def list_sales(
         q.update(_mq(period_type, period_value))
     elif report_month:
         q["report_month"] = report_month
+    if portal and portal.lower() != "all":
+        q["portal"] = portal.lower()
     if upload_id:
         q["upload_id"] = upload_id
     if zone:

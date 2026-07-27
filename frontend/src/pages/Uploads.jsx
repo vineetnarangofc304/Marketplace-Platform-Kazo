@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import api, { formatApiError } from "@/lib/api";
-import { UploadCloud, FileSpreadsheet, Trash2, PlayCircle } from "lucide-react";
+import { UploadCloud, FileSpreadsheet, Trash2, PlayCircle, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { fmtInt } from "@/lib/format";
+import { usePortal } from "@/context/PortalContext";
 
-function UploadDrop({ kind, label, hint, onUploaded }) {
+function UploadDrop({ kind, label, hint, onUploaded, portal, portalName, isMyntraCompatible }) {
   const [drag, setDrag] = useState(false);
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState(null);
@@ -12,12 +13,19 @@ function UploadDrop({ kind, label, hint, onUploaded }) {
 
   const doUpload = async (file) => {
     if (!file) return;
+    if (!portal) { toast.error("Please pick a marketplace first"); return; }
+    if (!isMyntraCompatible &&
+        !window.confirm(
+          `${portalName} uses a different file schema from Myntra.\n\n` +
+          `The file will be stored with portal="${portal}", but rows may be rejected or parsed incorrectly ` +
+          `until the ${portalName}-specific parser is enabled in an upcoming release.\n\nProceed anyway?`
+        )) return;
     setBusy(true);
     setResult(null);
     try {
       const fd = new FormData();
       fd.append("file", file);
-      const { data } = await api.post(`/uploads/${kind}`, fd, {
+      const { data } = await api.post(`/uploads/${kind}?portal=${portal}`, fd, {
         headers: { "Content-Type": "multipart/form-data" },
       });
       setResult(data);
@@ -43,9 +51,15 @@ function UploadDrop({ kind, label, hint, onUploaded }) {
       >
         <UploadCloud size={28} className="mx-auto text-slate-400" strokeWidth={1.2} />
         <div className="mt-3 text-sm text-slate-700">{busy ? "Processing…" : "Drop .xlsx here or click to select"}</div>
-        <div className="overline mt-1">Myntra {label}</div>
+        <div className="overline mt-1">{portalName || "—"}  ·  {label}</div>
         <input data-testid={`upload-input-${kind}`} ref={inputRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={(e) => doUpload(e.target.files?.[0])} />
       </div>
+      {!isMyntraCompatible && portal && (
+        <div className="mt-3 flex items-start gap-2 text-[11px] mono bg-amber-50 text-amber-800 border border-amber-200 rounded-sm px-3 py-2">
+          <AlertTriangle size={12} className="mt-px shrink-0" />
+          <span><strong>{portalName}</strong> parser is on our roadmap. Uploads will be stored & tagged; parsing may be partial until we ship the native parser for this portal.</span>
+        </div>
+      )}
       {result ? (
         <div className="mt-3 text-xs mono border-t border-border pt-3 space-y-0.5">
           <div>File: <span className="text-slate-500">{result.filename}</span></div>
@@ -65,14 +79,22 @@ function UploadDrop({ kind, label, hint, onUploaded }) {
 }
 
 export default function Uploads() {
+  const { portals, portalCode, setPortalCode, portalParam } = usePortal();
   const [uploads, setUploads] = useState([]);
   const [running, setRunning] = useState(false);
+  // Portal ingest-selector — separate from global filter. Defaults to global unless "all".
+  const [ingestPortal, setIngestPortal] = useState(portalCode === "all" ? "myntra" : portalCode);
+  useEffect(() => { if (portalCode !== "all") setIngestPortal(portalCode); }, [portalCode]);
+
+  const ingestPortalObj = portals.find((p) => p.code === ingestPortal);
+  const isMyntraCompatible = ingestPortal === "myntra";
 
   const refresh = async () => {
-    const { data } = await api.get("/uploads");
+    const q = portalParam ? `?portal=${portalParam}` : "";
+    const { data } = await api.get(`/uploads${q}`);
     setUploads(data);
   };
-  useEffect(() => { refresh(); }, []);
+  useEffect(() => { refresh(); /* eslint-disable-next-line */ }, [portalParam]);
 
   const deleteUpload = async (id) => {
     if (!window.confirm("Delete this upload and its data?")) return;
@@ -99,24 +121,64 @@ export default function Uploads() {
         <div className="overline">Ingestion</div>
         <h1 className="text-2xl font-semibold tracking-tight mt-1 text-slate-900">Upload Marketplace Reports</h1>
         <p className="text-sm text-slate-500 mt-1">
-          Every upload is auto-tagged with its report month (from the Month / Posting Date columns). Repeat monthly.
+          Every upload is tagged with the selected marketplace + month. Repeat monthly per portal.
         </p>
       </div>
 
+      {/* Portal picker for ingestion */}
+      <div className="border border-border bg-white rounded-sm p-4">
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <div>
+            <div className="overline">Ingest for marketplace</div>
+            <div className="text-xs text-slate-500 mt-1">Pick the marketplace this file belongs to before dropping.</div>
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            {portals.map((p) => (
+              <button
+                key={p.code}
+                onClick={() => { setIngestPortal(p.code); if (portalCode !== "all") setPortalCode(p.code); }}
+                data-testid={`ingest-portal-${p.code}`}
+                className={`px-3 py-1.5 text-xs mono uppercase tracking-wider border rounded-sm ${
+                  ingestPortal === p.code
+                    ? "border-slate-900 bg-slate-900 text-white"
+                    : "border-slate-200 text-slate-600 hover:border-slate-400"
+                }`}
+              >
+                {p.name}
+                {p.status === "coming_soon" && <span className="ml-1.5 text-[9px] opacity-60">SOON</span>}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <UploadDrop kind="sales" label="Sales Data" hint="Myntra Raw Online Sale sheet — one row per order-item" onUploaded={refresh} />
-        <UploadDrop kind="settlement" label="Settlement / Commission Report" hint="Myntra payout / settlement report for the same month" onUploaded={refresh} />
+        <UploadDrop
+          kind="sales" label="Sales Data"
+          hint="Raw sales report from the marketplace — one row per order-item."
+          portal={ingestPortal} portalName={ingestPortalObj?.name}
+          isMyntraCompatible={isMyntraCompatible}
+          onUploaded={refresh}
+        />
+        <UploadDrop
+          kind="settlement" label="Settlement / Commission Report"
+          hint="Payout / settlement statement for the same month."
+          portal={ingestPortal} portalName={ingestPortalObj?.name}
+          isMyntraCompatible={isMyntraCompatible}
+          onUploaded={refresh}
+        />
       </div>
 
       <div className="border border-border bg-white rounded-sm">
         <div className="flex items-center justify-between p-4 border-b border-border">
-          <div className="overline">Upload History</div>
+          <div className="overline">Upload History{portalParam ? ` · ${ingestPortalObj?.name || portalParam}` : " · All Portals"}</div>
           <div className="text-xs mono text-slate-500">{uploads.length} uploads</div>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="grid-header">
               <tr>
+                <th className="grid-cell text-left">Portal</th>
                 <th className="grid-cell text-left">Type</th>
                 <th className="grid-cell text-left">Filename</th>
                 <th className="grid-cell text-left">Months</th>
@@ -128,18 +190,19 @@ export default function Uploads() {
             </thead>
             <tbody>
               {uploads.length === 0 ? (
-                <tr><td colSpan={7} className="grid-cell text-center text-slate-400 py-8">No uploads yet</td></tr>
+                <tr><td colSpan={8} className="grid-cell text-center text-slate-400 py-8">No uploads yet</td></tr>
               ) : uploads.map((u) => (
                 <tr key={u.id} className="grid-row" data-testid={`upload-row-${u.id}`}>
+                  <td className="grid-cell mono text-xs uppercase">{u.portal || "myntra"}</td>
                   <td className="grid-cell"><span className="inline-flex items-center gap-1"><FileSpreadsheet size={12} /> {u.type}</span></td>
-                  <td className="grid-cell truncate max-w-[280px]">{u.filename}</td>
+                  <td className="grid-cell truncate max-w-[240px]">{u.filename}</td>
                   <td className="grid-cell text-xs">{u.months ? Object.keys(u.months).join(", ") : "—"}</td>
                   <td className="grid-cell text-xs text-slate-500">{new Date(u.uploaded_at).toLocaleString()}</td>
                   <td className="grid-cell text-right fin-pos">{fmtInt(u.accepted_count)}</td>
                   <td className="grid-cell text-right fin-neg">{fmtInt(u.rejected_count)}</td>
                   <td className="grid-cell text-right">
                     <div className="inline-flex items-center gap-2">
-                      {u.type === "sales" ? (
+                      {u.type === "sales" && (u.portal || "myntra") === "myntra" ? (
                         <button disabled={running} onClick={() => runCalcs(u.id)} data-testid={`btn-run-calc-${u.id}`} className="btn text-xs">
                           <PlayCircle size={12} /> Run Calc
                         </button>

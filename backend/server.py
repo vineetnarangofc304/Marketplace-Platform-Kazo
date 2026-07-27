@@ -181,7 +181,7 @@ async def list_users(user=Depends(require_role("admin"))):
 
 
 # Include auth router now; other routers imported below
-from routers import masters, uploads_r, calculations, reconciliation, dashboards, reports, recovery, insights  # noqa: E402
+from routers import masters, uploads_r, calculations, reconciliation, dashboards, reports, recovery, insights, portals  # noqa: E402
 
 app.include_router(api)
 app.include_router(masters.router, prefix="/api", dependencies=[Depends(current_user)])
@@ -192,6 +192,7 @@ app.include_router(dashboards.router, prefix="/api", dependencies=[Depends(curre
 app.include_router(reports.router, prefix="/api", dependencies=[Depends(current_user)])
 app.include_router(recovery.router, prefix="/api", dependencies=[Depends(current_user)])
 app.include_router(insights.router, prefix="/api", dependencies=[Depends(current_user)])
+app.include_router(portals.router, prefix="/api", dependencies=[Depends(current_user)])
 
 # CORS — when allow_credentials=True, the spec forbids allow_origins=["*"].
 # We honour the CORS_ORIGINS env var when it's an explicit list, but if it's "*"
@@ -333,6 +334,8 @@ async def _bootstrap():
 
         # Seed masters (default Myntra commission structure) if empty
         await masters.seed_defaults(db)
+        # Seed portals catalog (multi-marketplace)
+        await portals.bootstrap_portals()
         logger.info("Bootstrap complete")
     except Exception as e:
         # Never block app readiness on bootstrap errors — log and keep serving.

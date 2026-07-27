@@ -1,5 +1,7 @@
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
+import PortalSwitcher from "@/components/PortalSwitcher";
+import { usePortal } from "@/context/PortalContext";
 import {
   LayoutDashboard, Upload, Table2, Calculator, GitCompareArrows,
   AlertTriangle, Settings2, LogOut, FileText, Wallet, Sparkles,
@@ -20,6 +22,7 @@ const nav = [
 
 export default function Layout({ children }) {
   const { user, logout } = useAuth();
+  const { active } = usePortal();
   const nav_ = useNavigate();
   const loc = useLocation();
 
@@ -82,12 +85,15 @@ export default function Layout({ children }) {
       </aside>
 
       <main className="flex-1 min-w-0 flex flex-col">
-        <header className="h-12 border-b border-border bg-white flex items-center justify-between px-6">
-          <div className="text-xs uppercase tracking-widest text-slate-500 mono">
+        <header className="h-14 border-b border-border bg-white flex items-center justify-between px-6 gap-4">
+          <div className="text-xs uppercase tracking-widest text-slate-500 mono truncate">
             {loc.pathname === "/" ? "Overview / Command Center" : loc.pathname.slice(1).replace(/\//g, " / ")}
           </div>
-          <div className="text-xs mono text-slate-500">
-            Myntra · Fundle Finance OS · {new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
+          <div className="flex items-center gap-4">
+            <PortalSwitcher />
+            <div className="text-[10px] mono text-slate-400 uppercase tracking-widest hidden lg:block">
+              {(active?.name) || "All Portals"} · {new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
+            </div>
           </div>
         </header>
         <div className="flex-1 overflow-auto">{children}</div>

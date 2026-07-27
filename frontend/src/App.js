@@ -1,6 +1,7 @@
 import "@/App.css";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/context/AuthContext";
+import { PortalProvider } from "@/context/PortalContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Layout from "@/components/Layout";
 import Login from "@/pages/Login";
@@ -28,28 +29,30 @@ function App() {
   return (
     <div className="App">
       <AuthProvider>
-        <BrowserRouter>
-          <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route path="/" element={<Shell><Overview /></Shell>} />
-            <Route path="/reports" element={<Shell><Reports /></Shell>} />
-            <Route path="/uploads" element={<Shell><Uploads /></Shell>} />
-            <Route path="/sales" element={<Shell><SalesLedger /></Shell>} />
-            <Route path="/calculations" element={<Shell><Calculations /></Shell>} />
-            <Route path="/reconciliation" element={<Shell><Reconciliation /></Shell>} />
-            <Route path="/discrepancies" element={<Shell><Discrepancies /></Shell>} />
-            <Route path="/recovery" element={<Shell><Recovery /></Shell>} />
-            <Route path="/insights" element={<Shell><Insights /></Shell>} />
-            <Route path="/masters" element={<Shell><Masters /></Shell>} />
-          </Routes>
-        </BrowserRouter>
-        <Toaster
-          theme="light"
-          position="top-right"
-          toastOptions={{
-            style: { background: "#FFFFFF", border: "1px solid #E1E4E8", fontFamily: "JetBrains Mono", fontSize: 12, borderRadius: 2, color: "#111827" },
-          }}
-        />
+        <PortalProvider>
+          <BrowserRouter>
+            <Routes>
+              <Route path="/login" element={<Login />} />
+              <Route path="/" element={<Shell><Overview /></Shell>} />
+              <Route path="/reports" element={<Shell><Reports /></Shell>} />
+              <Route path="/uploads" element={<Shell><Uploads /></Shell>} />
+              <Route path="/sales" element={<Shell><SalesLedger /></Shell>} />
+              <Route path="/calculations" element={<Shell><Calculations /></Shell>} />
+              <Route path="/reconciliation" element={<Shell><Reconciliation /></Shell>} />
+              <Route path="/discrepancies" element={<Shell><Discrepancies /></Shell>} />
+              <Route path="/recovery" element={<Shell><Recovery /></Shell>} />
+              <Route path="/insights" element={<Shell><Insights /></Shell>} />
+              <Route path="/masters" element={<Shell><Masters /></Shell>} />
+            </Routes>
+          </BrowserRouter>
+          <Toaster
+            theme="light"
+            position="top-right"
+            toastOptions={{
+              style: { background: "#FFFFFF", border: "1px solid #E1E4E8", fontFamily: "JetBrains Mono", fontSize: 12, borderRadius: 2, color: "#111827" },
+            }}
+          />
+        </PortalProvider>
       </AuthProvider>
     </div>
   );
