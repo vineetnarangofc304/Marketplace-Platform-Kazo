@@ -5,9 +5,11 @@ import { fmtCurrency, fmtInt } from "@/lib/format";
 import { Search, X, Filter } from "lucide-react";
 import PeriodSelector from "@/components/PeriodSelector";
 import { SortableTh, nextDir } from "@/components/SortableTable";
+import { usePortal } from "@/context/PortalContext";
 
 export default function SalesLedger() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const { portalParam } = usePortal();
   const [period, setPeriod] = useState({
     period_type: searchParams.get("period_type") || "month",
     period_value: searchParams.get("period_value") || "",
@@ -28,6 +30,7 @@ export default function SalesLedger() {
   const load = async () => {
     const params = {
       period_type: period.period_type, period_value: period.period_value || undefined,
+      portal: portalParam,
       search: search || undefined,
       sub_category: filters.sub_category || undefined,
       zone: filters.zone || undefined,
@@ -40,7 +43,7 @@ export default function SalesLedger() {
     setItems(data.items);
     setTotal(data.total);
   };
-  useEffect(() => { load(); /* eslint-disable-next-line */ }, [period.period_type, period.period_value, filters.sub_category, filters.zone, filters.order_status, filters.txn_type, sort.by, sort.dir]);
+  useEffect(() => { load(); /* eslint-disable-next-line */ }, [period.period_type, period.period_value, portalParam, filters.sub_category, filters.zone, filters.order_status, filters.txn_type, sort.by, sort.dir]);
 
   // Debounced search: fire 400ms after user stops typing (also on manual Enter).
   useEffect(() => {

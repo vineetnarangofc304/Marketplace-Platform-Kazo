@@ -79,30 +79,40 @@ def _to_month(v) -> Optional[str]:
 # Canonical target fields + a list of possible source header variants.
 # Match is case-insensitive and whitespace-insensitive.
 SALES_HEADER_ALIASES: Dict[str, List[str]] = {
-    "order_date": ["Order Date", "OrderDate", "Order_Date"],
-    "txn_type": ["Txn Type", "Transaction Type", "Type"],
+    "order_date": ["Order Date", "OrderDate", "Order_Date", "purchase-date", "Purchase Date"],
+    "txn_type": ["Txn Type", "Transaction Type", "Type", "transaction-type"],
     "brand": ["Brand"],
     "month": ["Month", "Report Month"],
-    "posting_date": ["Posting Date", "PostingDate"],
-    "order_status": ["Order Status", "Status"],
-    "portal_name": ["Portal Name", "Portal", "Marketplace"],
-    "sales_invoice_no": ["Sales Invoice No", "Invoice No", "Invoice Number"],
-    "online_order_id": ["Online Order Id", "Order Id", "Order ID", "OrderId"],
-    "sku": ["Sku", "SKU", "sku"],
-    "zone": ["Shipped To _ZONE", "Zone", "Shipped Zone", "Shipping Zone"],
-    "qty": ["QTY-Final", "Qty", "Quantity", "Order Qty"],
-    "mrp": ["MRP", "MRP/Item"],
-    "total_mrp": ["Total MRP", "MRP Total"],
-    "customer_discount": ["Cust. Discount", "Customer Discount", "Discount"],
-    "nsv_val": ["NSV VAL.", "NSV Value", "NSV Val", "NSV"],
+    "posting_date": ["Posting Date", "PostingDate", "posted-date-time"],
+    "order_status": ["Order Status", "Status", "shipment-status", "order-status"],
+    "portal_name": ["Portal Name", "Portal", "Marketplace", "marketplace-name"],
+    "sales_invoice_no": ["Sales Invoice No", "Invoice No", "Invoice Number", "invoice-number"],
+    "online_order_id": ["Online Order Id", "Order Id", "Order ID", "OrderId",
+                         "amazon-order-id", "Amazon Order ID", "amazon_order_id",
+                         "Order Number", "Sub Order Number", "sub-order-id"],
+    "sku": ["Sku", "SKU", "sku", "ASIN", "seller-sku", "item-sku",
+             "Item Code", "Product SKU", "Style Id"],
+    "zone": ["Shipped To _ZONE", "Zone", "Shipped Zone", "Shipping Zone",
+              "ship-state", "ship-city", "State", "Buyer State"],
+    "qty": ["QTY-Final", "Qty", "Quantity", "Order Qty", "quantity", "quantity-purchased", "quantity_purchased"],
+    "mrp": ["MRP", "MRP/Item", "item-price", "Item Price"],
+    "total_mrp": ["Total MRP", "MRP Total", "product_sales", "Product Sales"],
+    "customer_discount": ["Cust. Discount", "Customer Discount", "Discount",
+                           "item-promotion-discount", "promotion-discount"],
+    "nsv_val": ["NSV VAL.", "NSV Value", "NSV Val", "NSV",
+                 "Net Amount", "Net Payable", "Total Amount",
+                 "product_sales", "Product Sales", "principal", "Principal Amount"],
     "nsv_per_unit": ["NSV/Unit", "NSV per Unit"],
-    "main_category": ["Main Category", "Master Category"],
-    "category": ["Category"],
-    "sub_category": ["Sub Category_ GTA Charges", "Sub Category", "Sub-Category", "Subcategory"],
-    "actual_gt_amount": ["GT Amount (Inc. gst)", "GT Amount", "GT Charges (Inc GST)"],
-    "actual_fixed_fee": ["Fixed Fee-New", "Fixed Fee"],
+    "main_category": ["Main Category", "Master Category", "Product Type", "product-type"],
+    "category": ["Category", "Product Category", "item-category"],
+    "sub_category": ["Sub Category_ GTA Charges", "Sub Category", "Sub-Category", "Subcategory",
+                      "product-sub-category", "Product Sub-Category"],
+    "actual_gt_amount": ["GT Amount (Inc. gst)", "GT Amount", "GT Charges (Inc GST)",
+                          "shipping-fee", "shipping_fee", "logistics-fee"],
+    "actual_fixed_fee": ["Fixed Fee-New", "Fixed Fee", "fba-fees", "fixed-fee"],
     "actual_return_fee": ["Return Fee-New", "Return Fee"],
-    "actual_commission_value": ["Commission Value.-New", "Commission Value", "Commission"],
+    "actual_commission_value": ["Commission Value.-New", "Commission Value", "Commission",
+                                  "selling-fees", "referral-fee", "Referral Fee", "commission-fee"],
 }
 
 
@@ -159,8 +169,8 @@ def _parse_sales_xlsx(content: bytes) -> Dict[str, Any]:
         if canonical and canonical not in col_idx:
             col_idx[canonical] = i
 
-    # Require the minimum set of columns
-    required = {"online_order_id", "sku", "nsv_val", "sub_category"}
+    # Require the minimum set of columns. sub_category is optional for non-Myntra portals.
+    required = {"online_order_id", "sku", "nsv_val"}
     missing = required - set(col_idx.keys())
     if missing:
         raise HTTPException(400, f"Missing required columns: {sorted(missing)}. Found: {sorted(col_idx.keys())}")

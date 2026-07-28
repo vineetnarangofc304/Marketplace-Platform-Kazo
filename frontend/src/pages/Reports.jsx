@@ -6,12 +6,14 @@ import { toast } from "sonner";
 import { Download, RefreshCw } from "lucide-react";
 import StatChip from "@/components/StatChip";
 import PeriodSelector from "@/components/PeriodSelector";
+import { usePortal } from "@/context/PortalContext";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell, LineChart, Line, Legend } from "recharts";
 
 const SEV_COLORS = { critical: "#DC2626", high: "#EA580C", medium: "#CA8A04", low: "#0284C7" };
 
 export default function Reports() {
   const nav = useNavigate();
+  const { portalParam } = usePortal();
   const [period, setPeriod] = useState({ period_type: "month", period_value: "" });
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -20,11 +22,11 @@ export default function Reports() {
   useEffect(() => {
     if (!period.period_type || (period.period_type !== "all" && !period.period_value)) return;
     setLoading(true);
-    api.get("/reports/period", { params: { period_type: period.period_type, period_value: period.period_value || undefined } })
+    api.get("/reports/period", { params: { period_type: period.period_type, period_value: period.period_value || undefined, portal: portalParam } })
       .then((r) => setReport(r.data))
       .catch((e) => toast.error(e.response?.data?.detail || e.message))
       .finally(() => setLoading(false));
-  }, [period.period_type, period.period_value]);
+  }, [period.period_type, period.period_value, portalParam]);
 
   const download = async () => {
     if (period.period_type !== "month" || !period.period_value) {

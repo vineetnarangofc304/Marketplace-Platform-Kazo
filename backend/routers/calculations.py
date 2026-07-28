@@ -402,17 +402,129 @@ def compute_expected(sale: Dict[str, Any], masters: Dict[str, Any]) -> Dict[str,
 class RunCalcIn(BaseModel):
     upload_id: Optional[str] = None
     report_month: Optional[str] = None
+    portal: Optional[str] = None
     recalculate: bool = False
+
+
+# --------------------------------------------------------------------------
+# Generic portal calc — flat-rate T1..T5 fee heads from the portals catalog.
+# Used for all portals EXCEPT myntra (which has the detailed rule engine above).
+# --------------------------------------------------------------------------
+_ORDER_TYPE_TO_CASE = {
+    "sales":           "Delivered",
+    "return":          "Delivered",     # negative NSV row → treat as reversal case (Delivered w/ negative sign already)
+    "return_dto":      "DTO",
+    "rto":             "RTO",
+    "internal_cancel": "InternalCancel",
+}
+
+
+def _compute_expected_portal(sale: Dict[str, Any], portal_doc: Dict[str, Any]) -> Dict[str, Any]:
+    """Portal-agnostic calc using T1..T5 fee heads.
+
+    For each fee head:
+      * sale/return leg → sale['nsv_val'] × pct (or flat_inr / etc.)
+      * case_matrix rewrites: 'All null' → 0, 'Again Charged' → same sign as sale-leg,
+                              'Reversal' → flip sign, 'No reversal' → 0
+    """
+    nsv_val = float(sale.get("nsv_val") or 0)
+    order_type = _classify_order(sale.get("order_status"), sale.get("txn_type"))
+    case = _ORDER_TYPE_TO_CASE.get(order_type, "Delivered")
+
+    heads = portal_doc.get("fee_heads") or []
+    matrix = portal_doc.get("case_matrix") or {}
+    reasons: List[str] = []
+
+    total_charges = 0.0
+    charges: List[Dict[str, Any]] = []
+
+    is_return = order_type in ("return", "return_dto")
+
+    for h in heads:
+        key = h.get("key")
+        unit = h.get("unit")
+        base = h.get("sale") if not is_return else h.get("return")
+        behaviour = (matrix.get(case) or {}).get(key, "Charged")
+
+        # Resolve base value
+        val = 0.0
+        if isinstance(base, (int, float)):
+            if unit == "pct":
+                val = nsv_val * base
+            elif unit == "flat_inr":
+                val = float(base)
+            else:
+                val = float(base)
+        elif isinstance(base, str) and base not in ("-", "table", "category", "reversed", "again_charged"):
+            # placeholder — unhandled string
+            reasons.append(f"Head {key} base '{base}' not evaluable")
+
+        # Behaviour override
+        if behaviour == "All null":
+            val = 0.0
+        elif behaviour == "No reversal":
+            val = 0.0
+        elif behaviour == "Reversal":
+            val = -abs(val)
+        elif behaviour == "Again Charged":
+            val = abs(val)
+
+        charges.append({
+            "key": key, "label": h.get("label"), "value": round(val, 2),
+            "behaviour": behaviour, "unit": unit,
+        })
+        total_charges += val
+
+    expected_settlement = nsv_val - total_charges
+    # Try to identify a commission-like head for classic KPI fields
+    commission_head = next((c for c in charges if "commission" in (c.get("label") or "").lower()), None)
+    logistic_head   = next((c for c in charges if "logistic" in (c.get("label") or "").lower()), None)
+
+    return {
+        "commission": round(commission_head["value"], 2) if commission_head else 0,
+        "commission_gst": 0,
+        "commission_incl_gst": round(commission_head["value"], 2) if commission_head else 0,
+        "commission_pct": None,
+        "fixed_fee": 0,
+        "fixed_fee_gst": 0,
+        "fixed_fee_incl_gst": 0,
+        "gt_charge": round(logistic_head["value"], 2) if logistic_head else 0,
+        "return_fee": 0,
+        "tcs": 0,
+        "tds": 0,
+        "nsv_after_gt": round(nsv_val, 2),
+        "total_deductions": round(total_charges, 2),
+        "expected_settlement": round(expected_settlement, 2),
+        "order_type": order_type,
+        "is_return": is_return,
+        "unmapped": len(reasons) > 0,
+        "unmapped_reasons": reasons,
+        "breakdown": {
+            "isp": None,
+            "qty": sale.get("qty") or 1,
+            "nsv_val": round(nsv_val, 2),
+            "sub_category": sale.get("sub_category"),
+            "master_category": sale.get("main_category"),
+            "zone": sale.get("zone"),
+            "level": None,
+            "order_type": order_type,
+            "report_month": _extract_report_month(sale),
+            "portal": portal_doc.get("code"),
+            "portal_charges": charges,
+        },
+        "report_month": _extract_report_month(sale),
+    }
 
 
 @router.post("/calculations/run")
 async def run_calculations(payload: RunCalcIn):
-    masters = await _get_masters()
     q: Dict[str, Any] = {}
     if payload.upload_id:
         q["upload_id"] = payload.upload_id
     if payload.report_month:
         q["report_month"] = payload.report_month
+    if payload.portal and payload.portal.lower() != "all":
+        q["portal"] = payload.portal.lower()
 
     total = await db.sales.count_documents(q)
     if total == 0:
@@ -424,7 +536,11 @@ async def run_calculations(payload: RunCalcIn):
         if sales_ids:
             await db.calculations.delete_many({"sales_id": {"$in": sales_ids}})
 
-    # Fetch existing sales_ids that already have calculations to skip
+    # Load portal catalog once
+    portal_docs: Dict[str, Dict[str, Any]] = {p["code"]: p async for p in db.portals.find({}, {"_id": 0})}
+    # Myntra masters loaded lazily
+    myntra_masters = None
+
     existing_ids = set()
     if not payload.recalculate:
         async for c in db.calculations.find({}, {"sales_id": 1}):
@@ -436,7 +552,28 @@ async def run_calculations(payload: RunCalcIn):
     async for sale in db.sales.find(q, {"_id": 0}):
         if sale["id"] in existing_ids:
             continue
-        result = compute_expected(sale, masters)
+        portal_code = (sale.get("portal") or "myntra").lower()
+        if portal_code == "myntra":
+            if myntra_masters is None:
+                myntra_masters = await _get_masters()
+            result = compute_expected(sale, myntra_masters)
+        else:
+            pdoc = portal_docs.get(portal_code)
+            if not pdoc:
+                # Fallback: mark unmapped
+                result = {
+                    "commission": 0, "commission_gst": 0, "commission_incl_gst": 0, "commission_pct": None,
+                    "fixed_fee": 0, "fixed_fee_gst": 0, "fixed_fee_incl_gst": 0,
+                    "gt_charge": 0, "return_fee": 0, "tcs": 0, "tds": 0,
+                    "nsv_after_gt": 0, "total_deductions": 0, "expected_settlement": 0,
+                    "order_type": _classify_order(sale.get("order_status"), sale.get("txn_type")),
+                    "is_return": False, "unmapped": True,
+                    "unmapped_reasons": [f"Unknown portal '{portal_code}'"],
+                    "breakdown": {"nsv_val": float(sale.get("nsv_val") or 0)},
+                    "report_month": _extract_report_month(sale),
+                }
+            else:
+                result = _compute_expected_portal(sale, pdoc)
         if result["unmapped"]:
             unmapped_count += 1
         doc = {
@@ -445,6 +582,7 @@ async def run_calculations(payload: RunCalcIn):
             "upload_id": sale.get("upload_id"),
             "online_order_id": sale.get("online_order_id"),
             "sku": sale.get("sku"),
+            "portal": portal_code,
             "computed_at": _iso(),
             **result,
         }
@@ -473,6 +611,7 @@ async def list_calculations(
     report_month: Optional[str] = None,
     period_type: Optional[str] = None,
     period_value: Optional[str] = None,
+    portal: Optional[str] = None,
     sub_category: Optional[str] = None,
     master_category: Optional[str] = None,
     zone: Optional[str] = None,
@@ -491,6 +630,8 @@ async def list_calculations(
         q.update(_mq(period_type, period_value))
     elif report_month:
         q["report_month"] = report_month
+    if portal and portal.lower() != "all":
+        q["portal"] = portal.lower()
     if upload_id:
         q["upload_id"] = upload_id
     if sub_category:

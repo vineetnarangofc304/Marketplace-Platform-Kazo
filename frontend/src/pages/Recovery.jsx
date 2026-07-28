@@ -22,6 +22,7 @@ const STATUS_TONE = {
 export default function Recovery() {
   const nav = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const { portalParam } = usePortal();
   const [period, setPeriod] = useState({
     period_type: searchParams.get("period_type") || "month",
     period_value: searchParams.get("period_value") || "",
@@ -41,7 +42,7 @@ export default function Recovery() {
 
   const loadSummary = async () => {
     const { data } = await api.get("/recovery/summary", {
-      params: { period_type: period.period_type, period_value: period.period_value || undefined },
+      params: { period_type: period.period_type, period_value: period.period_value || undefined, portal: portalParam },
     });
     setSummary(data);
   };
@@ -50,6 +51,7 @@ export default function Recovery() {
       params: {
         period_type: period.period_type,
         period_value: period.period_value || undefined,
+        portal: portalParam,
         status: filters.status || undefined,
         priority: filters.priority || undefined,
         severity: filters.severity || undefined,
@@ -67,7 +69,7 @@ export default function Recovery() {
     loadSummary();
     loadCases();
     /* eslint-disable-next-line */
-  }, [period.period_type, period.period_value, filters.status, filters.priority, filters.severity, sort.by, sort.dir]);
+  }, [period.period_type, period.period_value, portalParam, filters.status, filters.priority, filters.severity, sort.by, sort.dir]);
 
   const autoCreate = async () => {
     setAutoBusy(true);

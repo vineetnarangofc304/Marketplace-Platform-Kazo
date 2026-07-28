@@ -23,6 +23,13 @@ def _period_filter(period_type: Optional[str], period_value: Optional[str], repo
     return {}
 
 
+def _apply_portal(q: Dict[str, Any], portal: Optional[str]) -> Dict[str, Any]:
+    if portal and portal.lower() != "all":
+        q["portal"] = portal.lower()
+    return q
+    return {}
+
+
 def _strip_id(rows: List[dict]) -> List[dict]:
     for r in rows:
         r.pop("_id", None) if isinstance(r, dict) and "_id" not in ("_id",) else None
@@ -35,10 +42,12 @@ async def commission_summary(
     report_month: Optional[str] = None,
     period_type: Optional[str] = None,
     period_value: Optional[str] = None,
+    portal: Optional[str] = None,
 ):
     match: Dict[str, Any] = _period_filter(period_type, period_value, report_month)
     if upload_id:
         match["upload_id"] = upload_id
+    _apply_portal(match, portal)
 
     cache_key = f"comm-summary::{match}"
 
@@ -108,10 +117,12 @@ async def reconciliation_summary(
     report_month: Optional[str] = None,
     period_type: Optional[str] = None,
     period_value: Optional[str] = None,
+    portal: Optional[str] = None,
 ):
     q: Dict[str, Any] = _period_filter(period_type, period_value, report_month)
     if recon_run_id:
         q["recon_run_id"] = recon_run_id
+    _apply_portal(q, portal)
 
     cache_key = f"recon-summary::{q}"
 
@@ -159,8 +170,10 @@ async def overview(
     report_month: Optional[str] = None,
     period_type: Optional[str] = None,
     period_value: Optional[str] = None,
+    portal: Optional[str] = None,
 ):
     q = _period_filter(period_type, period_value, report_month)
+    _apply_portal(q, portal)
     cache_key = f"overview::{q}"
 
     async def _load():
@@ -214,6 +227,7 @@ async def return_velocity(
     report_month: Optional[str] = None,
     period_type: Optional[str] = None,
     period_value: Optional[str] = None,
+    portal: Optional[str] = None,
     top: int = 15,
 ):
     """% of orders that flipped from Sales to Return-DTO, by sub-category.
@@ -222,6 +236,7 @@ async def return_velocity(
     net loss for a DTO order — the seller keeps NSV but pays the fixed fee).
     """
     q = _period_filter(period_type, period_value, report_month)
+    _apply_portal(q, portal)
     cache_key = f"return-velocity::{q}::{top}"
 
     async def _load():
@@ -291,3 +306,63 @@ async def return_velocity(
         }
 
     return await get_or_set(cache_key, CACHE_TTL, _load, tag="calculations")
+
+
+@router.get("/dashboard/portals-summary")
+async def portals_summary(
+    report_month: Optional[str] = None,
+    period_type: Optional[str] = None,
+    period_value: Optional[str] = None,
+):
+    """Consolidated per-portal KPIs — for the cross-portal Overview widget."""
+    q = _period_filter(period_type, period_value, report_month)
+    cache_key = f"portals-summary::{q}"
+
+    async def _load():
+        portals = await db.portals.find({}, {"_id": 0}).sort("code", 1).to_list(50)
+
+        async def _per_portal(p):
+            pq = {**q, "portal": p["code"]}
+            sales_t = db.sales.count_documents(pq)
+            calc_t = db.calculations.count_documents(pq)
+            disc_t = db.discrepancies.count_documents(pq)
+            nsv_t = db.calculations.aggregate([
+                {"$match": pq},
+                {"$group": {"_id": None,
+                            "nsv": {"$sum": {"$ifNull": ["$breakdown.nsv_val", 0]}},
+                            "expected_settlement": {"$sum": {"$ifNull": ["$expected_settlement", 0]}},
+                            "commission": {"$sum": {"$ifNull": ["$commission_incl_gst", 0]}}}}
+            ]).to_list(1)
+            leak_t = db.discrepancies.aggregate([
+                {"$match": pq},
+                {"$group": {"_id": None, "sum": {"$sum": {"$ifNull": ["$recoverable", 0]}}}}
+            ]).to_list(1)
+            sales_c, calc_c, disc_c, agg, leak = await asyncio.gather(sales_t, calc_t, disc_t, nsv_t, leak_t)
+            k = agg[0] if agg else {}
+            return {
+                "code": p["code"],
+                "name": p["name"],
+                "status": p.get("status", "coming_soon"),
+                "sales_count": sales_c,
+                "calc_count": calc_c,
+                "disc_count": disc_c,
+                "nsv": round(k.get("nsv", 0) or 0, 2),
+                "expected_settlement": round(k.get("expected_settlement", 0) or 0, 2),
+                "expected_commission": round(k.get("commission", 0) or 0, 2),
+                "leakage": round((leak[0]["sum"] if leak else 0) or 0, 2),
+            }
+
+        rows = await asyncio.gather(*[_per_portal(p) for p in portals])
+        totals = {
+            "portals_count": len(portals),
+            "live_portals": sum(1 for r in rows if r["status"] == "live"),
+            "sales_count": sum(r["sales_count"] for r in rows),
+            "nsv": round(sum(r["nsv"] for r in rows), 2),
+            "expected_settlement": round(sum(r["expected_settlement"] for r in rows), 2),
+            "leakage": round(sum(r["leakage"] for r in rows), 2),
+            "disc_count": sum(r["disc_count"] for r in rows),
+        }
+        return {"totals": totals, "portals": rows}
+
+    return await get_or_set(cache_key, CACHE_TTL, _load, tag="portals-summary")
+

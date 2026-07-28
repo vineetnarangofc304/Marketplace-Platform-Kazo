@@ -99,6 +99,7 @@ def _default_priority(severity: str) -> str:
 async def list_cases(
     period_type: str = "all",
     period_value: Optional[str] = None,
+    portal: Optional[str] = None,
     status: Optional[str] = None,
     priority: Optional[str] = None,
     severity: Optional[str] = None,
@@ -110,6 +111,8 @@ async def list_cases(
 ):
     q: dict = {}
     q.update(month_query(period_type, period_value))
+    if portal and portal.lower() != "all":
+        q["portal"] = portal.lower()
     if status:
         q["status"] = status
     if priority:
@@ -364,9 +367,11 @@ async def delete_case(case_id: str):
 
 
 @router.get("/summary")
-async def summary(period_type: str = "all", period_value: Optional[str] = None):
+async def summary(period_type: str = "all", period_value: Optional[str] = None, portal: Optional[str] = None):
     q: dict = {}
     q.update(month_query(period_type, period_value))
+    if portal and portal.lower() != "all":
+        q["portal"] = portal.lower()
 
     # Aggregate by status
     by_status_cur = db.recovery_cases.aggregate([
@@ -412,6 +417,8 @@ async def summary(period_type: str = "all", period_value: Optional[str] = None):
     disc_match: dict = {}
     disc_match.update(month_query(period_type, period_value))
     disc_match["recoverable"] = {"$gt": 0}
+    if portal and portal.lower() != "all":
+        disc_match["portal"] = portal.lower()
     disc_total = await db.discrepancies.count_documents(disc_match)
 
     coverage_pct = (totals["total_cases"] / disc_total) if disc_total else 0

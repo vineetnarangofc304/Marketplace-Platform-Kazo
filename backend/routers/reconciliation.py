@@ -269,6 +269,7 @@ async def list_discrepancies(
     report_month: Optional[str] = None,
     period_type: Optional[str] = None,
     period_value: Optional[str] = None,
+    portal: Optional[str] = None,
     severity: Optional[str] = None,
     match_status: Optional[str] = None,
     sub_category: Optional[str] = None,
@@ -285,6 +286,8 @@ async def list_discrepancies(
         q.update(_mq(period_type, period_value))
     elif report_month:
         q["report_month"] = report_month
+    if portal and portal.lower() != "all":
+        q["portal"] = portal.lower()
     if recon_run_id:
         q["recon_run_id"] = recon_run_id
     if severity:

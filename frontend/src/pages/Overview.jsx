@@ -4,6 +4,7 @@ import api from "@/lib/api";
 import StatChip from "@/components/StatChip";
 import PeriodSelector from "@/components/PeriodSelector";
 import { fmtCurrency, fmtInt, fmtPct } from "@/lib/format";
+import { usePortal } from "@/context/PortalContext";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell, CartesianGrid, Legend } from "recharts";
 import { AlertTriangle, ArrowUpRight, RotateCcw } from "lucide-react";
 
@@ -12,29 +13,35 @@ const CHART_COLORS = ["#2563EB", "#059669", "#D97706", "#DC2626", "#7C3AED", "#D
 
 export default function Overview() {
   const nav = useNavigate();
+  const { portalCode, portalParam, portals, setPortalCode } = usePortal();
   const [period, setPeriod] = useState({ period_type: "month", period_value: "" });
   const [overview, setOverview] = useState(null);
   const [commSum, setCommSum] = useState(null);
   const [reconSum, setReconSum] = useState(null);
   const [returnVel, setReturnVel] = useState(null);
+  const [portalsSummary, setPortalsSummary] = useState(null);
 
   useEffect(() => {
-    const params = { period_type: period.period_type, period_value: period.period_value || undefined };
+    const params = { period_type: period.period_type, period_value: period.period_value || undefined, portal: portalParam };
     api.get("/dashboard/overview", { params }).then((r) => setOverview(r.data));
     api.get("/dashboard/commission-summary", { params }).then((r) => setCommSum(r.data));
     api.get("/dashboard/reconciliation-summary", { params }).then((r) => setReconSum(r.data));
     api.get("/dashboard/return-velocity", { params: { ...params, top: 12 } }).then((r) => setReturnVel(r.data));
-  }, [period.period_type, period.period_value]);
+    // Portals summary is always fetched (agnostic of the switch) so the widget renders when portal="all"
+    api.get("/dashboard/portals-summary", { params: { period_type: period.period_type, period_value: period.period_value || undefined } })
+      .then((r) => setPortalsSummary(r.data));
+  }, [period.period_type, period.period_value, portalParam]);
 
   const kpi = commSum?.kpi || {};
   const marginPct = kpi.total_nsv ? (kpi.expected_settlement || 0) / kpi.total_nsv : 0;
   const commPct = kpi.total_nsv ? (kpi.expected_commission || 0) / kpi.total_nsv : 0;
 
-  // Drill helpers — pass current period to detail pages
+  // Drill helpers — pass current period + portal to detail pages
   const goTo = (path, extra = {}) => {
     const p = new URLSearchParams();
     if (period.period_type) p.set("period_type", period.period_type);
     if (period.period_value) p.set("period_value", period.period_value);
+    if (portalParam) p.set("portal", portalParam);
     Object.entries(extra).forEach(([k, v]) => v !== undefined && p.set(k, v));
     nav(`${path}?${p.toString()}`);
   };
@@ -51,6 +58,43 @@ export default function Overview() {
         </div>
         <PeriodSelector value={period} onChange={setPeriod} testIdPrefix="overview-period" />
       </div>
+
+      {/* Cross-portal widget — shown when the switcher is on "All Portals" */}
+      {portalCode === "all" && portalsSummary && (
+        <div className="border border-border bg-white rounded-sm overflow-hidden" data-testid="portals-summary-widget">
+          <div className="px-5 py-3 border-b border-border flex items-center justify-between">
+            <div>
+              <div className="overline">Cross-Portal Snapshot</div>
+              <div className="text-sm mt-0.5 text-slate-700">
+                {portalsSummary.totals?.live_portals}/{portalsSummary.totals?.portals_count} portals live
+                &nbsp;·&nbsp; {fmtInt(portalsSummary.totals?.sales_count)} orders
+                &nbsp;·&nbsp; {fmtCurrency(portalsSummary.totals?.nsv)} NSV
+              </div>
+            </div>
+            <div className="text-[10px] mono uppercase tracking-widest text-slate-400">Click a portal to filter</div>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
+            {(portalsSummary.portals || []).map((p) => (
+              <button
+                key={p.code}
+                onClick={() => setPortalCode(p.code)}
+                data-testid={`portal-tile-${p.code}`}
+                className="text-left p-4 border-r border-b border-border hover:bg-slate-50 transition-colors"
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <span className={`text-[9px] mono uppercase px-1.5 py-px rounded-sm ${p.status === "live" ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-amber-50 text-amber-700 border border-amber-200"}`}>
+                    {p.status === "live" ? "LIVE" : "SOON"}
+                  </span>
+                  <span className="text-sm font-medium tracking-tight">{p.name}</span>
+                </div>
+                <div className="text-lg font-semibold text-slate-900">{fmtCurrency(p.nsv)}</div>
+                <div className="overline mt-1">{fmtInt(p.sales_count)} orders · {fmtInt(p.disc_count)} disc.</div>
+                <div className="text-[11px] mono text-slate-500 mt-1">Expected {fmtCurrency(p.expected_settlement)}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         <StatChip testId="kpi-nsv" label="Total NSV" value={fmtCurrency(kpi.total_nsv)} sub={`${fmtInt(kpi.total_orders)} orders`} onClick={() => goTo("/sales")} drillHint />

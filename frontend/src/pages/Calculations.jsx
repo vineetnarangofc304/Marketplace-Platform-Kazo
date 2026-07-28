@@ -6,9 +6,11 @@ import { toast } from "sonner";
 import { PlayCircle, RefreshCw, Search, X, Filter } from "lucide-react";
 import PeriodSelector from "@/components/PeriodSelector";
 import { SortableTh, nextDir } from "@/components/SortableTable";
+import { usePortal } from "@/context/PortalContext";
 
 export default function Calculations() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const { portalParam } = usePortal();
   const initialPeriodType = searchParams.get("period_type") || "month";
   const initialPeriodValue = searchParams.get("period_value") || "";
   const [period, setPeriod] = useState({ period_type: initialPeriodType, period_value: initialPeriodValue });
@@ -31,6 +33,7 @@ export default function Calculations() {
     const params = {
       period_type: period.period_type,
       period_value: period.period_value || undefined,
+      portal: portalParam,
       search: search || undefined,
       sub_category: filters.sub_category || undefined,
       master_category: filters.master_category || undefined,
@@ -44,7 +47,7 @@ export default function Calculations() {
     setItems(data.items);
     setTotal(data.total);
   };
-  useEffect(() => { load(); /* eslint-disable-next-line */ }, [period.period_type, period.period_value, filters.sub_category, filters.master_category, filters.zone, filters.order_type, filters.severity_flag, sort.by, sort.dir]);
+  useEffect(() => { load(); /* eslint-disable-next-line */ }, [period.period_type, period.period_value, portalParam, filters.sub_category, filters.master_category, filters.zone, filters.order_type, filters.severity_flag, sort.by, sort.dir]);
 
   // Debounced search
   useEffect(() => {
@@ -58,6 +61,7 @@ export default function Calculations() {
     try {
       const { data } = await api.post("/calculations/run", {
         report_month: period.period_type === "month" ? period.period_value || undefined : undefined,
+        portal: portalParam,
         recalculate: true,
       });
       toast.success(`${data.fully_mapped_count} mapped · ${data.unmapped_count} unmapped`);

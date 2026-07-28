@@ -1,0 +1,31 @@
+{
+  "summary": "Iteration 12 (portal-aware backend + cross-portal Overview widget) tested end-to-end. Wrote 15 backend pytest cases in /app/backend/tests/test_iter12_portals.py covering /api/dashboard/portals-summary shape, portal= query filter on overview/commission-summary/reconciliation-summary/return-velocity/calculations/discrepancies/recovery/reports/period, POST /calculations/run with portal payload, and upload header-alias missing-columns error. ALL 15 PASSED. UI smoke: login as admin@kazo.com/admin123 works, portal-switcher-select present in header, Cross-Portal Snapshot renders 6 portal tiles (data-testid portal-tile-{code}) with correct KPIs for Myntra (21,614 orders · ₹1,27,02,900 NSV · Expected ₹42,58,108.65) and zeros for the other 5 'coming soon' portals. Clicking Myntra tile persists fundle_portal=myntra in localStorage; switching to amazon via <select> updates localStorage=amazon and Calculations page correctly shows 0 rows. No console errors (only a benign recharts width/height warning during initial mount).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Overview (initial load)", "issues": ["Recharts ResponsiveContainer emits width(-1)/height(-1) warning on first render — cosmetic only, chart renders fine on relayout."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter12_portals.py",
+    "/app/test_reports/pytest/iter12.xml"
+  ],
+  "action_items": [
+    "Minor: /app/backend/routers/dashboards.py::_apply_portal has dead code — a stray `return {}` after `return q` (lines 29-30). Not functional, but dead branch — clean up for readability."
+  ],
+  "critical_code_review_comments": [
+    "dashboards.py _apply_portal helper mutates the passed-in dict and also returns it — but the callers use the mutation, not the return value. Fine but slightly inconsistent style; the dead `return {}` on line 30 is unreachable.",
+    "calculations.py _compute_expected_portal correctly delegates to portal fee_heads T1..T5 and case_matrix. Verified endpoint accepts {portal: 'amazon'} without crashing (returns processed=0, total_sales=0 as expected since no Amazon sales seeded).",
+    "uploads_r.py required columns now {online_order_id, sku, nsv_val} — confirmed 400 error path returns clear message when headers are absent."
+  ],
+  "updated_files": ["/app/backend/tests/test_iter12_portals.py"],
+  "success_rate": {"backend": "100% (15/15)", "frontend": "100% (all flows verified)"},
+  "test_credentials": "admin@kazo.com / admin123 (verified working)",
+  "seed_data_creation": "None. Used existing 21,614 Myntra sales rows.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Iteration 12 shipped clean. Test file /app/backend/tests/test_iter12_portals.py is a regression suite for the portal filter. Cross-Portal Snapshot widget testids: portal-tile-{code} where code ∈ {ajio, amazon, flipkart, myntra, nykaa, tatacliq}. PortalContext localStorage key = 'fundle_portal', default 'all'. Header switcher testid = 'portal-switcher-select'. Any future Amazon parser rewrite should preserve the current alias set — the required columns are only {online_order_id, sku, nsv_val}.",
+  "rca of the issue": "N/A — no defects found."
+}

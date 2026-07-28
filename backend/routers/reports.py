@@ -39,7 +39,7 @@ async def available_months():
     return await get_or_set("months-union", 60, _load, tag="periods")
 
 
-async def _period_aggregate(months: List[str], label: str) -> Dict[str, Any]:
+async def _period_aggregate(months: List[str], label: str, portal: Optional[str] = None) -> Dict[str, Any]:
     calc_match: Dict[str, Any] = {}
     disc_match: Dict[str, Any] = {}
     sales_match: Dict[str, Any] = {}
@@ -47,8 +47,12 @@ async def _period_aggregate(months: List[str], label: str) -> Dict[str, Any]:
         calc_match["report_month"] = {"$in": months}
         disc_match["report_month"] = {"$in": months}
         sales_match["report_month"] = {"$in": months}
+    if portal and portal.lower() != "all":
+        calc_match["portal"] = portal.lower()
+        disc_match["portal"] = portal.lower()
+        sales_match["portal"] = portal.lower()
 
-    cache_key = f"period-agg::{label}::{months}"
+    cache_key = f"period-agg::{label}::{months}::{portal or 'all'}"
 
     async def _load():
         kpi_t = db.calculations.aggregate([
@@ -159,12 +163,13 @@ async def report_periods():
 async def period_report(
     period_type: str = Query(..., description="month|quarter|year|ytd|all"),
     period_value: Optional[str] = Query(None, description="e.g. 2026-04 for month, 2026-Q2 for quarter, 2026 for year/ytd"),
+    portal: Optional[str] = Query(None),
 ):
     try:
         months, label = parse_period(period_type, period_value)
     except Exception as e:
         raise HTTPException(400, f"Invalid period: {e}")
-    return await _period_aggregate(months, label)
+    return await _period_aggregate(months, label, portal=portal)
 
 
 @router.get("/reports/monthly")

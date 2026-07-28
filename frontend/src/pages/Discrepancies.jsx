@@ -6,9 +6,11 @@ import { toast } from "sonner";
 import { AlertTriangle, X, Search, Filter, Wallet } from "lucide-react";
 import PeriodSelector from "@/components/PeriodSelector";
 import { SortableTh, nextDir } from "@/components/SortableTable";
+import { usePortal } from "@/context/PortalContext";
 
 export default function Discrepancies() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const { portalParam } = usePortal();
   const [period, setPeriod] = useState({
     period_type: searchParams.get("period_type") || "month",
     period_value: searchParams.get("period_value") || "",
@@ -27,6 +29,7 @@ export default function Discrepancies() {
       params: {
         period_type: period.period_type,
         period_value: period.period_value || undefined,
+        portal: portalParam,
         recon_run_id: runId || undefined,
         severity: severity || undefined,
         match_status: status || undefined,
@@ -38,7 +41,7 @@ export default function Discrepancies() {
     setItems(data.items);
     setTotal(data.total);
   };
-  useEffect(() => { load(); /* eslint-disable-next-line */ }, [period.period_type, period.period_value, severity, status, sort.by, sort.dir, runId]);
+  useEffect(() => { load(); /* eslint-disable-next-line */ }, [period.period_type, period.period_value, portalParam, severity, status, sort.by, sort.dir, runId]);
 
   const onSort = (key) => setSort((s) => nextDir(s.by, s.dir, key));
 
