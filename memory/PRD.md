@@ -252,6 +252,34 @@ User uploaded `All Portal_Commercial -AI.xlsx` with rate cards for **Amazon, AJI
 - Non-Myntra calculation engine not yet implemented — the calc router still uses Myntra-specific formulas
 - Category-level Flipkart commission rate card requires an external upload (per Excel notes)
 
+## Iteration 12 — Portal Filter Everywhere + Cross-Portal Overview + Portal-Aware Calc (2026-07)
+User: "Amazon Parser + Calc — build the native Amazon report parser... Portal Filter Everywhere — thread portalParam from PortalContext into every remaining API call... Cross-Portal Overview — a 'Combined view' dashboard when portal='all' showing consolidated leakage / margin across every active marketplace side-by-side. DO"
+
+### Delivered
+- **Backend**
+  - `GET /api/dashboard/portals-summary` — per-portal aggregation (sales_count, nsv, expected_settlement, expected_commission, disc_count, leakage) + totals
+  - `?portal=` query param added to: `/dashboard/overview`, `/dashboard/commission-summary`, `/dashboard/reconciliation-summary`, `/dashboard/return-velocity`, `/calculations`, `/reconciliation/discrepancies`, `/recovery/cases`, `/recovery/summary`, `/reports/period`
+  - `POST /calculations/run` accepts `{portal}` in body — branches by portal: Myntra uses full masters-driven `compute_expected(sale, masters)`; non-Myntra uses new `_compute_expected_portal(sale, portal_doc)` which reads T1..T5 fee_heads and case_matrix (Delivered/DTO/RTO/InternalCancel × head)
+  - `_ORDER_TYPE_TO_CASE` mapping: sales/return → Delivered, return_dto → DTO, rto → RTO, internal_cancel → InternalCancel
+  - Behaviour translation: `All null`/`No reversal` → 0, `Reversal` → −abs, `Again Charged` → +abs
+  - `SALES_HEADER_ALIASES` extended to recognise Amazon MTR headers: `amazon-order-id`, `ASIN`, `seller-sku`, `product_sales`, `principal`, `quantity-purchased`, `shipping-fee`, `selling-fees`, `referral-fee`, etc.
+  - Required upload columns relaxed from `{online_order_id, sku, nsv_val, sub_category}` → `{online_order_id, sku, nsv_val}` (sub_category now optional so non-Myntra portals parse)
+- **Frontend**
+  - `Overview.jsx` — new **Cross-Portal Snapshot** widget (shown only when portal=all). 6 clickable portal tiles with NSV, orders, disc_count, expected settlement + LIVE/SOON badges. Clicking a tile sets portalCode via setPortalCode
+  - Threaded `portalParam` into `Overview`, `SalesLedger`, `Calculations`, `Discrepancies`, `Recovery`, `Reports` — all list APIs re-fetch when the top-header switcher changes
+  - Fixed pre-existing broken tail in `Recovery.jsx` (stray `</div>` + duplicate closing braces)
+- **Test suite** — `/app/backend/tests/test_iter12_portals.py` (15 tests, all passing)
+
+### Bugs found & fixed by testing agent
+- Dead code cleanup: `_apply_portal()` had an unreachable `return {}` — removed
+- Zero critical/major issues found by testing agent
+- Frontend E2E verified: portal-switcher persists, tile-click updates localStorage, Calculations correctly shows 0 rows for portal=amazon
+
+### Known limitations (roadmap)
+- **True native Amazon parser** — the header-alias approach handles common Amazon MTR columns, but a real Amazon file may have quirks (multi-header, sub-order IDs, tax splits). Need a real sample file to build a truly native parser
+- **Non-Myntra masters editing UI** — currently the portal rate cards from Masters → Portals tab are readable but the frontend inline editing only saves label changes (fee_heads full editor is roadmap)
+- **Amazon settlement reconciliation** — settlement parser also needs Amazon-specific header aliases (currently only sales-side aliases were expanded)
+
 ## Test Credentials
 - **Admin (Kazo tenant)**: `admin@kazo.com` / `admin123`
 - **Admin (Fundle marketing/demo)**: `admin@fundle.ai` / `admin123`

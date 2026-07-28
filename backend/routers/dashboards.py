@@ -27,7 +27,6 @@ def _apply_portal(q: Dict[str, Any], portal: Optional[str]) -> Dict[str, Any]:
     if portal and portal.lower() != "all":
         q["portal"] = portal.lower()
     return q
-    return {}
 
 
 def _strip_id(rows: List[dict]) -> List[dict]:
