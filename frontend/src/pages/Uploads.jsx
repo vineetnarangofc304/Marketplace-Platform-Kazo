@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { fmtInt } from "@/lib/format";
 import { usePortal } from "@/context/PortalContext";
 
-function UploadDrop({ kind, label, hint, onUploaded, portal, portalName, isMyntraCompatible }) {
+function UploadDrop({ kind, label, hint, onUploaded, portal, portalName, isCompatible }) {
   const [drag, setDrag] = useState(false);
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState(null);
@@ -14,9 +14,9 @@ function UploadDrop({ kind, label, hint, onUploaded, portal, portalName, isMyntr
   const doUpload = async (file) => {
     if (!file) return;
     if (!portal) { toast.error("Please pick a marketplace first"); return; }
-    if (!isMyntraCompatible &&
+    if (!isCompatible &&
         !window.confirm(
-          `${portalName} uses a different file schema from Myntra.\n\n` +
+          `${portalName} uses a different file schema.\n\n` +
           `The file will be stored with portal="${portal}", but rows may be rejected or parsed incorrectly ` +
           `until the ${portalName}-specific parser is enabled in an upcoming release.\n\nProceed anyway?`
         )) return;
@@ -54,7 +54,7 @@ function UploadDrop({ kind, label, hint, onUploaded, portal, portalName, isMyntr
         <div className="overline mt-1">{portalName || "—"}  ·  {label}</div>
         <input data-testid={`upload-input-${kind}`} ref={inputRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={(e) => doUpload(e.target.files?.[0])} />
       </div>
-      {!isMyntraCompatible && portal && (
+      {!isCompatible && portal && (
         <div className="mt-3 flex items-start gap-2 text-[11px] mono bg-amber-50 text-amber-800 border border-amber-200 rounded-sm px-3 py-2">
           <AlertTriangle size={12} className="mt-px shrink-0" />
           <span><strong>{portalName}</strong> parser is on our roadmap. Uploads will be stored & tagged; parsing may be partial until we ship the native parser for this portal.</span>
@@ -87,7 +87,9 @@ export default function Uploads() {
   useEffect(() => { if (portalCode !== "all") setIngestPortal(portalCode); }, [portalCode]);
 
   const ingestPortalObj = portals.find((p) => p.code === ingestPortal);
-  const isMyntraCompatible = ingestPortal === "myntra";
+  // Any 'live' portal has a working parser (Myntra native + generic portal engine
+  // covering Amazon/AJIO/Nykaa/Tata Cliq/Flipkart via the fee-heads matrix).
+  const isCompatible = ingestPortalObj?.status === "live";
 
   const refresh = async () => {
     const q = portalParam ? `?portal=${portalParam}` : "";
@@ -115,14 +117,50 @@ export default function Uploads() {
     }
   };
 
+  const rebuildAll = async () => {
+    const scope = portalParam ? `${ingestPortalObj?.name || portalParam}` : "ALL portals";
+    if (!window.confirm(
+      `Rebuild expected charges for ${scope}?\n\n` +
+      `This wipes existing calculations and re-runs the engine using the current masters. ` +
+      `Safe to run — no source data is modified.`
+    )) return;
+    setRunning(true);
+    try {
+      const body = { recalculate: true };
+      if (portalParam) body.portal = portalParam;
+      const { data } = await api.post("/calculations/run", body);
+      toast.success(
+        `Rebuilt ${data.processed?.toLocaleString?.("en-IN") || data.processed} rows · ` +
+        `${data.fully_mapped_count?.toLocaleString?.("en-IN") || data.fully_mapped_count} mapped · ` +
+        `${data.unmapped_count?.toLocaleString?.("en-IN") || data.unmapped_count} unmapped`,
+        { duration: 6000 }
+      );
+    } catch (e) {
+      toast.error(formatApiError(e.response?.data?.detail) || e.message);
+    } finally {
+      setRunning(false);
+    }
+  };
+
   return (
     <div className="p-6 space-y-5" data-testid="uploads-page">
-      <div>
-        <div className="overline">Ingestion</div>
-        <h1 className="text-2xl font-semibold tracking-tight mt-1 text-slate-900">Upload Marketplace Reports</h1>
-        <p className="text-sm text-slate-500 mt-1">
-          Every upload is tagged with the selected marketplace + month. Repeat monthly per portal.
-        </p>
+      <div className="flex items-start justify-between flex-wrap gap-3">
+        <div>
+          <div className="overline">Ingestion</div>
+          <h1 className="text-2xl font-semibold tracking-tight mt-1 text-slate-900">Upload Marketplace Reports</h1>
+          <p className="text-sm text-slate-500 mt-1">
+            Every upload is tagged with the selected marketplace + month. Repeat monthly per portal.
+          </p>
+        </div>
+        <button
+          data-testid="btn-rebuild-all-calculations"
+          onClick={rebuildAll}
+          disabled={running}
+          className="btn"
+          title="Wipe & recompute expected charges for the selected portal scope using the latest masters."
+        >
+          <PlayCircle size={12} /> {running ? "Rebuilding…" : `Rebuild Calculations${portalParam ? ` · ${ingestPortalObj?.name || portalParam}` : " · All Portals"}`}
+        </button>
       </div>
 
       {/* Portal picker for ingestion */}
@@ -157,14 +195,14 @@ export default function Uploads() {
           kind="sales" label="Sales Data"
           hint="Raw sales report from the marketplace — one row per order-item."
           portal={ingestPortal} portalName={ingestPortalObj?.name}
-          isMyntraCompatible={isMyntraCompatible}
+          isCompatible={isCompatible}
           onUploaded={refresh}
         />
         <UploadDrop
           kind="settlement" label="Settlement / Commission Report"
           hint="Payout / settlement statement for the same month."
           portal={ingestPortal} portalName={ingestPortalObj?.name}
-          isMyntraCompatible={isMyntraCompatible}
+          isCompatible={isCompatible}
           onUploaded={refresh}
         />
       </div>
@@ -202,7 +240,7 @@ export default function Uploads() {
                   <td className="grid-cell text-right fin-neg">{fmtInt(u.rejected_count)}</td>
                   <td className="grid-cell text-right">
                     <div className="inline-flex items-center gap-2">
-                      {u.type === "sales" && (u.portal || "myntra") === "myntra" ? (
+                      {u.type === "sales" ? (
                         <button disabled={running} onClick={() => runCalcs(u.id)} data-testid={`btn-run-calc-${u.id}`} className="btn text-xs">
                           <PlayCircle size={12} /> Run Calc
                         </button>

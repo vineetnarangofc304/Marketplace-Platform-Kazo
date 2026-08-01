@@ -1,7 +1,7 @@
 """Iteration 12: portal-aware endpoints + cross-portal summary.
 
 Covers:
-- Login (admin@kazo.com / admin123)
+- Login (admin@fundle.ai / admin123)
 - /api/dashboard/portals-summary shape
 - portal= query param on overview / commission-summary / reconciliation-summary / return-velocity
 - portal= on /calculations, /reconciliation/discrepancies, /recovery/cases, /recovery/summary, /reports/period
@@ -32,7 +32,7 @@ API = f"{BASE_URL}/api"
 
 @pytest.fixture(scope="module")
 def token():
-    r = requests.post(f"{API}/auth/login", json={"email": "admin@kazo.com", "password": "admin123"}, timeout=30)
+    r = requests.post(f"{API}/auth/login", json={"email": "admin@fundle.ai", "password": "admin123"}, timeout=30)
     assert r.status_code == 200, f"Login failed: {r.status_code} {r.text}"
     data = r.json()
     tok = data.get("token") or data.get("access_token")

@@ -32,7 +32,7 @@ PORTALS_SEED = [
     {
         "code": "amazon",
         "name": "Amazon",
-        "status": "coming_soon",
+        "status": "live",
         "notes": "18.7% commission + 11.5% logistic. Effective Apr-2025 to Mar-2026.",
         "fee_heads": [
             {"key": "T1", "label": "Commission %",  "sale": 0.187,  "return": -0.187, "unit": "pct"},
@@ -48,7 +48,7 @@ PORTALS_SEED = [
     {
         "code": "ajio",
         "name": "AJIO (Direct Ship)",
-        "status": "coming_soon",
+        "status": "live",
         "notes": "Flat 36% commission. No reversal on return-DTO fixed heads.",
         "fee_heads": [
             {"key": "T1", "label": "Commission %",  "sale": 0.36,   "return": -0.36,  "unit": "pct"},
@@ -63,7 +63,7 @@ PORTALS_SEED = [
     {
         "code": "nykaa",
         "name": "Nykaa",
-        "status": "coming_soon",
+        "status": "live",
         "notes": "24% commission + Rs.50/order fixed + 0.80% gateway (Prepaid & COD). No reversal on fixed / gateway.",
         "fee_heads": [
             {"key": "T1", "label": "Commission %",       "sale": 0.24,   "return": -0.24,  "unit": "pct"},
@@ -80,7 +80,7 @@ PORTALS_SEED = [
     {
         "code": "tatacliq",
         "name": "Tata Cliq",
-        "status": "coming_soon",
+        "status": "live",
         "notes": "16% commission + 31% (bags only) + 3% marketing + 6% logistic. Marketing reversed on DTO.",
         "fee_heads": [
             {"key": "T1", "label": "Commission %",     "sale": 0.16,   "return": -0.16, "unit": "pct"},
@@ -98,7 +98,7 @@ PORTALS_SEED = [
     {
         "code": "flipkart",
         "name": "Flipkart",
-        "status": "coming_soon",
+        "status": "live",
         "notes": "Category-level commission (external rate card required). Effective Apr-2025 to Mar-2026.",
         "fee_heads": [
             {"key": "T1", "label": "Commission %",  "sale": "category", "return": "category", "unit": "category_table"},

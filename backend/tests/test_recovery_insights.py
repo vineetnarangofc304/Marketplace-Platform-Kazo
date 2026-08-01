@@ -5,7 +5,7 @@ import pytest
 import requests
 
 BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://marketplace-recon-1.preview.emergentagent.com").rstrip("/")
-ADMIN_EMAIL = "admin@kazo.com"
+ADMIN_EMAIL = "admin@fundle.ai"
 ADMIN_PASSWORD = "admin123"
 
 

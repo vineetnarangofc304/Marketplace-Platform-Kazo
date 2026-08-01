@@ -20,7 +20,7 @@ PERIOD = ("month", "2026-04")
 @pytest.fixture(scope="session")
 def token():
     r = requests.post(f"{API}/auth/login",
-                      json={"email": "admin@kazo.com", "password": "admin123"},
+                      json={"email": "admin@fundle.ai", "password": "admin123"},
                       timeout=30)
     assert r.status_code == 200, r.text
     return r.json().get("access_token") or r.json().get("token")

@@ -12,7 +12,7 @@ API = f"{BASE_URL}/api"
 
 def _login():
     s = requests.Session()
-    r = s.post(f"{API}/auth/login", json={"email": "admin@kazo.com", "password": "admin123"})
+    r = s.post(f"{API}/auth/login", json={"email": "admin@fundle.ai", "password": "admin123"})
     assert r.status_code == 200, r.text
     return s
 

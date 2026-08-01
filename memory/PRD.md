@@ -301,3 +301,41 @@ User: "now need a nicely done video that explains the problem, the solution and 
 - `/app/marketing/audio/` — 10 OpenAI TTS mp3 segments
 - `/app/marketing/slides/` — 10 rendered 1920×1080 slides
 - `/app/marketing/screenshots/` — real Playwright captures of Preview
+
+
+## Iteration 13 — Multi-Portal Live Activation + Rebuild UI (2026-02, session 3)
+User: "Changes" (following upload of `All Portal_Commercial -AI.xlsx`) → interpreted as: activate non-Myntra portals, add Amazon parser, add a Rebuild-All button, and finish the parked Return-DTO patch.
+
+### Delivered
+- **All 6 portals now `live`** (Myntra, Amazon, AJIO, Nykaa, Tata Cliq, Flipkart). `data_portals_seed.py` bumped from `coming_soon` → `live` for the 5 new marketplaces. `bootstrap_portals()` now upserts status on every startup so existing MongoDB docs sync without a manual reset.
+- **Amazon MTR / Settlement parser**:
+  - Extended `SALES_HEADER_ALIASES` in `backend/routers/uploads_r.py` with Amazon-specific columns (`Amazon Order ID`, `ASIN`, `MSKU`, `Ship To State`, `Item Total Amount`, `FBA Fee`, `Referral Fee`, `Marketplace Fee`, etc.).
+  - New `_normalize_row_for_portal(rec, portal)` helper maps portal-native vocabularies (Amazon `Shipped`/`Refund`/`Cancelled`, AJIO/Nykaa/Tata Cliq/Flipkart `Order`/`Return`/`Cancel`) onto the canonical `{Sales, Return} × {Delivered, DTO, RTO, Internal Cancellation}` taxonomy used by `_classify_order`.
+  - Called from `upload_sales()` immediately before persistence so downstream calculation engine sees canonical rows.
+  - Myntra remains untouched (no-op).
+- **"Rebuild All Calculations" UI trigger** (`Uploads.jsx`):
+  - New header button `data-testid="btn-rebuild-all-calculations"` that calls `POST /api/calculations/run` with `{recalculate: true, portal: <scope>}` and confirms via `window.confirm` before wiping calculations.
+  - Label auto-updates to show scope: "Rebuild Calculations · All Portals" or "Rebuild Calculations · Amazon" etc.
+  - Toast surfaces `{processed, fully_mapped_count, unmapped_count}` rounded with `en-IN` formatting.
+  - Per-upload Run Calc button relaxed from `myntra`-only → any portal (multi-portal calc engine now covers all 6).
+  - Portal-compat check switched from `ingestPortal === 'myntra'` → `portalObj.status === 'live'` so amber warning banner only shows for future `coming_soon` portals.
+- **Return-DTO fixed-fee patch — verified**: Confirmed via 3 tests in `test_return_dto_fix.py` (all 5,443 return_dto rows have `fixed_fee_incl_gst = 0`, `return_fee` matches Level×Zone master, sum ≈ ₹6.58L). No new code needed — was already correctly implemented in Iteration 8. Added explicit regression tests + documentation.
+- **Login page** — prefilled email + demo credentials updated to `admin@fundle.ai`.
+
+### Tests
+- `/app/backend/tests/test_iter13_multi_portal.py` — 8 tests: all-portals-live, Amazon sales/return/RTO normalizer, Amazon calc math (18.7% + 11.5%), Amazon RTO zeroing, rebuild endpoint with portal scope, full Myntra rebuild (21,614 rows).
+- All 14 tests (6 pre-existing return_dto + 8 new) pass in 10s.
+
+### Files touched
+- `backend/routers/uploads_r.py` — Amazon header aliases + `_normalize_row_for_portal` + hook in `upload_sales`.
+- `backend/routers/portals.py` — idempotent status-sync in `bootstrap_portals`.
+- `backend/data_portals_seed.py` — 5 portals status: `coming_soon` → `live`.
+- `frontend/src/pages/Uploads.jsx` — Rebuild button + `isCompatible` from portal status + Run Calc for all portals.
+- `frontend/src/pages/Login.jsx` — default email `admin@fundle.ai`.
+- `backend/tests/test_iter13_multi_portal.py` — new.
+- All test files: `admin@kazo.com` → `admin@fundle.ai`.
+
+### Roadmap (unchanged)
+- P1: Automated Return-Velocity monthly email (Resend integration).
+- P2: SSO / tenant boundaries, white-label logo upload, `/api/health/ready` endpoint.
+- Backlog: True native Amazon settlement (MTR) tax-split parsing when a real file is provided.

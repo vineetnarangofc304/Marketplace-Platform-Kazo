@@ -19,7 +19,7 @@ EXPECTED_COUNTS = {
 @pytest.fixture(scope="session")
 def session():
     s = requests.Session()
-    r = s.post(f"{API}/auth/login", json={"email": "admin@kazo.com", "password": "admin123"})
+    r = s.post(f"{API}/auth/login", json={"email": "admin@fundle.ai", "password": "admin123"})
     assert r.status_code == 200, f"login failed: {r.status_code} {r.text[:300]}"
     tok = r.json().get("access_token") or r.json().get("token")
     if tok:

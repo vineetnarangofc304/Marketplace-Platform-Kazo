@@ -24,7 +24,12 @@ def _now_iso():
 
 
 async def bootstrap_portals():
-    """Seed the portals collection if empty. Idempotent."""
+    """Seed the portals collection if empty. Idempotent.
+
+    Also refreshes `status` and `fee_heads` from the seed for portals that
+    already exist so status upgrades (coming_soon → live) flow to prod
+    without requiring a manual reset.
+    """
     count = await db.portals.count_documents({})
     if count == 0:
         docs = []
@@ -32,6 +37,21 @@ async def bootstrap_portals():
             docs.append({**p, "created_at": _now_iso(), "updated_at": _now_iso()})
         await db.portals.insert_many(docs)
         print(f"[portals] seeded {len(docs)} portals")
+    else:
+        # Sync status from seed (upgrades non-Myntra portals from coming_soon to live
+        # once the calc engine can handle them). Do NOT overwrite user-customised
+        # fee_heads / case_matrix / notes.
+        for p in PORTALS_SEED:
+            await db.portals.update_one(
+                {"code": p["code"]},
+                {"$set": {"status": p["status"], "updated_at": _now_iso()},
+                 "$setOnInsert": {"code": p["code"], "name": p["name"],
+                                    "fee_heads": p.get("fee_heads", []),
+                                    "case_matrix": p.get("case_matrix", {}),
+                                    "notes": p.get("notes", ""),
+                                    "created_at": _now_iso()}},
+                upsert=True,
+            )
     # Ensure existing sales / calculations rows have portal = 'myntra' if missing
     r1 = await db.sales.update_many({"portal": {"$exists": False}}, {"$set": {"portal": "myntra"}})
     r2 = await db.calculations.update_many({"portal": {"$exists": False}}, {"$set": {"portal": "myntra"}})

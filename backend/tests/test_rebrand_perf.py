@@ -12,7 +12,7 @@ PERIOD = "2026-04"
 def client():
     s = requests.Session()
     r = s.post(f"{BASE_URL}/api/auth/login",
-               json={"email": "admin@kazo.com", "password": "admin123"},
+               json={"email": "admin@fundle.ai", "password": "admin123"},
                timeout=15)
     assert r.status_code == 200, f"login failed: {r.status_code} {r.text}"
     data = r.json()

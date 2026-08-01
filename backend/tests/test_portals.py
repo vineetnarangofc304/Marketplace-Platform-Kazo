@@ -9,7 +9,7 @@ EXPECTED_CODES = {"myntra", "amazon", "ajio", "nykaa", "tatacliq", "flipkart"}
 
 @pytest.fixture(scope="module")
 def admin_token():
-    r = requests.post(f"{BASE_URL}/api/auth/login", json={"email": "admin@kazo.com", "password": "admin123"}, timeout=15)
+    r = requests.post(f"{BASE_URL}/api/auth/login", json={"email": "admin@fundle.ai", "password": "admin123"}, timeout=15)
     assert r.status_code == 200, f"login failed: {r.status_code} {r.text}"
     return r.json()["token"]
 

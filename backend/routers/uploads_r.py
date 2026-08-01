@@ -78,41 +78,56 @@ def _to_month(v) -> Optional[str]:
 # ---------- Sales upload ----------
 # Canonical target fields + a list of possible source header variants.
 # Match is case-insensitive and whitespace-insensitive.
+# NOTE: Aliases cover Myntra, Amazon MTR/Settlement, AJIO, Nykaa, Tata Cliq,
+# Flipkart. New portals just add their column labels here; the parser routes
+# by `portal` query-param at ingestion time.
 SALES_HEADER_ALIASES: Dict[str, List[str]] = {
-    "order_date": ["Order Date", "OrderDate", "Order_Date", "purchase-date", "Purchase Date"],
-    "txn_type": ["Txn Type", "Transaction Type", "Type", "transaction-type"],
-    "brand": ["Brand"],
+    "order_date": ["Order Date", "OrderDate", "Order_Date", "purchase-date", "Purchase Date",
+                    "Order Placed Date", "Invoice Date"],
+    "txn_type": ["Txn Type", "Transaction Type", "Type", "transaction-type",
+                  "Order Type"],
+    "brand": ["Brand", "Brand Name"],
     "month": ["Month", "Report Month"],
-    "posting_date": ["Posting Date", "PostingDate", "posted-date-time"],
-    "order_status": ["Order Status", "Status", "shipment-status", "order-status"],
+    "posting_date": ["Posting Date", "PostingDate", "posted-date-time",
+                      "Invoice Date"],
+    "order_status": ["Order Status", "Status", "shipment-status", "order-status",
+                      "Item Status"],
     "portal_name": ["Portal Name", "Portal", "Marketplace", "marketplace-name"],
     "sales_invoice_no": ["Sales Invoice No", "Invoice No", "Invoice Number", "invoice-number"],
     "online_order_id": ["Online Order Id", "Order Id", "Order ID", "OrderId",
                          "amazon-order-id", "Amazon Order ID", "amazon_order_id",
-                         "Order Number", "Sub Order Number", "sub-order-id"],
+                         "Order Number", "Sub Order Number", "sub-order-id",
+                         "Order Item Id", "amazon-order-item-id"],
     "sku": ["Sku", "SKU", "sku", "ASIN", "seller-sku", "item-sku",
-             "Item Code", "Product SKU", "Style Id"],
+             "Item Code", "Product SKU", "Style Id", "MSKU"],
     "zone": ["Shipped To _ZONE", "Zone", "Shipped Zone", "Shipping Zone",
-              "ship-state", "ship-city", "State", "Buyer State"],
-    "qty": ["QTY-Final", "Qty", "Quantity", "Order Qty", "quantity", "quantity-purchased", "quantity_purchased"],
-    "mrp": ["MRP", "MRP/Item", "item-price", "Item Price"],
-    "total_mrp": ["Total MRP", "MRP Total", "product_sales", "Product Sales"],
+              "ship-state", "ship-city", "State", "Buyer State",
+              "Ship To State", "Delivery State"],
+    "qty": ["QTY-Final", "Qty", "Quantity", "Order Qty", "quantity", "quantity-purchased", "quantity_purchased",
+             "Item Qty", "Ordered Qty"],
+    "mrp": ["MRP", "MRP/Item", "item-price", "Item Price", "Unit Price"],
+    "total_mrp": ["Total MRP", "MRP Total"],
     "customer_discount": ["Cust. Discount", "Customer Discount", "Discount",
                            "item-promotion-discount", "promotion-discount"],
     "nsv_val": ["NSV VAL.", "NSV Value", "NSV Val", "NSV",
                  "Net Amount", "Net Payable", "Total Amount",
-                 "product_sales", "Product Sales", "principal", "Principal Amount"],
+                 "product_sales", "Product Sales", "principal", "Principal Amount",
+                 "Invoice Amount", "Order Item Total", "Sale Amount",
+                 "Item Total Amount"],
     "nsv_per_unit": ["NSV/Unit", "NSV per Unit"],
     "main_category": ["Main Category", "Master Category", "Product Type", "product-type"],
     "category": ["Category", "Product Category", "item-category"],
     "sub_category": ["Sub Category_ GTA Charges", "Sub Category", "Sub-Category", "Subcategory",
                       "product-sub-category", "Product Sub-Category"],
     "actual_gt_amount": ["GT Amount (Inc. gst)", "GT Amount", "GT Charges (Inc GST)",
-                          "shipping-fee", "shipping_fee", "logistics-fee"],
-    "actual_fixed_fee": ["Fixed Fee-New", "Fixed Fee", "fba-fees", "fixed-fee"],
-    "actual_return_fee": ["Return Fee-New", "Return Fee"],
+                          "shipping-fee", "shipping_fee", "logistics-fee",
+                          "Shipping Fee", "Logistics Fee"],
+    "actual_fixed_fee": ["Fixed Fee-New", "Fixed Fee", "fba-fees", "fixed-fee",
+                          "FBA Fee", "Fulfilment Fee", "Closing Fee"],
+    "actual_return_fee": ["Return Fee-New", "Return Fee", "Return Shipping Fee"],
     "actual_commission_value": ["Commission Value.-New", "Commission Value", "Commission",
-                                  "selling-fees", "referral-fee", "Referral Fee", "commission-fee"],
+                                  "selling-fees", "referral-fee", "Referral Fee", "commission-fee",
+                                  "Marketplace Fee"],
 }
 
 
@@ -125,6 +140,64 @@ def _build_alias_lookup(aliases: Dict[str, List[str]]) -> Dict[str, str]:
 
 
 SALES_LOOKUP = _build_alias_lookup(SALES_HEADER_ALIASES)
+
+
+# --------------------------------------------------------------------------
+# Portal-specific post-parse normalisation.
+# Non-Myntra portals use different vocabulary for txn_type / order_status.
+# We normalise them into the canonical taxonomy used by _classify_order:
+#   txn_type ∈ {Sales, Return}
+#   order_status ∈ {Delivered, DTO, RTO, Internal Cancellation, ...}
+# so the generic portal calc engine can classify each row correctly.
+# --------------------------------------------------------------------------
+def _normalize_row_for_portal(rec: Dict[str, Any], portal: str) -> Dict[str, Any]:
+    """Map portal-native status vocabularies onto the canonical taxonomy.
+
+    Mutates and returns `rec`. Safe no-op for Myntra (already canonical).
+    """
+    portal = (portal or "myntra").lower()
+    if portal == "myntra":
+        return rec
+
+    raw_status = (rec.get("order_status") or "").strip().lower()
+    raw_txn = (rec.get("txn_type") or "").strip().lower()
+    nsv = rec.get("nsv_val") or 0
+
+    # Amazon MTR / Settlement reports
+    if portal == "amazon":
+        # Refund rows come with negative principal or txn_type in {refund, return}
+        if "refund" in raw_txn or "return" in raw_txn or nsv < 0:
+            rec["txn_type"] = "Return"
+            # cancellation on refund side → DTO / RTO. Amazon lumps them under Cancel.
+            if "cancel" in raw_status:
+                rec["order_status"] = "DTO"
+            elif "rto" in raw_status or "returned" in raw_status:
+                rec["order_status"] = "RTO"
+            else:
+                rec["order_status"] = "Delivered"
+        else:
+            rec["txn_type"] = "Sales"
+            if "cancel" in raw_status:
+                rec["order_status"] = "Internal Cancellation"
+            elif raw_status.startswith("shipped") or raw_status.startswith("delivered"):
+                rec["order_status"] = "Delivered"
+        return rec
+
+    # AJIO / Nykaa / Tata Cliq / Flipkart share a common convention:
+    # 'Order' → Sales, 'Return' → Return, 'Cancel' → Internal Cancellation
+    if "return" in raw_txn or "refund" in raw_txn or nsv < 0:
+        rec["txn_type"] = "Return"
+        if "cancel" in raw_status:
+            rec["order_status"] = "DTO"
+        elif "rto" in raw_status:
+            rec["order_status"] = "RTO"
+    else:
+        rec["txn_type"] = "Sales"
+        if "cancel" in raw_status:
+            rec["order_status"] = "Internal Cancellation"
+        elif not raw_status:
+            rec["order_status"] = "Delivered"
+    return rec
 
 
 def _find_header_row(ws, lookup: Dict[str, str]):
@@ -251,6 +324,9 @@ async def upload_sales(file: UploadFile = File(...), portal: str = Query("myntra
                 "source_file": file.filename,
                 "portal": portal,
             })
+            # Normalise txn_type / order_status to the canonical vocabulary
+            # so the calculation engine can classify each row deterministically.
+            _normalize_row_for_portal(d, portal)
             if d.get("report_month"):
                 months[d["report_month"]] = months.get(d["report_month"], 0) + 1
             docs.append(d)

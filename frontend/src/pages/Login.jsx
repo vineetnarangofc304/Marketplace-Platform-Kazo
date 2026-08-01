@@ -7,7 +7,7 @@ import { toast } from "sonner";
 export default function Login() {
   const { login } = useAuth();
   const nav = useNavigate();
-  const [email, setEmail] = useState("admin@kazo.com");
+  const [email, setEmail] = useState("admin@fundle.ai");
   const [password, setPassword] = useState("admin123");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -81,7 +81,7 @@ export default function Login() {
 
           <div className="mt-8 border-t border-border pt-4">
             <div className="overline mb-1">Demo Credentials</div>
-            <div className="text-xs mono text-slate-500">admin@kazo.com · admin123</div>
+            <div className="text-xs mono text-slate-500">admin@fundle.ai · admin123</div>
           </div>
         </form>
         <a

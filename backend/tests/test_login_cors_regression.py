@@ -11,7 +11,7 @@ import pytest
 
 LOCAL = "http://localhost:8001"
 PUBLIC = os.environ.get("REACT_APP_BACKEND_URL", "").rstrip("/") or LOCAL
-ADMIN_EMAIL = "admin@kazo.com"
+ADMIN_EMAIL = "admin@fundle.ai"
 ADMIN_PASSWORD = "admin123"
 
 
