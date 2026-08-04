@@ -59,6 +59,31 @@ async def bootstrap_portals():
     if r1.modified_count or r2.modified_count or r3.modified_count:
         print(f"[portals] back-filled portal=myntra on {r1.modified_count} sales, {r2.modified_count} calcs, {r3.modified_count} uploads")
 
+    # Back-fill posting_location_code from the sales_invoice_no prefix for
+    # historical rows that were ingested before the alias was added. This is
+    # lossless: it uses only what already exists on the doc (invoice prefix
+    # is the marketplace/warehouse code — "MYN" for Myntra, etc.).
+    pipeline = [
+        {"$match": {"$and": [
+            {"$or": [{"posting_location_code": {"$exists": False}}, {"posting_location_code": None}, {"posting_location_code": ""}]},
+            {"sales_invoice_no": {"$ne": None}},
+        ]}},
+        {"$limit": 100000},
+    ]
+    to_backfill = [d async for d in db.sales.aggregate(pipeline)]
+    if to_backfill:
+        from pymongo import UpdateOne
+        ops = []
+        for d in to_backfill:
+            inv = str(d.get("sales_invoice_no") or "")
+            prefix = inv.split("/")[0].strip() if "/" in inv else inv[:6]
+            if prefix:
+                ops.append(UpdateOne({"_id": d["_id"]}, {"$set": {"posting_location_code": prefix.upper()}}))
+        for i in range(0, len(ops), 1000):
+            if ops[i:i+1000]:
+                await db.sales.bulk_write(ops[i:i+1000])
+        print(f"[portals] back-filled posting_location_code on {len(ops)} sales rows")
+
 
 class PortalUpsert(BaseModel):
     name: Optional[str] = None

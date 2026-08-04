@@ -1,0 +1,73 @@
+{
+  "verdict": "not_fixed",
+  "user_reported_bug": "Client sent 6 observations after production deployment: (1) Order Qty net (Sales-Returns), (2) DTO reversal shows GT/Commission/Fixed fee as negative reversals + Return Fee (Level\u00d7Zone), no GST, (3) TCS/TDS removed entirely, (4) Sales Ledger + export must have columns: Brand, Sale Type, Posting Date, Item No, Posting_Location Code, Main Ctg, Level No, Price Range Key (NSV), Price Range Key (NSV after GT), (5) Apparels \u2014 commission ALL fallback when sub_cat not matched, (6) Export Sales Ledger to Excel with all fields.",
+  "summary": "No relevant testing skill found. Focused verification covered the posting_location_code backfill regression, April 2026 Myntra sales summary, recalculation/DTO arithmetic, export headers, Sales Ledger/Calculations UI, and Overview/Reports/Reconciliation rendering. Most previously passing checks still pass, but the location backfill is incomplete: only 14,219/21,614 Myntra sales rows have posting_location_code='MYN'; all 7,395 return rows remain MYSRI-/PSCM and the Sales Ledger UI shows MYSRI- when filtered to Return. No MOCKED APIs were used.",
+  "backend_issues": {
+    "critical": [
+      {
+        "endpoint": "/api/sales?portal=myntra&txn_type=Return",
+        "issue": "posting_location_code is still not 'MYN' for Myntra return rows. DB proof: portal=myntra total=21,614, posting_location_code!='MYN'=7,395 (7,294 MYSRI-, 101 PSCM). API return-row sample shows MYSRI- in posting_location_code.",
+        "priority": "HIGH"
+      }
+    ],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "Sales Ledger Location column",
+        "issue": "The default first 20 April Myntra rows show MYN, but filtering Sale Type to Return shows Location=MYSRI- for visible return rows, violating the expected all-MYN location normalization.",
+        "selector": "[data-testid='filter-txn'], tr[data-testid^='sales-row-'] td:nth-child(7)",
+        "priority": "HIGH"
+      }
+    ],
+    "integration_issues": [
+      {
+        "flow": "Sales Ledger API -> grid/export posting_location_code",
+        "issue": "Frontend faithfully renders backend posting_location_code; because backend return rows are MYSRI-/PSCM, any return-filtered grid/export can expose non-MYN values.",
+        "affected_selectors": [
+          "sales-page",
+          "filter-txn",
+          "btn-export-sales",
+          "sales-row-{id}"
+        ]
+      }
+    ],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/test_reports/bug_verification_14_backend.py",
+    "/app/test_reports/bug_verification_14_backend_results.json",
+    "/app/test_reports/bug_verification_14_location_api_window.py",
+    "/app/test_reports/bug_verification_14_location_api_window_results.json",
+    "/app/test_reports/bug_verification_14_ui.py",
+    "/app/test_reports/bug_verification_14_ui_return_location.py"
+  ],
+  "action_items": [
+    "Fix the posting_location_code backfill for portal=myntra return invoices so MYSRI-/PSCM historical rows normalize to MYN, or otherwise satisfy the stated contract that all 21,614 Myntra rows return MYN.",
+    "After fixing, re-run a full all-row DB/API count plus Sales Ledger return-filter UI and return-filter export spot checks, not only /api/sales?limit=100 default ordering."
+  ],
+  "critical_code_review_comments": [
+    "In /app/backend/routers/portals.py lines 66-81, the backfill uses inv.split('/')[0] or inv[:6]. That works for MYN/26-27 sales invoices but converts return invoices like MYSRI-2627-07117 to MYSRI- and PSCM... to PSCM, leaving the all-MYN requirement unmet for 7,395 rows.",
+    "Backend log confirms the one-time backfill ran on 21,614 rows, but the derivation algorithm produced multiple location codes instead of normalizing all Myntra rows to MYN."
+  ],
+  "updated_files": [
+    "/app/test_reports/bug_verification_14_backend.py",
+    "/app/test_reports/bug_verification_14_backend_results.json",
+    "/app/test_reports/bug_verification_14_location_api_window.py",
+    "/app/test_reports/bug_verification_14_location_api_window_results.json",
+    "/app/test_reports/bug_verification_14_ui.py",
+    "/app/test_reports/bug_verification_14_ui_return_location.py",
+    "/app/test_reports/bug_verification_14.json",
+    "/app/test_reports/iteration_14.json"
+  ],
+  "success_rate": {
+    "backend": "90%",
+    "frontend": "80%"
+  },
+  "seed_data_creation": "No seed data created. Ran /api/calculations/run with recalculate=true for report_month=2026-04 portal=myntra to verify unmapped_count=0, which regenerated April Myntra calculation rows.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Mandatory skill lookup was performed; no relevant testing skill found. Start by rechecking /api/sales?portal=myntra&txn_type=Return and DB grouping by posting_location_code for portal=myntra. Expected after fix: total=21,614 and non-MYN count=0, including return rows. Also re-run Sales Ledger return-filter UI because the default first 20 rows can mask the bug.",
+  "rca_of_the_issue": "The attempted backfill derives posting_location_code directly from the sales_invoice_no prefix. Myntra sales invoices use MYN/..., but return invoices use prefixes such as MYSRI- and PSCM. Because the fallback takes the first six characters when no slash exists, return rows are stored as MYSRI-/PSCM instead of MYN. Reproduction: login as admin@fundle.ai/admin123, call /api/sales?portal=myntra&txn_type=Return&limit=10, or open Sales Ledger for 2026-04 Myntra and filter Sale Type=Return; Location displays MYSRI-."
+}

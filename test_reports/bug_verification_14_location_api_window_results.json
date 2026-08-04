@@ -1,0 +1,79 @@
+{
+  "total": 7395,
+  "filter": {
+    "portal": "myntra",
+    "txn_type": "Return"
+  },
+  "sample": [
+    {
+      "id": "b224f7f0-9b39-4133-bf26-d661c254abde",
+      "txn_type": "Return",
+      "order_status": "DTO",
+      "sales_invoice_no": "MYSRI-2627-07117",
+      "posting_location_code": "MYSRI-"
+    },
+    {
+      "id": "7c3e35c0-03dc-4255-9c7a-b18587cbb655",
+      "txn_type": "Return",
+      "order_status": "RTO",
+      "sales_invoice_no": "MYSRI-2627-07107",
+      "posting_location_code": "MYSRI-"
+    },
+    {
+      "id": "9375932c-aba6-492f-9f4c-e92728259fba",
+      "txn_type": "Return",
+      "order_status": "RTO",
+      "sales_invoice_no": "MYSRI-2627-07112",
+      "posting_location_code": "MYSRI-"
+    },
+    {
+      "id": "33f6c7ce-05b9-4f3a-9fda-187b7e6cc4e5",
+      "txn_type": "Return",
+      "order_status": "RTO",
+      "sales_invoice_no": "MYSRI-2627-07108",
+      "posting_location_code": "MYSRI-"
+    },
+    {
+      "id": "8af2790b-3046-40e0-99ae-31dda664c79c",
+      "txn_type": "Return",
+      "order_status": "RTO",
+      "sales_invoice_no": "MYSRI-2627-06261",
+      "posting_location_code": "MYSRI-"
+    },
+    {
+      "id": "513022de-d442-4e1f-8fa1-73c0a935ca71",
+      "txn_type": "Return",
+      "order_status": "RTO",
+      "sales_invoice_no": "MYSRI-2627-06262",
+      "posting_location_code": "MYSRI-"
+    },
+    {
+      "id": "01f5de30-a187-4dac-bd40-67027657da55",
+      "txn_type": "Return",
+      "order_status": "DTO",
+      "sales_invoice_no": "MYSRI-2627-07294",
+      "posting_location_code": "MYSRI-"
+    },
+    {
+      "id": "97cffef0-585f-4202-83c3-ef81f6bb2d02",
+      "txn_type": "Return",
+      "order_status": "DTO",
+      "sales_invoice_no": "MYSRI-2627-07234",
+      "posting_location_code": "MYSRI-"
+    },
+    {
+      "id": "38ee6a50-e7bb-4ddc-b49a-d813fcafcae4",
+      "txn_type": "Return",
+      "order_status": "DTO",
+      "sales_invoice_no": "MYSRI-2627-07262",
+      "posting_location_code": "MYSRI-"
+    },
+    {
+      "id": "ace273d9-04b1-4068-b704-30dcc3f537aa",
+      "txn_type": "Return",
+      "order_status": "DTO",
+      "sales_invoice_no": "MYSRI-2627-06838",
+      "posting_location_code": "MYSRI-"
+    }
+  ]
+}

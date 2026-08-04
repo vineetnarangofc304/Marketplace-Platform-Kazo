@@ -1,0 +1,156 @@
+{
+  "checks": [
+    {
+      "name": "auth_login",
+      "ok": true,
+      "details": {
+        "email": "admin@fundle.ai"
+      }
+    },
+    {
+      "name": "api_sales_first_100_posting_location_code_myn",
+      "ok": true,
+      "details": {
+        "total": 21614,
+        "sample_size": 100,
+        "bad_locations": []
+      }
+    },
+    {
+      "name": "db_all_myntra_sales_have_myn_location",
+      "ok": false,
+      "details": {
+        "total_myntra_sales": 21614,
+        "non_myn_count": 7395,
+        "missing_count": 0
+      }
+    },
+    {
+      "name": "sales_summary_net_order_qty_6824",
+      "ok": true,
+      "details": {
+        "row_count": 21614,
+        "sales_rows": 14219,
+        "return_rows": 7395,
+        "net_orders": 6824,
+        "net_qty": 6824.0,
+        "nsv_total": 12702900.0
+      }
+    },
+    {
+      "name": "recalculate_april_myntra_unmapped_zero",
+      "ok": true,
+      "details": {
+        "processed": 21614,
+        "total_sales": 21614,
+        "unmapped_count": 0,
+        "fully_mapped_count": 21614
+      }
+    },
+    {
+      "name": "api_unmapped_total_zero_after_recalc",
+      "ok": true,
+      "details": {
+        "total": 0
+      }
+    },
+    {
+      "name": "return_dto_negative_reversals_return_fee_positive_taxes_zero",
+      "ok": true,
+      "details": {
+        "sample_size": 20,
+        "bad_rows": []
+      }
+    },
+    {
+      "name": "sales_calc_tcs_tds_commission_gst_zero",
+      "ok": true,
+      "details": {
+        "sample_size": 100,
+        "bad_sales_ids": []
+      }
+    },
+    {
+      "name": "apparel_commission_all_fallback_present_and_mapped",
+      "ok": true,
+      "details": {
+        "mapped_apparel_all_fallback_count": 57
+      }
+    },
+    {
+      "name": "sales_export_xlsx_headers_and_first_20_locations",
+      "ok": true,
+      "details": {
+        "content_type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "headers": [
+          "Portal",
+          "Brand",
+          "Sale Type",
+          "Order Status",
+          "Posting Date",
+          "Report Month",
+          "Online Order ID",
+          "Item No (SKU)",
+          "Sales Invoice No",
+          "Posting_Location Code",
+          "Main Ctg",
+          "Category",
+          "Sub Category",
+          "Level No",
+          "Zone",
+          "Qty",
+          "MRP",
+          "Total MRP",
+          "Customer Discount",
+          "NSV Value",
+          "NSV per Unit",
+          "NSV after GT",
+          "Price Range - Key (NSV)",
+          "Price Range - Key (NSV after GT)",
+          "Commission %",
+          "Commission (Expected)",
+          "GT Charge (Expected)",
+          "Fixed Fee (Expected)",
+          "Return Fee (Expected)",
+          "Total Deductions",
+          "Expected Settlement"
+        ],
+        "missing_headers": [],
+        "item_header_present": true,
+        "first_20_locations": [
+          "MYN",
+          "MYN",
+          "MYN",
+          "MYN",
+          "MYN",
+          "MYN",
+          "MYN",
+          "MYN",
+          "MYN",
+          "MYN",
+          "MYN",
+          "MYN",
+          "MYN",
+          "MYN",
+          "MYN",
+          "MYN",
+          "MYN",
+          "MYN",
+          "MYN",
+          "MYN"
+        ]
+      }
+    }
+  ],
+  "failures": [
+    {
+      "name": "db_all_myntra_sales_have_myn_location",
+      "ok": false,
+      "details": {
+        "total_myntra_sales": 21614,
+        "non_myn_count": 7395,
+        "missing_count": 0
+      }
+    }
+  ]
+}
