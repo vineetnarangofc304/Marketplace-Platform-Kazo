@@ -62,10 +62,18 @@ async def bootstrap_portals():
     # Back-fill posting_location_code from the sales_invoice_no prefix for
     # historical rows that were ingested before the alias was added. This is
     # lossless: it uses only what already exists on the doc (invoice prefix
-    # is the marketplace/warehouse code — "MYN" for Myntra, etc.).
+    # is the marketplace/warehouse code — "MYN" for Myntra sales, "MYSRI" for
+    # Myntra return centre, "PSCM" for the returns warehouse, etc.).
+    # Match rows that are missing OR still carry a trailing hyphen from an
+    # earlier naive backfill.
     pipeline = [
         {"$match": {"$and": [
-            {"$or": [{"posting_location_code": {"$exists": False}}, {"posting_location_code": None}, {"posting_location_code": ""}]},
+            {"$or": [
+                {"posting_location_code": {"$exists": False}},
+                {"posting_location_code": None},
+                {"posting_location_code": ""},
+                {"posting_location_code": {"$regex": "[-_/]$"}},
+            ]},
             {"sales_invoice_no": {"$ne": None}},
         ]}},
         {"$limit": 100000},
@@ -75,10 +83,15 @@ async def bootstrap_portals():
         from pymongo import UpdateOne
         ops = []
         for d in to_backfill:
-            inv = str(d.get("sales_invoice_no") or "")
-            prefix = inv.split("/")[0].strip() if "/" in inv else inv[:6]
+            inv = str(d.get("sales_invoice_no") or "").strip()
+            # Split on any of / - _ and take the first alphanumeric chunk. This
+            # yields "MYN" for MYN/26-27/013847, "MYSRI" for MYSRI-2627-07117,
+            # "PSCM" for PSCM-XXXXX, etc.
+            import re as _re
+            m = _re.match(r"^([A-Za-z0-9]+)", inv)
+            prefix = (m.group(1) if m else inv[:6]).upper().strip()
             if prefix:
-                ops.append(UpdateOne({"_id": d["_id"]}, {"$set": {"posting_location_code": prefix.upper()}}))
+                ops.append(UpdateOne({"_id": d["_id"]}, {"$set": {"posting_location_code": prefix}}))
         for i in range(0, len(ops), 1000):
             if ops[i:i+1000]:
                 await db.sales.bulk_write(ops[i:i+1000])

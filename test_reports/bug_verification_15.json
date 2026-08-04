@@ -1,0 +1,42 @@
+{
+  "verdict": "fixed",
+  "user_reported_bug": "Client sent 6 observations after production deployment: (1) Order Qty net (Sales-Returns), (2) DTO reversal shows GT/Commission/Fixed fee as negative reversals + Return Fee (Level×Zone), no GST, (3) TCS/TDS removed entirely, (4) Sales Ledger + export must have columns: Brand, Sale Type, Posting Date, Item No, Posting_Location Code, Main Ctg, Level No, Price Range Key (NSV), Price Range Key (NSV after GT), (5) Apparels — commission ALL fallback when sub_cat not matched, (6) Export Sales Ledger to Excel with all fields.",
+  "summary": "No relevant testing skill found. Focused backend/API/DB/UI verification passed for the April 2026 Myntra posting_location_code fix and the previously passing client observations. DB has 21,614/21,614 rows with clean non-empty alphanumeric location codes (MYN=14,219, MYSRI=7,294, PSCM=101), no trailing punctuation, and invoice-prefix/location mismatches=0. Sales Ledger UI shows 6,824 Order Qty net, first 20 displayed sales rows show MYN, Return filter shows MYSRI, export has 21,614 rows with Posting_Location Code populated for every row, recalculation processed 21,614 rows with unmapped_count=0, DTO/tax/fallback checks passed. No MOCKED APIs were used.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/test_reports/bug_verification_15_backend_checks.py",
+    "/app/test_reports/bug_verification_15_backend_results.json",
+    "/app/test_reports/bug_verification_15_ui_results.json",
+    "/app/test_reports/bug_verification_15_ui_mcp_script.py"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Inspected /app/backend/routers/portals.py: the backfill now matches missing/blank/trailing-punctuation posting_location_code values and extracts ^([A-Za-z0-9]+), preserving legitimate MYN/MYSRI/PSCM prefixes without trailing punctuation.",
+    "Export contains the requested semantic columns and populated data. Header labels observed: Item No (SKU), Price Range - Key (NSV), Price Range - Key (NSV after GT)."
+  ],
+  "updated_files": [
+    "/app/test_reports/bug_verification_15_backend_checks.py",
+    "/app/test_reports/bug_verification_15_backend_results.json",
+    "/app/test_reports/bug_verification_15_ui_results.json",
+    "/app/test_reports/bug_verification_15_ui_mcp_script.py",
+    "/app/test_reports/bug_verification_15.json",
+    "/app/test_reports/iteration_15.json"
+  ],
+  "success_rate": {
+    "backend": "100%",
+    "frontend": "100%"
+  },
+  "seed_data_creation": "No seed data created. Ran /api/calculations/run with recalculate=true for report_month=2026-04 portal=myntra to verify unmapped_count=0; this regenerated April Myntra calculation rows as part of the normal user flow.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Mandatory skill lookup was performed with 'Sales Ledger Excel export posting location reconciliation'; no relevant testing skill found. Current evidence: DB count 21,614, all posting_location_code values clean/non-empty; UI and export location checks passed; calculations checks passed after recalc. Note that MYSRI and PSCM are valid preserved Myntra return-processing prefixes, not failures.",
+  "rca_of_the_issue": "Previous failure was caused by a naive prefix extraction that left return invoice prefixes with trailing punctuation (for example MYSRI-). The current fix extracts the first alphanumeric chunk from sales_invoice_no and backfills rows with missing or punctuation-suffixed posting_location_code. Reproduction checks now pass via DB, API, UI, and export."
+}

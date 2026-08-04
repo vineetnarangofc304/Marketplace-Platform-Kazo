@@ -1,0 +1,36 @@
+{
+  "tool": "mcp_browser_automation",
+  "base_url": "https://marketplace-recon-1.preview.emergentagent.com",
+  "credentials": "admin@fundle.ai / admin123",
+  "result": "passed",
+  "checks": {
+    "login": "passed",
+    "sales_ledger_url": "/sales?period_type=month&period_value=2026-04&portal=myntra",
+    "sales_summary": "6,824 Order Qty (net) · 14,219 Sales − 7,395 Returns · 21,614 rows",
+    "sales_table_headers": [
+      "Order ID",
+      "Brand",
+      "Sale Type",
+      "Status",
+      "Posting Date",
+      "Item No",
+      "Location",
+      "Main Ctg",
+      "Sub-Cat",
+      "Level",
+      "Zone",
+      "Month",
+      "Qty",
+      "MRP",
+      "NSV",
+      "Price Range (NSV)",
+      "Price Range (NSV after GT)"
+    ],
+    "first_20_default_location_values": ["MYN", "MYN", "MYN", "MYN", "MYN", "MYN", "MYN", "MYN", "MYN", "MYN", "MYN", "MYN", "MYN", "MYN", "MYN", "MYN", "MYN", "MYN", "MYN", "MYN"],
+    "first_20_return_filter_location_values": ["MYSRI", "MYSRI", "MYSRI", "MYSRI", "MYSRI", "MYSRI", "MYSRI", "MYSRI", "MYSRI", "MYSRI", "MYSRI", "MYSRI", "MYSRI", "MYSRI", "MYSRI", "MYSRI", "MYSRI", "MYSRI", "MYSRI", "MYSRI"],
+    "drawer_rows_visible": ["Commission", "Fixed Fee", "GT Charge", "Return Fee (Level/Zone)", "Total Deductions", "Expected Settlement"],
+    "drawer_hidden_terms": ["GST", "TCS", "TDS"],
+    "overview_reports_reconciliation_render": "passed without visible error text"
+  },
+  "notes": "Browser run used localStorage fundle_portal=myntra because PortalContext does not consume the portal query string directly; the tested URL still included portal=myntra. Reconciliation renders but shows the expected no-settlement notice for 2026-04, not an application error."
+}

@@ -1,0 +1,212 @@
+{
+  "api_base": "https://marketplace-recon-1.preview.emergentagent.com/api",
+  "db_checks": {
+    "sales_row_count": 21614,
+    "missing_location_count": 0,
+    "dirty_location_count": 0,
+    "invoice_prefix_mismatch_count": 0,
+    "location_counts": {
+      "MYN": 14219,
+      "MYSRI": 7294,
+      "PSCM": 101
+    },
+    "sales_locations": {
+      "MYN": 14219
+    },
+    "return_locations": {
+      "MYSRI": 7294,
+      "PSCM": 101
+    },
+    "sample_bad_locations": [],
+    "net_qty_sum": 6824.0
+  },
+  "api_checks": {
+    "login": {
+      "email": "admin@fundle.ai",
+      "status_code": 200,
+      "user": {
+        "id": "3e02cdc0-90f5-4bc5-8b36-f93f388ae4a2",
+        "email": "admin@fundle.ai",
+        "name": "Administrator",
+        "role": "admin"
+      }
+    },
+    "sales_summary": {
+      "row_count": 21614,
+      "sales_rows": 14219,
+      "return_rows": 7395,
+      "net_orders": 6824,
+      "net_qty": 6824.0,
+      "nsv_total": 12702900.0
+    },
+    "first_20_sales_locations": [
+      "MYN",
+      "MYN",
+      "MYN",
+      "MYN",
+      "MYN",
+      "MYN",
+      "MYN",
+      "MYN",
+      "MYN",
+      "MYN",
+      "MYN",
+      "MYN",
+      "MYN",
+      "MYN",
+      "MYN",
+      "MYN",
+      "MYN",
+      "MYN",
+      "MYN",
+      "MYN"
+    ],
+    "first_20_return_locations": [
+      "MYSRI",
+      "MYSRI",
+      "MYSRI",
+      "MYSRI",
+      "MYSRI",
+      "MYSRI",
+      "MYSRI",
+      "MYSRI",
+      "MYSRI",
+      "MYSRI",
+      "MYSRI",
+      "MYSRI",
+      "MYSRI",
+      "MYSRI",
+      "MYSRI",
+      "MYSRI",
+      "MYSRI",
+      "MYSRI",
+      "MYSRI",
+      "MYSRI"
+    ],
+    "first_20_sales_all_myn": true,
+    "first_20_return_all_clean_nonblank": true,
+    "first_20_return_all_mysri": true,
+    "recalculate_result": {
+      "processed": 21614,
+      "total_sales": 21614,
+      "unmapped_count": 0,
+      "fully_mapped_count": 21614
+    },
+    "calculation_db": {
+      "calc_count": 21614,
+      "unmapped_count_after_recalc": 0,
+      "nonzero_tcs_tds_or_gst_count": 0,
+      "return_dto_bad_sign_count": 0,
+      "return_dto_sample": [
+        {
+          "sales_id": "7d5191e4-9141-4659-afe3-be4d74167885",
+          "commission_gst": 0,
+          "commission_incl_gst": -349.86,
+          "fixed_fee_incl_gst": -61.0,
+          "gt_charge": -266.0,
+          "return_fee": 194.0,
+          "tcs": 0,
+          "tds": 0
+        },
+        {
+          "sales_id": "da511d2e-0757-48ce-be92-98e6e9146c81",
+          "commission_gst": 0,
+          "commission_incl_gst": -350.0,
+          "fixed_fee_incl_gst": -61.0,
+          "gt_charge": -266.0,
+          "return_fee": 194.0,
+          "tcs": 0,
+          "tds": 0
+        },
+        {
+          "sales_id": "f1000e2e-2e53-4995-a1f4-5bdd6a6dd8dd",
+          "commission_gst": 0,
+          "commission_incl_gst": -298.34,
+          "fixed_fee_incl_gst": -61.0,
+          "gt_charge": -266.0,
+          "return_fee": 194.0,
+          "tcs": 0,
+          "tds": 0
+        },
+        {
+          "sales_id": "670e1931-98c7-44a2-8077-b7a77c0aee7b",
+          "commission_gst": 0,
+          "commission_incl_gst": -349.44,
+          "fixed_fee_incl_gst": -61.0,
+          "gt_charge": -266.0,
+          "return_fee": 194.0,
+          "tcs": 0,
+          "tds": 0
+        },
+        {
+          "sales_id": "a2f54cbc-879a-421c-b5a5-cf235e00faf0",
+          "commission_gst": 0,
+          "commission_incl_gst": -323.68,
+          "fixed_fee_incl_gst": -61.0,
+          "gt_charge": -266.0,
+          "return_fee": 194.0,
+          "tcs": 0,
+          "tds": 0
+        }
+      ],
+      "apparel_all_commission_fallback_count": 57
+    }
+  },
+  "export_checks": {
+    "status_code": 200,
+    "content_type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "sheet": "Sales Ledger",
+    "row_count_excluding_header": 21614,
+    "headers": [
+      "Portal",
+      "Brand",
+      "Sale Type",
+      "Order Status",
+      "Posting Date",
+      "Report Month",
+      "Online Order ID",
+      "Item No (SKU)",
+      "Sales Invoice No",
+      "Posting_Location Code",
+      "Main Ctg",
+      "Category",
+      "Sub Category",
+      "Level No",
+      "Zone",
+      "Qty",
+      "MRP",
+      "Total MRP",
+      "Customer Discount",
+      "NSV Value",
+      "NSV per Unit",
+      "NSV after GT",
+      "Price Range - Key (NSV)",
+      "Price Range - Key (NSV after GT)",
+      "Commission %",
+      "Commission (Expected)",
+      "GT Charge (Expected)",
+      "Fixed Fee (Expected)",
+      "Return Fee (Expected)",
+      "Total Deductions",
+      "Expected Settlement"
+    ],
+    "required_header_presence": {
+      "Brand": true,
+      "Sale Type": true,
+      "Posting Date": true,
+      "Item No": false,
+      "Posting_Location Code": true,
+      "Main Ctg": true,
+      "Level No": true,
+      "Price Range Key (NSV)": false,
+      "Price Range Key (NSV after GT)": false
+    },
+    "location_blank_count": 0,
+    "location_dirty_count": 0,
+    "location_counts_sample": {
+      "MYN": 14219,
+      "MYSRI": 7294,
+      "PSCM": 101
+    }
+  }
+}
