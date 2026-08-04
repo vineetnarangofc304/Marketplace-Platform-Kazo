@@ -2,10 +2,11 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import api from "@/lib/api";
 import { fmtCurrency, fmtInt } from "@/lib/format";
-import { Search, X, Filter } from "lucide-react";
+import { Search, X, Filter, Download } from "lucide-react";
 import PeriodSelector from "@/components/PeriodSelector";
 import { SortableTh, nextDir } from "@/components/SortableTable";
 import { usePortal } from "@/context/PortalContext";
+import { toast } from "sonner";
 
 export default function SalesLedger() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -16,7 +17,10 @@ export default function SalesLedger() {
   });
   const [items, setItems] = useState([]);
   const [total, setTotal] = useState(0);
+  const [summary, setSummary] = useState({ net_orders: 0, net_qty: 0, sales_rows: 0, return_rows: 0 });
+  const [calcMap, setCalcMap] = useState({});  // sales_id → calc breakdown
   const [search, setSearch] = useState("");
+  const [exporting, setExporting] = useState(false);
   const [filters, setFilters] = useState({
     sub_category: searchParams.get("sub_category") || "",
     zone: searchParams.get("zone") || "",
@@ -27,25 +31,39 @@ export default function SalesLedger() {
   const [drawer, setDrawer] = useState(null);
   const [calc, setCalc] = useState(null);
 
+  const buildParams = (extra = {}) => ({
+    period_type: period.period_type, period_value: period.period_value || undefined,
+    portal: portalParam,
+    search: search || undefined,
+    sub_category: filters.sub_category || undefined,
+    zone: filters.zone || undefined,
+    order_status: filters.order_status || undefined,
+    txn_type: filters.txn_type || undefined,
+    ...extra,
+  });
+
   const load = async () => {
-    const params = {
-      period_type: period.period_type, period_value: period.period_value || undefined,
-      portal: portalParam,
-      search: search || undefined,
-      sub_category: filters.sub_category || undefined,
-      zone: filters.zone || undefined,
-      order_status: filters.order_status || undefined,
-      txn_type: filters.txn_type || undefined,
-      sort_by: sort.by, sort_dir: sort.dir,
-      limit: 500,
-    };
-    const { data } = await api.get("/sales", { params });
-    setItems(data.items);
-    setTotal(data.total);
+    const params = buildParams({ sort_by: sort.by, sort_dir: sort.dir, limit: 500 });
+    const [salesRes, summaryRes] = await Promise.all([
+      api.get("/sales", { params }),
+      api.get("/sales/summary", { params: buildParams() }),
+    ]);
+    setItems(salesRes.data.items);
+    setTotal(salesRes.data.total);
+    setSummary(summaryRes.data);
+    // Fetch calcs for the visible rows (best-effort) so we can show Level / Price Range on the grid
+    const ids = salesRes.data.items.map((r) => r.id);
+    if (ids.length) {
+      try {
+        const calcRes = await api.get("/calculations", { params: { limit: 500, ...(portalParam ? { portal: portalParam } : {}) } });
+        const map = {};
+        for (const c of calcRes.data.items) { map[c.sales_id] = c; }
+        setCalcMap(map);
+      } catch { /* silent */ }
+    }
   };
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [period.period_type, period.period_value, portalParam, filters.sub_category, filters.zone, filters.order_status, filters.txn_type, sort.by, sort.dir]);
 
-  // Debounced search: fire 400ms after user stops typing (also on manual Enter).
   useEffect(() => {
     const t = setTimeout(() => { load(); }, 400);
     return () => clearTimeout(t);
@@ -65,6 +83,24 @@ export default function SalesLedger() {
     }
   };
 
+  const exportExcel = async () => {
+    setExporting(true);
+    try {
+      const res = await api.get("/sales/export", { params: buildParams(), responseType: "blob" });
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `fundle-sales-ledger-${period.period_value || "all"}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      toast.success("Excel downloaded");
+    } catch (e) {
+      toast.error("Export failed — " + (e.response?.data?.detail || e.message));
+    } finally { setExporting(false); }
+  };
+
   const activeFilterCount = Object.values(filters).filter(Boolean).length + (search ? 1 : 0);
   const clearFilters = () => { setFilters({ sub_category: "", zone: "", order_status: "", txn_type: "" }); setSearch(""); };
 
@@ -74,9 +110,28 @@ export default function SalesLedger() {
         <div>
           <div className="overline">Canonical Sales Ledger</div>
           <h1 className="text-2xl font-semibold tracking-tight mt-1 text-slate-900">Order Items</h1>
-          <p className="text-sm text-slate-500 mt-1 mono">{fmtInt(total)} rows · click any row to view calc breakdown</p>
+          <p className="text-sm text-slate-500 mt-1 mono" data-testid="sales-summary">
+            <span className="font-semibold text-slate-900">{fmtInt(summary.net_orders || 0)}</span> Order Qty (net)
+            {" · "}
+            <span>{fmtInt(summary.sales_rows || 0)} Sales</span>
+            {" − "}
+            <span>{fmtInt(summary.return_rows || 0)} Returns</span>
+            {" · "}
+            <span className="text-slate-400">{fmtInt(total)} rows</span>
+          </p>
         </div>
-        <PeriodSelector value={period} onChange={setPeriod} testIdPrefix="sales-period" />
+        <div className="flex items-end gap-2 flex-wrap">
+          <PeriodSelector value={period} onChange={setPeriod} testIdPrefix="sales-period" />
+          <button
+            data-testid="btn-export-sales"
+            onClick={exportExcel}
+            disabled={exporting || total === 0}
+            className="btn"
+            title="Download the filtered Sales Ledger as Excel with all client-requested columns (Brand, Level, Price Ranges, etc.)"
+          >
+            <Download size={12} /> {exporting ? "Exporting…" : "Export Excel"}
+          </button>
+        </div>
       </div>
 
       <div className="border border-border bg-white p-3 rounded-sm flex items-center gap-2 flex-wrap">
@@ -112,34 +167,54 @@ export default function SalesLedger() {
           <thead className="grid-header sticky top-0 z-10">
             <tr>
               <SortableTh label="Order ID" sortKey="order_id" sort={sort} onSort={onSort} className="frozen-col" />
-              <SortableTh label="SKU" sortKey="sku" sort={sort} onSort={onSort} />
+              <th className="grid-cell text-left">Brand</th>
+              <th className="grid-cell text-left">Sale Type</th>
               <th className="grid-cell text-left">Status</th>
+              <th className="grid-cell text-left">Posting Date</th>
+              <SortableTh label="Item No" sortKey="sku" sort={sort} onSort={onSort} />
+              <th className="grid-cell text-left">Location</th>
+              <th className="grid-cell text-left">Main Ctg</th>
               <SortableTh label="Sub-Cat" sortKey="sub_category" sort={sort} onSort={onSort} />
+              <th className="grid-cell text-left">Level</th>
               <SortableTh label="Zone" sortKey="zone" sort={sort} onSort={onSort} />
               <SortableTh label="Month" sortKey="month" sort={sort} onSort={onSort} />
               <SortableTh label="Qty" sortKey="qty" sort={sort} onSort={onSort} align="right" />
               <SortableTh label="MRP" sortKey="mrp" sort={sort} onSort={onSort} align="right" />
-              <th className="grid-cell text-right">Discount</th>
               <SortableTh label="NSV" sortKey="nsv" sort={sort} onSort={onSort} align="right" />
+              <th className="grid-cell text-left">Price Range (NSV)</th>
+              <th className="grid-cell text-left">Price Range (NSV after GT)</th>
             </tr>
           </thead>
           <tbody>
             {items.length === 0 ? (
-              <tr><td colSpan={10} className="grid-cell text-center text-slate-400 py-10">No sales rows for this filter. Upload sales data or clear filters.</td></tr>
-            ) : items.map((r) => (
-              <tr key={r.id} onClick={() => openDrawer(r)} className="grid-row drill" data-testid={`sales-row-${r.id}`}>
-                <td className="grid-cell frozen-col drill-link">{(r.online_order_id || "").slice(0, 14)}…</td>
-                <td className="grid-cell">{r.sku}</td>
-                <td className="grid-cell text-slate-500">{r.order_status}</td>
-                <td className="grid-cell">{r.sub_category}</td>
-                <td className="grid-cell text-slate-500">{r.zone}</td>
-                <td className="grid-cell text-slate-500">{r.report_month}</td>
-                <td className="grid-cell text-right">{fmtInt(r.qty)}</td>
-                <td className="grid-cell text-right">{fmtCurrency(r.mrp)}</td>
-                <td className="grid-cell text-right fin-neg">{fmtCurrency(r.customer_discount)}</td>
-                <td className="grid-cell text-right">{fmtCurrency(r.nsv_val)}</td>
-              </tr>
-            ))}
+              <tr><td colSpan={17} className="grid-cell text-center text-slate-400 py-10">No sales rows for this filter. Upload sales data or clear filters.</td></tr>
+            ) : items.map((r) => {
+              const c = calcMap[r.id] || {};
+              const bd = c.breakdown || {};
+              const crule = bd.commission_rule || {};
+              const gtCell = bd.gt_charge_cell || {};
+              return (
+                <tr key={r.id} onClick={() => openDrawer(r)} className="grid-row drill" data-testid={`sales-row-${r.id}`}>
+                  <td className="grid-cell frozen-col drill-link">{(r.online_order_id || "").slice(0, 14)}…</td>
+                  <td className="grid-cell text-slate-500">{r.brand || "—"}</td>
+                  <td className="grid-cell text-slate-500">{r.txn_type || "—"}</td>
+                  <td className="grid-cell text-slate-500">{r.order_status}</td>
+                  <td className="grid-cell text-slate-500">{(r.posting_date || "").slice(0, 10) || "—"}</td>
+                  <td className="grid-cell mono">{r.sku}</td>
+                  <td className="grid-cell text-slate-500">{r.posting_location_code || "—"}</td>
+                  <td className="grid-cell text-slate-500">{r.main_category || "—"}</td>
+                  <td className="grid-cell">{r.sub_category}</td>
+                  <td className="grid-cell text-slate-500 mono text-[10px]">{bd.level || "—"}</td>
+                  <td className="grid-cell text-slate-500">{r.zone}</td>
+                  <td className="grid-cell text-slate-500">{r.report_month}</td>
+                  <td className="grid-cell text-right">{fmtInt(r.qty)}</td>
+                  <td className="grid-cell text-right">{fmtCurrency(r.mrp)}</td>
+                  <td className="grid-cell text-right">{fmtCurrency(r.nsv_val)}</td>
+                  <td className="grid-cell mono text-[10px] text-slate-500">{crule.price_range || "—"}</td>
+                  <td className="grid-cell mono text-[10px] text-slate-500">{gtCell.price_range || "—"}</td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
@@ -176,13 +251,10 @@ export default function SalesLedger() {
                   <div className="overline mb-2">Expected Calculation</div>
                   <table className="w-full text-xs mono border border-border">
                     <tbody>
-                      {[["Commission (ex GST)", calc.commission_base, "neg"],
-                        ["GST on Commission (18%)", calc.commission_gst, "neg"],
-                        ["Fixed Fee (ex GST)", calc.fixed_fee, "neg"],
-                        ["GST on Fixed Fee (18%)", calc.fixed_fee_gst, "neg"],
-                        ["GT Charge (incl GST)", calc.gt_charge, "neg"],
+                      {[["Commission", calc.commission_incl_gst, "neg"],
+                        ["Fixed Fee", calc.fixed_fee_incl_gst, "neg"],
+                        ["GT Charge", calc.gt_charge, "neg"],
                         ["Return Fee (Level/Zone)", calc.return_fee, "neg"],
-                        ["TCS", calc.tcs, "neg"], ["TDS", calc.tds, "neg"],
                         ["Total Deductions", calc.total_deductions, "neg", true],
                         ["Expected Settlement", calc.expected_settlement, "pos", true]].map(([k, v, tone, bold]) => (
                         <tr key={k}>

@@ -1,0 +1,401 @@
+{
+  "api_base": "https://marketplace-recon-1.preview.emergentagent.com/api",
+  "checks": [
+    {
+      "name": "admin login",
+      "ok": true,
+      "detail": {
+        "id": "3e02cdc0-90f5-4bc5-8b36-f93f388ae4a2",
+        "email": "admin@fundle.ai",
+        "name": "Administrator",
+        "role": "admin"
+      }
+    },
+    {
+      "name": "sales summary net_orders equals sales_rows - return_rows",
+      "ok": true,
+      "detail": {
+        "row_count": 21614,
+        "sales_rows": 14219,
+        "return_rows": 7395,
+        "net_orders": 6824,
+        "net_qty": 6824.0,
+        "nsv_total": 12702900.0
+      }
+    },
+    {
+      "name": "sales summary April 2026 expected values",
+      "ok": true,
+      "detail": {
+        "row_count": 21614,
+        "sales_rows": 14219,
+        "return_rows": 7395,
+        "net_orders": 6824,
+        "net_qty": 6824.0,
+        "nsv_total": 12702900.0
+      }
+    },
+    {
+      "name": "sales API first 20 include requested source fields",
+      "ok": false,
+      "detail": {
+        "row_count": 20,
+        "populated_counts": {
+          "brand": 20,
+          "txn_type": 20,
+          "posting_date": 20,
+          "sku": 20,
+          "posting_location_code": 0,
+          "main_category": 20,
+          "sub_category": 20,
+          "zone": 20,
+          "report_month": 20,
+          "qty": 20,
+          "mrp": 20,
+          "nsv_val": 20
+        }
+      }
+    },
+    {
+      "name": "return_dto calculations have reversals and no tax/GST",
+      "ok": true,
+      "detail": {
+        "sample_count": 50,
+        "failures": []
+      }
+    },
+    {
+      "name": "sales calculations remove TCS/TDS/GST and match formula",
+      "ok": true,
+      "detail": {
+        "sample_count": 50,
+        "failures": []
+      }
+    },
+    {
+      "name": "run calculations endpoint succeeds",
+      "ok": true,
+      "detail": {
+        "status_code": 200,
+        "body": {
+          "processed": 21614,
+          "total_sales": 21614,
+          "unmapped_count": 0,
+          "fully_mapped_count": 21614
+        }
+      }
+    },
+    {
+      "name": "run calculations unmapped_count is zero",
+      "ok": true,
+      "detail": {
+        "processed": 21614,
+        "total_sales": 21614,
+        "unmapped_count": 0,
+        "fully_mapped_count": 21614
+      }
+    },
+    {
+      "name": "unmapped summary empty after recalc",
+      "ok": true,
+      "detail": []
+    },
+    {
+      "name": "commission ALL fallback evidenced by matched_sub_category=ALL",
+      "ok": true,
+      "detail": {
+        "sales_id": "dd8e98ab-99e9-4236-8f61-3d86ccfeeb50",
+        "sub_category": "Clothing Set",
+        "master_category": "APPAREL",
+        "matched_sub_category": "All",
+        "commission_pct": 0.085
+      }
+    },
+    {
+      "name": "sales export has 31 headers incl requested fields",
+      "ok": true,
+      "detail": {
+        "status_code": 200,
+        "content_type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "content_disposition": "attachment; filename=\"fundle-sales-ledger-2026-04.xlsx\"",
+        "bytes": 3411797,
+        "sheet": "Sales Ledger",
+        "max_row": 21615,
+        "headers": [
+          "Portal",
+          "Brand",
+          "Sale Type",
+          "Order Status",
+          "Posting Date",
+          "Report Month",
+          "Online Order ID",
+          "Item No (SKU)",
+          "Sales Invoice No",
+          "Posting_Location Code",
+          "Main Ctg",
+          "Category",
+          "Sub Category",
+          "Level No",
+          "Zone",
+          "Qty",
+          "MRP",
+          "Total MRP",
+          "Customer Discount",
+          "NSV Value",
+          "NSV per Unit",
+          "NSV after GT",
+          "Price Range - Key (NSV)",
+          "Price Range - Key (NSV after GT)",
+          "Commission %",
+          "Commission (Expected)",
+          "GT Charge (Expected)",
+          "Fixed Fee (Expected)",
+          "Return Fee (Expected)",
+          "Total Deductions",
+          "Expected Settlement"
+        ],
+        "header_count": 31,
+        "first_20_join_populated_count": 20
+      }
+    },
+    {
+      "name": "sales export has at least 20 data rows",
+      "ok": true,
+      "detail": {
+        "max_row": 21615
+      }
+    },
+    {
+      "name": "sales export first 20 joined Level/Price Range fields populated",
+      "ok": true,
+      "detail": {
+        "first_20_rows": 20,
+        "populated_join_rows": 20
+      }
+    }
+  ],
+  "failures": [
+    {
+      "name": "sales API first 20 include requested source fields",
+      "detail": {
+        "row_count": 20,
+        "populated_counts": {
+          "brand": 20,
+          "txn_type": 20,
+          "posting_date": 20,
+          "sku": 20,
+          "posting_location_code": 0,
+          "main_category": 20,
+          "sub_category": 20,
+          "zone": 20,
+          "report_month": 20,
+          "qty": 20,
+          "mrp": 20,
+          "nsv_val": 20
+        }
+      }
+    }
+  ],
+  "samples": {
+    "sales_summary": {
+      "row_count": 21614,
+      "sales_rows": 14219,
+      "return_rows": 7395,
+      "net_orders": 6824,
+      "net_qty": 6824.0,
+      "nsv_total": 12702900.0
+    },
+    "return_dto": {
+      "id": "099d24fe-c82b-4453-8045-0630b5a09b3d",
+      "sales_id": "a752b5cd-e629-42ec-a383-ad1fa5ce9976",
+      "upload_id": "2ae44043-40bc-4352-9a20-d1460a255229",
+      "online_order_id": "83410B8C-556E-465B-96A1-EB3A80DB1DF1",
+      "sku": "KZ01952BLACKXL01",
+      "portal": "myntra",
+      "computed_at": "2026-08-04T20:10:12.232202+00:00",
+      "commission_base": -279.06,
+      "commission_gst": 0,
+      "commission_incl_gst": -279.06,
+      "commission_pct": 0.085,
+      "fixed_fee": -61.0,
+      "fixed_fee_gst": 0,
+      "fixed_fee_incl_gst": -61.0,
+      "gt_charge": -207.0,
+      "return_fee": 112.0,
+      "tcs": 0,
+      "tds": 0,
+      "nsv_after_gt": -3283.0,
+      "total_deductions": -435.06,
+      "expected_settlement": -2847.94,
+      "order_type": "return_dto",
+      "is_return": true,
+      "unmapped": false,
+      "unmapped_reasons": [],
+      "breakdown": {
+        "isp": 3490.0,
+        "qty": -1.0,
+        "nsv_val": -3490.0,
+        "sub_category": "Jeggings",
+        "master_category": "APPAREL",
+        "zone": "Zonal",
+        "level": "Level 1",
+        "order_type": "return_dto",
+        "report_month": "2026-04",
+        "commission_rule": {
+          "id": "0da12c02-8ef5-4c7b-8989-3dc83fc4cc1d",
+          "commission_pct": 0.085,
+          "price_range": ">500",
+          "commission_model": "Split Commission and Logistics",
+          "matched_sub_category": "Jeggings"
+        },
+        "fixed_fee_slab": {
+          "id": "dcf3842f-04c6-4a16-8244-42f30b4f0eef",
+          "label": ">2000",
+          "fixed_fee": 61.0
+        },
+        "gt_charge_cell": {
+          "id": "2a2a7ae4-a134-4618-b5f7-d285f4fd4aa4",
+          "level": "Level 1",
+          "price_range": ">2000",
+          "unit_charge": 207.0,
+          "qty": -1.0
+        },
+        "return_fee_cell": {
+          "id": "14d40719-4c21-4480-894d-eb8da65a785d",
+          "zone": "Zonal",
+          "level": "Level 1",
+          "fee": 112.0,
+          "applied": true
+        },
+        "nsv_after_gt": -3283.0
+      },
+      "report_month": "2026-04"
+    },
+    "sales_calc": {
+      "id": "e53f8787-f766-4b86-a52d-ca936aa455b4",
+      "sales_id": "3fc2c0d5-aca8-448a-91ae-51ecd5e58438",
+      "upload_id": "2ae44043-40bc-4352-9a20-d1460a255229",
+      "online_order_id": "BA030AAB-E147-4FA2-847F-8B119D06AEC1",
+      "sku": "DT1150TAUPC01",
+      "portal": "myntra",
+      "computed_at": "2026-08-04T20:10:12.209437+00:00",
+      "commission_base": 871.36,
+      "commission_gst": 0,
+      "commission_incl_gst": 871.36,
+      "commission_pct": 0.14,
+      "fixed_fee": 61.0,
+      "fixed_fee_gst": 0,
+      "fixed_fee_incl_gst": 61.0,
+      "gt_charge": 266.0,
+      "return_fee": 0.0,
+      "tcs": 0,
+      "tds": 0,
+      "nsv_after_gt": 6224.0,
+      "total_deductions": 1198.36,
+      "expected_settlement": 5025.64,
+      "order_type": "sales",
+      "is_return": false,
+      "unmapped": false,
+      "unmapped_reasons": [],
+      "breakdown": {
+        "isp": 6490.0,
+        "qty": 1.0,
+        "nsv_val": 6490.0,
+        "sub_category": "Handbags",
+        "master_category": "ACCESSORIES",
+        "zone": "Zonal",
+        "level": "Level 3",
+        "order_type": "sales",
+        "report_month": "2026-04",
+        "commission_rule": {
+          "id": "3f70929d-c836-4c9e-85e5-b967818f1857",
+          "commission_pct": 0.14,
+          "price_range": ">2000",
+          "commission_model": "Split Commission and Logistics",
+          "matched_sub_category": "Handbags"
+        },
+        "fixed_fee_slab": {
+          "id": "dcf3842f-04c6-4a16-8244-42f30b4f0eef",
+          "label": ">2000",
+          "fixed_fee": 61.0
+        },
+        "gt_charge_cell": {
+          "id": "8a2e3030-5550-4690-873d-8bd18a229d8d",
+          "level": "Level 3",
+          "price_range": ">2000",
+          "unit_charge": 266.0,
+          "qty": 1.0
+        },
+        "return_fee_cell": {
+          "id": "19e97798-f285-409d-9cbd-6604d27b6642",
+          "zone": "Zonal",
+          "level": "Level 3",
+          "fee": 194.0,
+          "applied": false
+        },
+        "nsv_after_gt": 6224.0
+      },
+      "report_month": "2026-04"
+    },
+    "run_calculations": {
+      "status_code": 200,
+      "body": {
+        "processed": 21614,
+        "total_sales": 21614,
+        "unmapped_count": 0,
+        "fully_mapped_count": 21614
+      }
+    },
+    "unmapped_summary": [],
+    "all_fallback": {
+      "sales_id": "dd8e98ab-99e9-4236-8f61-3d86ccfeeb50",
+      "sub_category": "Clothing Set",
+      "master_category": "APPAREL",
+      "matched_sub_category": "All",
+      "commission_pct": 0.085
+    },
+    "export": {
+      "status_code": 200,
+      "content_type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "content_disposition": "attachment; filename=\"fundle-sales-ledger-2026-04.xlsx\"",
+      "bytes": 3411797,
+      "sheet": "Sales Ledger",
+      "max_row": 21615,
+      "headers": [
+        "Portal",
+        "Brand",
+        "Sale Type",
+        "Order Status",
+        "Posting Date",
+        "Report Month",
+        "Online Order ID",
+        "Item No (SKU)",
+        "Sales Invoice No",
+        "Posting_Location Code",
+        "Main Ctg",
+        "Category",
+        "Sub Category",
+        "Level No",
+        "Zone",
+        "Qty",
+        "MRP",
+        "Total MRP",
+        "Customer Discount",
+        "NSV Value",
+        "NSV per Unit",
+        "NSV after GT",
+        "Price Range - Key (NSV)",
+        "Price Range - Key (NSV after GT)",
+        "Commission %",
+        "Commission (Expected)",
+        "GT Charge (Expected)",
+        "Fixed Fee (Expected)",
+        "Return Fee (Expected)",
+        "Total Deductions",
+        "Expected Settlement"
+      ],
+      "header_count": 31,
+      "first_20_join_populated_count": 20
+    }
+  }
+}

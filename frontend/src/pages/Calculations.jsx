@@ -250,14 +250,10 @@ function CalcDrawer({ data, onClose }) {
               <table className="w-full text-xs mono border border-border">
                 <tbody>
                   {[
-                    ["Commission base (ex GST)", c.commission_base, "neg"],
-                    ["GST on Commission (18%)", c.commission_gst, "neg"],
-                    ["Fixed Fee (ex GST)", c.fixed_fee, "neg"],
-                    ["GST on Fixed Fee (18%)", c.fixed_fee_gst, "neg"],
-                    ["GT Charge (incl GST)", c.gt_charge, "neg"],
+                    ["Commission", c.commission_incl_gst, "neg"],
+                    ["Fixed Fee", c.fixed_fee_incl_gst, "neg"],
+                    ["GT Charge", c.gt_charge, "neg"],
                     ["Return Fee (Level/Zone)", c.return_fee, "neg"],
-                    ["TCS", c.tcs, "neg"],
-                    ["TDS", c.tds, "neg"],
                     ["Total Deductions", c.total_deductions, "neg", true],
                     ["Expected Settlement", c.expected_settlement, "pos", true],
                   ].map(([k, v, tone, bold]) => (

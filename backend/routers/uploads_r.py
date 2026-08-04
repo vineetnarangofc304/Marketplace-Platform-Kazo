@@ -119,6 +119,8 @@ SALES_HEADER_ALIASES: Dict[str, List[str]] = {
     "category": ["Category", "Product Category", "item-category"],
     "sub_category": ["Sub Category_ GTA Charges", "Sub Category", "Sub-Category", "Subcategory",
                       "product-sub-category", "Product Sub-Category"],
+    "posting_location_code": ["Posting Location Code", "Posting_Location Code", "Location Code",
+                                "Warehouse Code", "Fulfilment Center", "ship-from-code"],
     "actual_gt_amount": ["GT Amount (Inc. gst)", "GT Amount", "GT Charges (Inc GST)",
                           "shipping-fee", "shipping_fee", "logistics-fee",
                           "Shipping Fee", "Logistics Fee"],
@@ -283,6 +285,7 @@ def _parse_sales_xlsx(content: bytes) -> Dict[str, Any]:
                 "main_category": _norm_str(gv(row, "main_category")),
                 "category": _norm_str(gv(row, "category")),
                 "sub_category": _norm_str(gv(row, "sub_category")),
+                "posting_location_code": _norm_str(gv(row, "posting_location_code")),
                 "actual_gt_amount": _num(gv(row, "actual_gt_amount")),
                 "actual_fixed_fee": _num(gv(row, "actual_fixed_fee")),
                 "actual_return_fee": _num(gv(row, "actual_return_fee")),
@@ -593,6 +596,213 @@ async def list_sales_months():
     ]
     rows = await db.sales.aggregate(pipeline).to_list(200)
     return [{"month": r["_id"], "count": r["count"]} for r in rows]
+
+
+@router.get("/sales/summary")
+async def sales_summary(
+    upload_id: Optional[str] = None,
+    report_month: Optional[str] = None,
+    period_type: Optional[str] = None,
+    period_value: Optional[str] = None,
+    portal: Optional[str] = None,
+    search: Optional[str] = None,
+    zone: Optional[str] = None,
+    category: Optional[str] = None,
+    sub_category: Optional[str] = None,
+    main_category: Optional[str] = None,
+    order_status: Optional[str] = None,
+    txn_type: Optional[str] = None,
+):
+    """Aggregate KPIs for the Sales Ledger. Order Qty = net qty (Sales − Returns)."""
+    from period_utils import month_query as _mq
+    q: Dict[str, Any] = {}
+    if period_type:
+        q.update(_mq(period_type, period_value))
+    elif report_month:
+        q["report_month"] = report_month
+    if portal and portal.lower() != "all":
+        q["portal"] = portal.lower()
+    if upload_id:
+        q["upload_id"] = upload_id
+    if zone:
+        q["zone"] = zone
+    if category:
+        q["category"] = category
+    if sub_category:
+        q["sub_category"] = sub_category
+    if main_category:
+        q["main_category"] = main_category
+    if order_status:
+        q["order_status"] = order_status
+    if txn_type:
+        q["txn_type"] = txn_type
+    if search:
+        s = _regex_escape(search.strip())
+        q["$or"] = [
+            {"online_order_id": {"$regex": s, "$options": "i"}},
+            {"sku": {"$regex": s, "$options": "i"}},
+            {"sales_invoice_no": {"$regex": s, "$options": "i"}},
+        ]
+    pipeline = [
+        {"$match": q},
+        {"$group": {
+            "_id": None,
+            "row_count": {"$sum": 1},
+            "sales_rows": {"$sum": {"$cond": [{"$in": ["$txn_type", ["Sales", "sales", None]]}, 1, 0]}},
+            "return_rows": {"$sum": {"$cond": [{"$in": ["$txn_type", ["Return", "return"]]}, 1, 0]}},
+            "net_qty": {"$sum": {"$ifNull": ["$qty", 0]}},
+            "nsv_total": {"$sum": {"$ifNull": ["$nsv_val", 0]}},
+        }},
+    ]
+    rows = await db.sales.aggregate(pipeline).to_list(1)
+    if not rows:
+        return {"row_count": 0, "sales_rows": 0, "return_rows": 0, "net_qty": 0, "net_orders": 0, "nsv_total": 0}
+    r = rows[0]
+    return {
+        "row_count": r.get("row_count", 0),
+        "sales_rows": r.get("sales_rows", 0),
+        "return_rows": r.get("return_rows", 0),
+        "net_orders": r.get("sales_rows", 0) - r.get("return_rows", 0),
+        "net_qty": round(r.get("net_qty", 0) or 0, 2),
+        "nsv_total": round(r.get("nsv_total", 0) or 0, 2),
+    }
+
+
+@router.get("/sales/export")
+async def export_sales_xlsx(
+    upload_id: Optional[str] = None,
+    report_month: Optional[str] = None,
+    period_type: Optional[str] = None,
+    period_value: Optional[str] = None,
+    portal: Optional[str] = None,
+    search: Optional[str] = None,
+    zone: Optional[str] = None,
+    sub_category: Optional[str] = None,
+    main_category: Optional[str] = None,
+    order_status: Optional[str] = None,
+    txn_type: Optional[str] = None,
+):
+    """Export the Sales Ledger as an Excel workbook with all client-requested
+    columns, including Brand, Sale Type, Posting Date, Item No, Posting_Location
+    Code, Main Ctg, Level No, Price Range (NSV), Price Range (NSV after GT) — the
+    last three are joined from the calculations collection.
+    """
+    from period_utils import month_query as _mq
+    from fastapi.responses import StreamingResponse
+    q: Dict[str, Any] = {}
+    if period_type:
+        q.update(_mq(period_type, period_value))
+    elif report_month:
+        q["report_month"] = report_month
+    if portal and portal.lower() != "all":
+        q["portal"] = portal.lower()
+    if upload_id:
+        q["upload_id"] = upload_id
+    if zone:
+        q["zone"] = zone
+    if sub_category:
+        q["sub_category"] = sub_category
+    if main_category:
+        q["main_category"] = main_category
+    if order_status:
+        q["order_status"] = order_status
+    if txn_type:
+        q["txn_type"] = txn_type
+    if search:
+        s = _regex_escape(search.strip())
+        q["$or"] = [
+            {"online_order_id": {"$regex": s, "$options": "i"}},
+            {"sku": {"$regex": s, "$options": "i"}},
+            {"sales_invoice_no": {"$regex": s, "$options": "i"}},
+        ]
+
+    # Stream sales rows (up to 200k for safety)
+    sales_cursor = db.sales.find(q, {"_id": 0}).limit(200000)
+    sale_docs = [s async for s in sales_cursor]
+    sales_ids = [s["id"] for s in sale_docs]
+
+    # Pull matching calc rows for the joined columns (Level, Price ranges, Commission %)
+    calc_map: Dict[str, Dict[str, Any]] = {}
+    if sales_ids:
+        async for c in db.calculations.find({"sales_id": {"$in": sales_ids}}, {"_id": 0}):
+            calc_map[c["sales_id"]] = c
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Sales Ledger"
+    headers = [
+        "Portal", "Brand", "Sale Type", "Order Status", "Posting Date", "Report Month",
+        "Online Order ID", "Item No (SKU)", "Sales Invoice No",
+        "Posting_Location Code", "Main Ctg", "Category", "Sub Category", "Level No",
+        "Zone", "Qty", "MRP", "Total MRP", "Customer Discount",
+        "NSV Value", "NSV per Unit", "NSV after GT",
+        "Price Range - Key (NSV)", "Price Range - Key (NSV after GT)",
+        "Commission %", "Commission (Expected)", "GT Charge (Expected)",
+        "Fixed Fee (Expected)", "Return Fee (Expected)", "Total Deductions",
+        "Expected Settlement",
+    ]
+    ws.append(headers)
+    for cell in ws[1]:
+        cell.font = openpyxl.styles.Font(bold=True)
+
+    def _n(v):
+        try:
+            return round(float(v), 2) if v is not None and v != "" else None
+        except Exception:
+            return None
+
+    for s in sale_docs:
+        c = calc_map.get(s["id"], {}) or {}
+        bd = c.get("breakdown") or {}
+        crule = bd.get("commission_rule") or {}
+        gt_cell = bd.get("gt_charge_cell") or {}
+        row = [
+            (s.get("portal") or "").upper(),
+            s.get("brand"),
+            s.get("txn_type"),
+            s.get("order_status"),
+            s.get("posting_date"),
+            s.get("report_month"),
+            s.get("online_order_id"),
+            s.get("sku"),
+            s.get("sales_invoice_no"),
+            s.get("posting_location_code"),
+            s.get("main_category"),
+            s.get("category"),
+            s.get("sub_category"),
+            bd.get("level"),
+            bd.get("zone") or s.get("zone"),
+            _n(s.get("qty")),
+            _n(s.get("mrp")),
+            _n(s.get("total_mrp")),
+            _n(s.get("customer_discount")),
+            _n(s.get("nsv_val")),
+            _n(s.get("nsv_per_unit")),
+            _n(c.get("nsv_after_gt")),
+            crule.get("price_range"),
+            gt_cell.get("price_range"),
+            crule.get("commission_pct"),
+            _n(c.get("commission_incl_gst")),
+            _n(c.get("gt_charge")),
+            _n(c.get("fixed_fee_incl_gst")),
+            _n(c.get("return_fee")),
+            _n(c.get("total_deductions")),
+            _n(c.get("expected_settlement")),
+        ]
+        ws.append(row)
+
+    for i, col in enumerate(ws.iter_cols(min_row=1, max_row=1), start=1):
+        ws.column_dimensions[openpyxl.utils.get_column_letter(i)].width = 18
+
+    buf = io.BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+    filename = f"fundle-sales-ledger-{report_month or period_value or 'all'}.xlsx"
+    return StreamingResponse(
+        buf,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 @router.get("/settlement")
