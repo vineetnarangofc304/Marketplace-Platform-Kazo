@@ -1,0 +1,91 @@
+{
+  "all_ok": true,
+  "backend_url": "https://marketplace-recon-1.preview.emergentagent.com",
+  "expected_admin_emails": [
+    "admin@fundle.ai",
+    "admin@kazo.com"
+  ],
+  "isolated_empty_db_startup_seed": {
+    "all_seeded_admins_valid": true,
+    "both_admins_seeded_after_startup": true,
+    "seeded_admin_users": [
+      {
+        "bcrypt_hash_present": true,
+        "email": "admin@fundle.ai",
+        "id_present": true,
+        "name": "Administrator",
+        "role": "admin"
+      },
+      {
+        "bcrypt_hash_present": true,
+        "email": "admin@kazo.com",
+        "id_present": true,
+        "name": "Administrator",
+        "role": "admin"
+      }
+    ],
+    "temp_db_name": "test_database_seed_verify_1785824456",
+    "used_isolated_empty_db": true,
+    "users_before_startup": 0
+  },
+  "live_api": {
+    "all_ok": true,
+    "api_url": "https://marketplace-recon-1.preview.emergentagent.com/api",
+    "logins": [
+      {
+        "email": "admin@fundle.ai",
+        "label": "current_prefilled_admin",
+        "me_email": "admin@fundle.ai",
+        "me_ok": true,
+        "me_status_code": 200,
+        "ok": true,
+        "set_cookie_access_token": true,
+        "status_code": 200,
+        "token_present": true,
+        "user": {
+          "email": "admin@fundle.ai",
+          "id_present": true,
+          "role": "admin"
+        }
+      },
+      {
+        "email": "admin@kazo.com",
+        "label": "legacy_admin",
+        "me_email": "admin@kazo.com",
+        "me_ok": true,
+        "me_status_code": 200,
+        "ok": true,
+        "set_cookie_access_token": true,
+        "status_code": 200,
+        "token_present": true,
+        "user": {
+          "email": "admin@kazo.com",
+          "id_present": true,
+          "role": "admin"
+        }
+      }
+    ]
+  },
+  "live_db": {
+    "admin_users": [
+      {
+        "bcrypt_hash_present": true,
+        "email": "admin@fundle.ai",
+        "id_present": true,
+        "name": "Administrator",
+        "role": "admin"
+      },
+      {
+        "bcrypt_hash_present": true,
+        "email": "admin@kazo.com",
+        "id_present": true,
+        "name": "Administrator",
+        "role": "admin"
+      }
+    ],
+    "all_are_admin_with_bcrypt": true,
+    "both_admins_present": true,
+    "db_name": "test_database"
+  },
+  "scope": "reported login bug only"
+}

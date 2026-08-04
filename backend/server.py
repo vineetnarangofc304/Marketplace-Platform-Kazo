@@ -34,6 +34,9 @@ JWT_ALG = "HS256"
 ACCESS_TTL_MIN = 60 * 24  # 24h for enterprise usability
 ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "admin@kazo.com")
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "admin123")
+# Historically two admin identities were rolled out. Seed both so login works
+# on any environment regardless of which email was documented last.
+ADMIN_EMAILS: list[str] = list({e.strip().lower() for e in [ADMIN_EMAIL, "admin@fundle.ai"] if e and e.strip()})
 
 mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
@@ -226,24 +229,28 @@ async def _startup():
     then kick off the rest of bootstrap (indexes + masters) in the background
     so K8s readiness probes succeed within seconds.
     """
-    # 1) Seed / rehash admin inline so login is available from the first request.
-    try:
-        existing = await db.users.find_one({"email": ADMIN_EMAIL})
-        if not existing:
-            await db.users.insert_one({
-                "id": new_id(), "email": ADMIN_EMAIL, "name": "Administrator",
-                "role": "admin", "password_hash": await hash_pwd_async(ADMIN_PASSWORD),
-                "created_at": now_iso(),
-            })
-            logger.info(f"Seeded admin inline: {ADMIN_EMAIL}")
-        elif not await verify_pwd_async(ADMIN_PASSWORD, existing["password_hash"]):
-            await db.users.update_one(
-                {"email": ADMIN_EMAIL},
-                {"$set": {"password_hash": await hash_pwd_async(ADMIN_PASSWORD)}},
-            )
-            logger.info(f"Rehashed admin inline: {ADMIN_EMAIL}")
-    except Exception as e:
-        logger.exception(f"Inline admin seed failed (deferring to background): {e}")
+    # 1) Seed / rehash admin users inline so login is available from the first
+    #    request. We seed BOTH the historical `admin@kazo.com` and the current
+    #    `admin@fundle.ai` (frontend default) so a fresh production DB works
+    #    without any manual bootstrap.
+    for email in ADMIN_EMAILS:
+        try:
+            existing = await db.users.find_one({"email": email})
+            if not existing:
+                await db.users.insert_one({
+                    "id": new_id(), "email": email, "name": "Administrator",
+                    "role": "admin", "password_hash": await hash_pwd_async(ADMIN_PASSWORD),
+                    "created_at": now_iso(),
+                })
+                logger.info(f"Seeded admin inline: {email}")
+            elif not await verify_pwd_async(ADMIN_PASSWORD, existing["password_hash"]):
+                await db.users.update_one(
+                    {"email": email},
+                    {"$set": {"password_hash": await hash_pwd_async(ADMIN_PASSWORD)}},
+                )
+                logger.info(f"Rehashed admin inline: {email}")
+        except Exception as e:
+            logger.exception(f"Inline admin seed failed for {email} (deferring to background): {e}")
 
     # 2) Kick off the rest of bootstrap in the background.
     asyncio.create_task(_bootstrap())
@@ -316,21 +323,23 @@ async def _bootstrap():
 
         await asyncio.gather(*(_mk_index(c, k, o) for c, k, o in index_specs))
 
-        # Seed admin
-        existing = await db.users.find_one({"email": ADMIN_EMAIL})
-        if not existing:
-            await db.users.insert_one({
-                "id": new_id(), "email": ADMIN_EMAIL, "name": "Administrator",
-                "role": "admin", "password_hash": await hash_pwd_async(ADMIN_PASSWORD),
-                "created_at": now_iso(),
-            })
-            logger.info(f"Seeded admin: {ADMIN_EMAIL}")
-        elif not await verify_pwd_async(ADMIN_PASSWORD, existing["password_hash"]):
-            await db.users.update_one(
-                {"email": ADMIN_EMAIL},
-                {"$set": {"password_hash": await hash_pwd_async(ADMIN_PASSWORD)}},
-            )
-            logger.info(f"Rehashed admin password: {ADMIN_EMAIL}")
+        # Seed admin (belt-and-braces — the inline startup already seeded, but
+        # re-run here idempotently in case inline was skipped due to a DB blip).
+        for email in ADMIN_EMAILS:
+            existing = await db.users.find_one({"email": email})
+            if not existing:
+                await db.users.insert_one({
+                    "id": new_id(), "email": email, "name": "Administrator",
+                    "role": "admin", "password_hash": await hash_pwd_async(ADMIN_PASSWORD),
+                    "created_at": now_iso(),
+                })
+                logger.info(f"Seeded admin: {email}")
+            elif not await verify_pwd_async(ADMIN_PASSWORD, existing["password_hash"]):
+                await db.users.update_one(
+                    {"email": email},
+                    {"$set": {"password_hash": await hash_pwd_async(ADMIN_PASSWORD)}},
+                )
+                logger.info(f"Rehashed admin password: {email}")
 
         # Seed masters (default Myntra commission structure) if empty
         await masters.seed_defaults(db)
