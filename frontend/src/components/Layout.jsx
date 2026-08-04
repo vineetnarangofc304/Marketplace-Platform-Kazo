@@ -29,14 +29,11 @@ export default function Layout({ children }) {
   return (
     <div className="min-h-screen flex bg-background text-foreground">
       <aside className="w-56 border-r border-border bg-white flex flex-col shrink-0">
-        <div className="px-5 py-5 border-b border-border">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold rounded-sm">F</div>
-            <div>
-              <div className="text-sm font-semibold tracking-tight">Fundle Finance OS</div>
-              <div className="overline">Marketplace Recon</div>
-            </div>
-          </div>
+        <div className="px-5 py-5 border-b border-border bg-slate-900">
+          <a href="https://fundle.ai" target="_blank" rel="noopener noreferrer" className="flex flex-col gap-1">
+            <img src="/fundle_logo.png" alt="Fundle" className="h-7 w-auto" data-testid="fundle-logo-sidebar" />
+            <div className="text-[10px] mono uppercase tracking-widest text-slate-400 mt-1">Finance OS · Marketplace Recon</div>
+          </a>
         </div>
         <nav className="flex-1 py-3 flex flex-col">
           {nav.map((n) => {
@@ -76,11 +73,7 @@ export default function Layout({ children }) {
           title="Powered by Fundle"
         >
           <span className="text-[9px] mono uppercase tracking-widest text-slate-400">Powered by</span>
-          <img
-            src="https://customer-assets-v7afamib.emergentagent.net/job_commission-hub-156/artifacts/f3pobwkf_fundle_logo-white-min-382x100.png"
-            alt="Fundle"
-            className="h-4 w-auto"
-          />
+          <img src="/fundle_logo.png" alt="Fundle" className="h-4 w-auto" />
         </a>
       </aside>
 

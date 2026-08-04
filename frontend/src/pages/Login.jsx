@@ -32,10 +32,9 @@ export default function Login() {
   return (
     <div className="min-h-screen w-full flex bg-background text-foreground">
       <div className="hidden md:flex flex-1 relative bg-white border-r border-border p-10 flex-col justify-between">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold rounded-sm">F</div>
-          <div className="text-sm tracking-tight font-semibold">Fundle Finance OS</div>
-        </div>
+        <a href="https://fundle.ai" target="_blank" rel="noopener noreferrer" className="inline-flex bg-slate-900 rounded-sm px-3 py-2 self-start">
+          <img src="/fundle_logo.png" alt="Fundle" className="h-6 w-auto" data-testid="fundle-logo-login-hero" />
+        </a>
         <div className="max-w-md">
           <div className="overline mb-3">Enterprise Reconciliation OS</div>
           <h1 className="text-4xl md:text-5xl font-light tracking-tight leading-tight text-slate-900">
@@ -93,11 +92,7 @@ export default function Login() {
           title="Powered by Fundle"
         >
           <span className="text-[10px] mono uppercase tracking-widest text-slate-400">Powered by</span>
-          <img
-            src="https://customer-assets-v7afamib.emergentagent.net/job_commission-hub-156/artifacts/f3pobwkf_fundle_logo-white-min-382x100.png"
-            alt="Fundle"
-            className="h-5 w-auto"
-          />
+          <img src="/fundle_logo.png" alt="Fundle" className="h-5 w-auto" />
         </a>
       </div>
     </div>
