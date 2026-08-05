@@ -1,0 +1,83 @@
+{
+  "backend_url": "https://marketplace-recon-1.preview.emergentagent.com",
+  "checks": [
+    {
+      "name": "auth_login",
+      "passed": true,
+      "status": 200
+    },
+    {
+      "name": "sales_summary_net_orders",
+      "passed": true,
+      "expected": {
+        "sales_rows": 14219,
+        "return_rows": 7395,
+        "net_orders": 6824
+      }
+    },
+    {
+      "name": "found_return_dto_sales_row",
+      "passed": true,
+      "sample_sales_id": "b224f7f0-9b39-4133-bf26-d661c254abde"
+    },
+    {
+      "name": "by_sale_return_dto_reversal",
+      "passed": true
+    },
+    {
+      "name": "calculations_endpoint_return_dto_sanity",
+      "passed": true
+    }
+  ],
+  "login_status": 200,
+  "sales_summary_status": 200,
+  "sales_summary": {
+    "row_count": 21614,
+    "sales_rows": 14219,
+    "return_rows": 7395,
+    "net_orders": 6824,
+    "net_qty": 6824.0,
+    "nsv_total": 12702900.0
+  },
+  "return_dto_sales_status": 200,
+  "return_dto_sales_total": 5443,
+  "sample_sale": {
+    "id": "b224f7f0-9b39-4133-bf26-d661c254abde",
+    "online_order_id": "326D677B-1384-40AD-A823-F0E9D470EC82",
+    "sku": "125474PRPLL",
+    "order_status": "DTO",
+    "txn_type": "Return",
+    "report_month": "2026-04",
+    "portal": "myntra"
+  },
+  "by_sale_status": 200,
+  "sample_by_sale_calc": {
+    "id": "49e26ff6-143e-41f3-9dea-dbc84b8ba271",
+    "sales_id": "b224f7f0-9b39-4133-bf26-d661c254abde",
+    "order_type": "return_dto",
+    "commission_incl_gst": -110.84,
+    "gt_charge": -171.0,
+    "fixed_fee_incl_gst": -45.0,
+    "return_fee": 112.0,
+    "tcs": 0,
+    "tds": 0,
+    "commission_gst": 0,
+    "fixed_fee_gst": 0
+  },
+  "calculations_return_dto_status": 200,
+  "sample_calculations_return_dto": {
+    "id": "3d66877f-8523-4506-a70f-6c58a52bed1f",
+    "sales_id": "a752b5cd-e629-42ec-a383-ad1fa5ce9976",
+    "portal": "myntra",
+    "report_month": "2026-04",
+    "order_type": "return_dto",
+    "commission_incl_gst": -279.06,
+    "gt_charge": -207.0,
+    "fixed_fee_incl_gst": -61.0,
+    "return_fee": 112.0,
+    "tcs": 0,
+    "tds": 0,
+    "commission_gst": 0
+  },
+  "passed": true
+}

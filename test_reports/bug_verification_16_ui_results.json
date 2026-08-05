@@ -1,0 +1,41 @@
+{
+  "steps": [
+    {
+      "name": "login",
+      "passed": true,
+      "detail": "admin credentials accepted or existing session reused"
+    },
+    {
+      "name": "sales_summary_net_qty_visible",
+      "passed": true,
+      "detail": "6,824 Order Qty (net) \u00b7 14,219 Sales \u2212 7,395 Returns \u00b7 21,614 rows"
+    },
+    {
+      "name": "sales_drawer_return_dto_reversal",
+      "passed": true,
+      "detail": "{\"Commission\": \"\\u20b9-110.84\", \"Fixed Fee\": \"\\u20b9-45.00\", \"GT Charge\": \"\\u20b9-171.00\", \"Return Fee (Level/Zone)\": \"\\u20b9112.00\", \"Total Deductions\": \"\\u20b9-214.84\", \"Expected Settlement\": \"\\u20b9-1,089.16\"}"
+    },
+    {
+      "name": "calculations_drawer_same_row_return_dto_reversal",
+      "passed": true,
+      "detail": "{\"Commission\": \"\\u20b9-110.84\", \"Fixed Fee\": \"\\u20b9-45.00\", \"GT Charge\": \"\\u20b9-171.00\", \"Return Fee (Level/Zone)\": \"\\u20b9112.00\", \"Total Deductions\": \"\\u20b9-214.84\", \"Expected Settlement\": \"\\u20b9-1,089.16\"}"
+    }
+  ],
+  "sales_drawer_table": {
+    "Commission": "\u20b9-110.84",
+    "Fixed Fee": "\u20b9-45.00",
+    "GT Charge": "\u20b9-171.00",
+    "Return Fee (Level/Zone)": "\u20b9112.00",
+    "Total Deductions": "\u20b9-214.84",
+    "Expected Settlement": "\u20b9-1,089.16"
+  },
+  "calc_drawer_table": {
+    "Commission": "\u20b9-110.84",
+    "Fixed Fee": "\u20b9-45.00",
+    "GT Charge": "\u20b9-171.00",
+    "Return Fee (Level/Zone)": "\u20b9112.00",
+    "Total Deductions": "\u20b9-214.84",
+    "Expected Settlement": "\u20b9-1,089.16"
+  },
+  "passed": true
+}
