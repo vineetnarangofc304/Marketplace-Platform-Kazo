@@ -1,0 +1,127 @@
+{
+  "base_url": "https://marketplace-recon-1.preview.emergentagent.com",
+  "checks": [
+    {
+      "name": "login",
+      "status_code": 200
+    },
+    {
+      "name": "portals_summary",
+      "status_code": 200
+    },
+    {
+      "name": "sales_summary",
+      "status_code": 200
+    },
+    {
+      "name": "calculations_return_dto",
+      "status_code": 200
+    },
+    {
+      "name": "drawer_by_sale_return_dto",
+      "status_code": 200
+    },
+    {
+      "name": "calculations_sales",
+      "status_code": 200
+    },
+    {
+      "name": "sales_export",
+      "status_code": 200,
+      "content_type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    }
+  ],
+  "sample_return_dto": {
+    "sales_id": "a752b5cd-e629-42ec-a383-ad1fa5ce9976",
+    "online_order_id": "83410B8C-556E-465B-96A1-EB3A80DB1DF1",
+    "order_type": "return_dto",
+    "commission_incl_gst": -279.06,
+    "gt_charge": -207.0,
+    "fixed_fee_incl_gst": -61.0,
+    "return_fee": 112.0,
+    "tcs": 0.0,
+    "tds": 0.0
+  },
+  "sample_sales": {
+    "sales_id": "3fc2c0d5-aca8-448a-91ae-51ecd5e58438",
+    "online_order_id": "BA030AAB-E147-4FA2-847F-8B119D06AEC1",
+    "order_type": "sales",
+    "commission_incl_gst": 871.36,
+    "gt_charge": 266.0,
+    "tcs": 0.0,
+    "tds": 0.0
+  },
+  "excel_headers_count": 31,
+  "portals_summary": {
+    "totals": {
+      "portals_count": 6,
+      "live_portals": 6,
+      "sales_count": 21614,
+      "net_orders": 6824,
+      "nsv": 12702900.0,
+      "expected_settlement": 7809879.48,
+      "leakage": 0,
+      "disc_count": 0
+    },
+    "myntra": {
+      "code": "myntra",
+      "name": "Myntra",
+      "status": "live",
+      "sales_count": 21614,
+      "net_orders": 6824,
+      "calc_count": 21614,
+      "disc_count": 0,
+      "nsv": 12702900.0,
+      "expected_settlement": 7809879.48,
+      "expected_commission": 1230370.84,
+      "leakage": 0
+    }
+  },
+  "sales_summary": {
+    "row_count": 21614,
+    "sales_rows": 14219,
+    "return_rows": 7395,
+    "net_orders": 6824,
+    "net_qty": 6824.0,
+    "nsv_total": 12702900.0
+  },
+  "tcs_tds_scan": {
+    "scanned_rows": 21614,
+    "nonzero_count": 0,
+    "samples": []
+  },
+  "excel_headers": [
+    "Portal",
+    "Brand",
+    "Sale Type",
+    "Order Status",
+    "Posting Date",
+    "Report Month",
+    "Online Order ID",
+    "Item No (SKU)",
+    "Sales Invoice No",
+    "Posting_Location Code",
+    "Main Ctg",
+    "Category",
+    "Sub Category",
+    "Level No",
+    "Zone",
+    "Qty",
+    "MRP",
+    "Total MRP",
+    "Customer Discount",
+    "NSV Value",
+    "NSV per Unit",
+    "NSV after GT",
+    "Price Range - Key (NSV)",
+    "Price Range - Key (NSV after GT)",
+    "Commission %",
+    "Commission (Expected)",
+    "GT Charge (Expected)",
+    "Fixed Fee (Expected)",
+    "Return Fee (Expected)",
+    "Total Deductions",
+    "Expected Settlement"
+  ],
+  "verdict": "passed"
+}

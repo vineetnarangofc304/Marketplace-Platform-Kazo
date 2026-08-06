@@ -20,6 +20,7 @@ export default function Overview() {
   const [reconSum, setReconSum] = useState(null);
   const [returnVel, setReturnVel] = useState(null);
   const [portalsSummary, setPortalsSummary] = useState(null);
+  const [salesSummary, setSalesSummary] = useState(null);
 
   useEffect(() => {
     const params = { period_type: period.period_type, period_value: period.period_value || undefined, portal: portalParam };
@@ -30,9 +31,12 @@ export default function Overview() {
     // Portals summary is always fetched (agnostic of the switch) so the widget renders when portal="all"
     api.get("/dashboard/portals-summary", { params: { period_type: period.period_type, period_value: period.period_value || undefined } })
       .then((r) => setPortalsSummary(r.data));
+    // Sales summary drives the net Order Qty KPI (Sales rows − Return rows in source data)
+    api.get("/sales/summary", { params }).then((r) => setSalesSummary(r.data)).catch(() => setSalesSummary(null));
   }, [period.period_type, period.period_value, portalParam]);
 
   const kpi = commSum?.kpi || {};
+  const netOrders = salesSummary?.net_orders ?? kpi.net_orders ?? kpi.total_orders;
   const marginPct = kpi.total_nsv ? (kpi.expected_settlement || 0) / kpi.total_nsv : 0;
   const commPct = kpi.total_nsv ? (kpi.expected_commission || 0) / kpi.total_nsv : 0;
 
@@ -67,7 +71,7 @@ export default function Overview() {
               <div className="overline">Cross-Portal Snapshot</div>
               <div className="text-sm mt-0.5 text-slate-700">
                 {portalsSummary.totals?.live_portals}/{portalsSummary.totals?.portals_count} portals live
-                &nbsp;·&nbsp; {fmtInt(portalsSummary.totals?.sales_count)} orders
+                &nbsp;·&nbsp; {fmtInt(portalsSummary.totals?.net_orders ?? portalsSummary.totals?.sales_count)} Order Qty (net)
                 &nbsp;·&nbsp; {fmtCurrency(portalsSummary.totals?.nsv)} NSV
               </div>
             </div>
@@ -88,7 +92,7 @@ export default function Overview() {
                   <span className="text-sm font-medium tracking-tight">{p.name}</span>
                 </div>
                 <div className="text-lg font-semibold text-slate-900">{fmtCurrency(p.nsv)}</div>
-                <div className="overline mt-1">{fmtInt(p.sales_count)} orders · {fmtInt(p.disc_count)} disc.</div>
+                <div className="overline mt-1">{fmtInt(p.net_orders ?? p.sales_count)} Order Qty (net) · {fmtInt(p.disc_count)} disc.</div>
                 <div className="text-[11px] mono text-slate-500 mt-1">Expected {fmtCurrency(p.expected_settlement)}</div>
               </button>
             ))}
@@ -97,9 +101,9 @@ export default function Overview() {
       )}
 
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-        <StatChip testId="kpi-nsv" label="Total NSV" value={fmtCurrency(kpi.total_nsv)} sub={`${fmtInt(kpi.total_orders)} orders`} onClick={() => goTo("/sales")} drillHint />
+        <StatChip testId="kpi-nsv" label="Total NSV" value={fmtCurrency(kpi.total_nsv)} sub={`${fmtInt(netOrders)} Order Qty (net)`} onClick={() => goTo("/sales")} drillHint />
         <StatChip testId="kpi-commission" label="Expected Commission" value={fmtCurrency(kpi.expected_commission)} sub={`${fmtPct(commPct, 2)} of NSV`} tone="negative" onClick={() => goTo("/calculations")} drillHint />
-        <StatChip testId="kpi-deductions" label="Total Deductions" value={fmtCurrency(kpi.expected_deductions)} sub="Comm + Fixed + GT + TCS/TDS" tone="negative" onClick={() => goTo("/calculations")} drillHint />
+        <StatChip testId="kpi-deductions" label="Total Deductions" value={fmtCurrency(kpi.expected_deductions)} sub="Comm + Fixed + GT + Return Fee" tone="negative" onClick={() => goTo("/calculations")} drillHint />
         <StatChip testId="kpi-settlement" label="Expected Settlement" value={fmtCurrency(kpi.expected_settlement)} sub={`Margin ${fmtPct(marginPct, 1)}`} tone="positive" onClick={() => goTo("/calculations")} drillHint />
         <StatChip testId="kpi-critical" label="Open Discrepancies" value={fmtInt(overview?.total_discrepancies || 0)} sub={`${fmtInt(overview?.open_critical || 0)} critical · ${fmtInt(overview?.open_high || 0)} high`} tone={overview?.open_critical > 0 ? "critical" : "neutral"} onClick={() => goTo("/discrepancies")} drillHint />
       </div>

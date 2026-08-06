@@ -55,7 +55,7 @@ export default function SalesLedger() {
     const ids = salesRes.data.items.map((r) => r.id);
     if (ids.length) {
       try {
-        const calcRes = await api.get("/calculations", { params: { limit: 500, ...(portalParam ? { portal: portalParam } : {}) } });
+        const calcRes = await api.get("/calculations", { params: { ...buildParams(), limit: 500 } });
         const map = {};
         for (const c of calcRes.data.items) { map[c.sales_id] = c; }
         setCalcMap(map);
@@ -181,13 +181,15 @@ export default function SalesLedger() {
               <SortableTh label="Qty" sortKey="qty" sort={sort} onSort={onSort} align="right" />
               <SortableTh label="MRP" sortKey="mrp" sort={sort} onSort={onSort} align="right" />
               <SortableTh label="NSV" sortKey="nsv" sort={sort} onSort={onSort} align="right" />
+              <th className="grid-cell text-right">Commission</th>
+              <th className="grid-cell text-right">GT</th>
               <th className="grid-cell text-left">Price Range (NSV)</th>
               <th className="grid-cell text-left">Price Range (NSV after GT)</th>
             </tr>
           </thead>
           <tbody>
             {items.length === 0 ? (
-              <tr><td colSpan={17} className="grid-cell text-center text-slate-400 py-10">No sales rows for this filter. Upload sales data or clear filters.</td></tr>
+              <tr><td colSpan={19} className="grid-cell text-center text-slate-400 py-10">No sales rows for this filter. Upload sales data or clear filters.</td></tr>
             ) : items.map((r) => {
               const c = calcMap[r.id] || {};
               const bd = c.breakdown || {};
@@ -210,6 +212,8 @@ export default function SalesLedger() {
                   <td className="grid-cell text-right">{fmtInt(r.qty)}</td>
                   <td className="grid-cell text-right">{fmtCurrency(r.mrp)}</td>
                   <td className="grid-cell text-right">{fmtCurrency(r.nsv_val)}</td>
+                  <td className={`grid-cell text-right ${(c.commission_incl_gst || 0) < 0 ? "fin-pos" : "fin-neg"}`}>{c.commission_incl_gst != null ? fmtCurrency(c.commission_incl_gst) : "—"}</td>
+                  <td className={`grid-cell text-right ${(c.gt_charge || 0) < 0 ? "fin-pos" : "fin-neg"}`}>{c.gt_charge != null ? fmtCurrency(c.gt_charge) : "—"}</td>
                   <td className="grid-cell mono text-[10px] text-slate-500">{crule.price_range || "—"}</td>
                   <td className="grid-cell mono text-[10px] text-slate-500">{gtCell.price_range || "—"}</td>
                 </tr>

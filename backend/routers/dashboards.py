@@ -56,6 +56,13 @@ async def commission_summary(
             {"$group": {
                 "_id": None,
                 "total_orders": {"$sum": 1},
+                "net_orders": {"$sum": {"$cond": [
+                    {"$in": ["$order_type", ["return", "return_dto"]]}, -1, 1,
+                ]}},
+                "sales_orders": {"$sum": {"$cond": [{"$eq": ["$order_type", "sales"]}, 1, 0]}},
+                "return_orders": {"$sum": {"$cond": [
+                    {"$in": ["$order_type", ["return", "return_dto"]]}, 1, 0,
+                ]}},
                 "total_nsv": {"$sum": {"$ifNull": ["$breakdown.nsv_val", 0]}},
                 "expected_commission": {"$sum": {"$ifNull": ["$commission_incl_gst", 0]}},
                 "expected_fixed_fee": {"$sum": {"$ifNull": ["$fixed_fee_incl_gst", 0]}},
@@ -325,6 +332,14 @@ async def portals_summary(
             sales_t = db.sales.count_documents(pq)
             calc_t = db.calculations.count_documents(pq)
             disc_t = db.discrepancies.count_documents(pq)
+            # Net orders (Sales rows - Return rows) from the source sales file's txn_type.
+            # Matches the client's mental model: "100 Sales - 2 Returns = 98".
+            net_orders_t = db.sales.aggregate([
+                {"$match": pq},
+                {"$group": {"_id": None, "n": {"$sum": {"$cond": [
+                    {"$in": [{"$toLower": {"$ifNull": ["$txn_type", "sales"]}}, ["return", "refund"]]}, -1, 1,
+                ]}}}}
+            ]).to_list(1)
             nsv_t = db.calculations.aggregate([
                 {"$match": pq},
                 {"$group": {"_id": None,
@@ -336,13 +351,14 @@ async def portals_summary(
                 {"$match": pq},
                 {"$group": {"_id": None, "sum": {"$sum": {"$ifNull": ["$recoverable", 0]}}}}
             ]).to_list(1)
-            sales_c, calc_c, disc_c, agg, leak = await asyncio.gather(sales_t, calc_t, disc_t, nsv_t, leak_t)
+            sales_c, calc_c, disc_c, net_r, agg, leak = await asyncio.gather(sales_t, calc_t, disc_t, net_orders_t, nsv_t, leak_t)
             k = agg[0] if agg else {}
             return {
                 "code": p["code"],
                 "name": p["name"],
                 "status": p.get("status", "coming_soon"),
                 "sales_count": sales_c,
+                "net_orders": (net_r[0]["n"] if net_r else 0) or 0,
                 "calc_count": calc_c,
                 "disc_count": disc_c,
                 "nsv": round(k.get("nsv", 0) or 0, 2),
@@ -356,6 +372,7 @@ async def portals_summary(
             "portals_count": len(portals),
             "live_portals": sum(1 for r in rows if r["status"] == "live"),
             "sales_count": sum(r["sales_count"] for r in rows),
+            "net_orders": sum(r["net_orders"] for r in rows),
             "nsv": round(sum(r["nsv"] for r in rows), 2),
             "expected_settlement": round(sum(r["expected_settlement"] for r in rows), 2),
             "leakage": round(sum(r["leakage"] for r in rows), 2),

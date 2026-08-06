@@ -1,0 +1,45 @@
+{
+  "verdict": "fixed",
+  "user_reported_bug": "Client marked 2 items as 'Not Done' in the updated Google Doc after last redeploy: (1) Order Qty net calculation is done on Sales Ledger URL but still Pending on the Overview report / KPI card, and (2) DTO reversal — 'Fixed and Return Fees as per the logic to be applied and rest (GT charges and Commission) to be subtracted (-)' is marked Not Done (client cannot see the reversal figures clearly on the Sales Ledger row / grid).",
+  "summary": "No relevant testing skill found. Focused preview verification passed for the two reported gaps: Overview Total NSV KPI and Cross-Portal Snapshot now show 6,824 Order Qty (net) for April 2026 Myntra, and Sales Ledger grid now exposes Commission and GT columns with negative values on Return/DTO rows and positive values on Sales rows. API regressions also passed: portals-summary and sales-summary net_orders=6824, TCS/TDS scanned as 0 across 21,614 April Myntra calculation rows, and Sales Ledger Excel export has 31 columns. No MOCKED APIs used; production was not touched.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/test_reports/bug_verification_17_backend_checks.py",
+    "/app/test_reports/bug_verification_17_backend_results.json",
+    "/app/test_reports/bug_verification_17_ui_mcp_script.py",
+    "/app/test_reports/bug_verification_17_ui_results.json"
+  ],
+  "action_items": [
+    "No preview code fix required for the reported items. If the client still sees the old behavior outside preview, ensure the verified preview build/data is what has been redeployed there."
+  ],
+  "critical_code_review_comments": [
+    "Inspected /app/backend/routers/dashboards.py: /api/dashboard/portals-summary now returns totals.net_orders and per-portal net_orders from source sales txn_type aggregation.",
+    "Inspected /app/frontend/src/pages/Overview.jsx: Total NSV KPI uses /api/sales/summary net_orders and Cross-Portal Snapshot uses net_orders labels.",
+    "Inspected /app/frontend/src/pages/SalesLedger.jsx: Commission and GT columns are present between NSV and Price Range and render calculation values directly in the grid."
+  ],
+  "updated_files": [
+    "/app/test_reports/bug_verification_17_backend_checks.py",
+    "/app/test_reports/bug_verification_17_backend_results.json",
+    "/app/test_reports/bug_verification_17_ui_mcp_script.py",
+    "/app/test_reports/bug_verification_17_ui_results.json",
+    "/app/test_reports/bug_verification_17.json",
+    "/app/test_reports/iteration_17.json"
+  ],
+  "success_rate": {
+    "backend": "100%",
+    "frontend": "100%"
+  },
+  "seed_data_creation": "No seed data created. Tests used existing preview data and admin@fundle.ai/admin123.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Mandatory skill lookup was performed with 'Order Qty net KPI DTO reversal Sales Ledger'; no relevant testing skill found. Preview URL used: REACT_APP_BACKEND_URL=https://marketplace-recon-1.preview.emergentagent.com. Key UI evidence: kpi-nsv showed '6,824 Order Qty (net)'; Cross-Portal totals showed '6,824 Order Qty (net) · ₹1,27,02,900.00 NSV'; Myntra tile showed '6,824 ORDER QTY (NET)'. Sales Ledger row a752b5cd-e629-42ec-a383-ad1fa5ce9976 / order 83410B8C-556E-465B-96A1-EB3A80DB1DF1 showed Return + DTO with Commission ₹-279.06 and GT ₹-207.00 in grid and drawer. Sales row 3fc2c0d5-aca8-448a-91ae-51ecd5e58438 showed Commission ₹871.36 and GT ₹266.00. Backend scan confirmed TCS/TDS zero across 21,614 rows and Excel export 31 columns.",
+  "rca_of_the_issue": "The reported Not Done symptoms do not reproduce on preview after the latest fix. The fix routes Overview net order labels through /api/sales/summary and exposes DTO reversal Commission/GT figures directly in the Sales Ledger grid, so users no longer need to open a drawer to see the reversal signs. Production was not tested/touched."
+}
