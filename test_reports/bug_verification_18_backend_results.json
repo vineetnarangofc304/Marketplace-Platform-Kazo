@@ -1,0 +1,123 @@
+{
+  "base_url": "https://marketplace-recon-1.preview.emergentagent.com",
+  "production_touched": false,
+  "checks": [
+    {
+      "name": "health",
+      "status": 200,
+      "body": {
+        "status": "ok",
+        "time": "2026-08-10T05:30:48.539456+00:00"
+      }
+    },
+    {
+      "name": "login",
+      "status": 200
+    }
+  ],
+  "samples": {
+    "sales_summary": {
+      "row_count": 21614,
+      "sales_rows": 14219,
+      "return_rows": 7395,
+      "net_orders": 6824,
+      "net_qty": 6824.0,
+      "nsv_total": 12702900.0
+    },
+    "portals_summary_totals": {
+      "portals_count": 6,
+      "live_portals": 6,
+      "sales_count": 21614,
+      "net_orders": 6824,
+      "nsv": 12702900.0,
+      "expected_settlement": 7809879.48,
+      "leakage": 0,
+      "disc_count": 0
+    },
+    "myntra_portal": {
+      "code": "myntra",
+      "name": "Myntra",
+      "status": "live",
+      "sales_count": 21614,
+      "net_orders": 6824,
+      "calc_count": 21614,
+      "disc_count": 0,
+      "nsv": 12702900.0,
+      "expected_settlement": 7809879.48,
+      "expected_commission": 1230370.84,
+      "leakage": 0
+    },
+    "expected_sales_ledger_header": "6,824 Order Qty (net) \u00b7 14,219 Sales \u2212 7,395 Returns",
+    "return_dto_calc": {
+      "id": "3d66877f-8523-4506-a70f-6c58a52bed1f",
+      "sales_id": "a752b5cd-e629-42ec-a383-ad1fa5ce9976",
+      "online_order_id": "83410B8C-556E-465B-96A1-EB3A80DB1DF1",
+      "commission_incl_gst": -279.06,
+      "fixed_fee_incl_gst": -61.0,
+      "gt_charge": -207.0,
+      "return_fee": 112.0,
+      "tcs": 0,
+      "tds": 0,
+      "commission_gst": 0
+    },
+    "sales_calc": {
+      "id": "9bdf1aac-678f-44fb-a956-5cf7ec2f3f0c",
+      "sales_id": "3fc2c0d5-aca8-448a-91ae-51ecd5e58438",
+      "online_order_id": "BA030AAB-E147-4FA2-847F-8B119D06AEC1",
+      "commission_incl_gst": 871.36,
+      "gt_charge": 266.0
+    },
+    "tax_scan": {
+      "total_scanned": 21614,
+      "violations": []
+    },
+    "unmapped_total": 0,
+    "all_fallback": {
+      "has_all_rule": true,
+      "sample_calc": {
+        "id": "39e70a4e-61a3-431b-b1c1-652d8685879f",
+        "online_order_id": "38724907-0F5F-4A24-A509-46F3EC7D84E6",
+        "sub_category": "Clothing Set",
+        "matched_sub_category": "all"
+      }
+    },
+    "export": {
+      "column_count": 31,
+      "required_missing": [],
+      "headers": [
+        "Portal",
+        "Brand",
+        "Sale Type",
+        "Order Status",
+        "Posting Date",
+        "Report Month",
+        "Online Order ID",
+        "Item No (SKU)",
+        "Sales Invoice No",
+        "Posting_Location Code",
+        "Main Ctg",
+        "Category",
+        "Sub Category",
+        "Level No",
+        "Zone",
+        "Qty",
+        "MRP",
+        "Total MRP",
+        "Customer Discount",
+        "NSV Value",
+        "NSV per Unit",
+        "NSV after GT",
+        "Price Range - Key (NSV)",
+        "Price Range - Key (NSV after GT)",
+        "Commission %",
+        "Commission (Expected)",
+        "GT Charge (Expected)",
+        "Fixed Fee (Expected)",
+        "Return Fee (Expected)",
+        "Total Deductions",
+        "Expected Settlement"
+      ]
+    }
+  },
+  "ok": true
+}

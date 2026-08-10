@@ -1,0 +1,45 @@
+{
+  "verdict": "fixed",
+  "user_reported_bug": "Client re-shared the Google Doc (https://docs.google.com/document/d/1wrReCWvXxkytYaLMn3FnwTkrukesxGCRc-lr1ksKXoA/edit?usp=sharing) with 'All points to be done'. Doc statuses still show: Point 1 (Overview KPI net Order Qty) = Pending; Point 2 (DTO reversal — Fixed & Return Fees applied, GT & Commission subtracted) = Not Done. Points 3, 4, 5 = Done. The doc's URLs all point to https://kazob2b.fundlezone.com (production), so the 'Pending' statuses reflect the production build. Preview should already contain all 5 fixes per the last two iterations. Please formally re-verify preview so we can confidently tell the user 'redeploy production'.",
+  "summary": "No relevant testing skill found. Focused PREVIEW-only verification passed end to end for all requested Google Doc points: Overview Total NSV KPI, Cross-Portal Snapshot, and Myntra tile show 6,824 Order Qty (net); Sales Ledger header shows 6,824 net · 14,219 Sales − 7,395 Returns; return_dto grid/drawer show negative Commission/Fixed Fee/GT and positive Return Fee with no GST/TCS/TDS rows. API regressions also passed: sales-summary and portals-summary net_orders=6824, TCS/TDS/commission_gst scanned as 0 across 21,614 rows, Excel export has 31 required columns, ALL commission fallback is active, and unmapped total is 0. Production was not touched and no APIs were MOCKED.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/test_reports/bug_verification_18_backend_checks.py",
+    "/app/test_reports/bug_verification_18_backend_results.json",
+    "/app/test_reports/bug_verification_18_ui_mcp_script.py",
+    "/app/test_reports/bug_verification_18_ui_results.json"
+  ],
+  "action_items": [
+    "No preview code fix required for these points. Since the reported Google Doc URLs point to production, the main agent can confidently tell the user to redeploy the verified preview build to production."
+  ],
+  "critical_code_review_comments": [
+    "Inspected /app/frontend/src/pages/Overview.jsx: Total NSV KPI consumes /api/sales/summary net_orders and Cross-Portal Snapshot/Myntra tile render portals-summary net_orders.",
+    "Inspected /app/frontend/src/pages/SalesLedger.jsx and /app/backend/routers/uploads_r.py: Sales Ledger header uses /api/sales/summary and grid/export expose the requested columns including Commission, GT, Level and Price Range fields.",
+    "Inspected /app/backend/routers/calculations.py: return_dto computes negative commission/fixed/GT reversals, positive return_fee, tax fields fixed at 0, and commission rule fallback to sub_category=ALL."
+  ],
+  "updated_files": [
+    "/app/test_reports/bug_verification_18_backend_checks.py",
+    "/app/test_reports/bug_verification_18_backend_results.json",
+    "/app/test_reports/bug_verification_18_ui_mcp_script.py",
+    "/app/test_reports/bug_verification_18_ui_results.json",
+    "/app/test_reports/bug_verification_18.json",
+    "/app/test_reports/iteration_18.json"
+  ],
+  "success_rate": {
+    "backend": "100%",
+    "frontend": "100%"
+  },
+  "seed_data_creation": "No seed data created. Tests used existing preview data and admin@fundle.ai/admin123.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Mandatory skill lookup used 'Google Doc Overview KPI DTO reversal Sales Ledger'; no relevant testing skill found. Preview URL used: https://marketplace-recon-1.preview.emergentagent.com only. Key evidence: kpi-nsv='₹1,27,02,900.00 / 6,824 Order Qty (net)'; Cross-Portal Snapshot includes '6,824 Order Qty (net) · ₹1,27,02,900.00 NSV'; Myntra tile includes '6,824 ORDER QTY (NET)'. Return DTO order 83410B8C-556E-465B-96A1-EB3A80DB1DF1 showed Commission ₹-279.06, Fixed Fee ₹-61.00, GT ₹-207.00, Return Fee ₹112.00 and no GST/TCS/TDS drawer rows. Sales order BA030AAB-E147-4FA2-847F-8B119D06AEC1 showed positive Commission ₹871.36 and GT ₹266.00. Backend scan confirmed 21,614 April Myntra rows with tax fields zero, unmapped total 0, ALL fallback sample found, and export column_count=31.",
+  "rca_of_the_issue": "The reported Not Done/Pending symptoms do not reproduce in preview. They remain attributable to production not being redeployed, because production URL was explicitly not tested/touched and preview now returns/renders the corrected values end to end."
+}

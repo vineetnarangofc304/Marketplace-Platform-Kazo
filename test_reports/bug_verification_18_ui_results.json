@@ -1,0 +1,52 @@
+{
+  "ok": true,
+  "base_url": "https://marketplace-recon-1.preview.emergentagent.com",
+  "production_touched": false,
+  "steps": [
+    {
+      "name": "login and overview load",
+      "details": {}
+    },
+    {
+      "name": "overview KPI, snapshot and Myntra tile show net Order Qty",
+      "details": {
+        "kpi": "TOTAL NSV\nDRILL \u2192\n\u20b91,27,02,900.00\n6,824 Order Qty (net)",
+        "tile": "LIVE\nMyntra\n\u20b91,27,02,900.00\n6,824 ORDER QTY (NET) \u00b7 0 DISC.\nExpected \u20b978,09,879.48"
+      }
+    },
+    {
+      "name": "sales ledger header and grid columns verified",
+      "details": {
+        "summary": "6,824 Order Qty (net) \u00b7 14,219 Sales \u2212 7,395 Returns \u00b7 21,614 rows"
+      }
+    },
+    {
+      "name": "return_dto grid row shows negative commission and GT",
+      "details": {
+        "row": "83410B8C-556E-\u2026\tKAZO\tReturn\tDTO\t2026-04-30\tKZ01952BLACKXL01\tMYSRI\tApparel\tJeggings\tLevel 1\t-\t2026-04\t-1\t\u20b93,490.00\t\u20b9-3,490.00\t\u20b9-279.06\t\u20b9-207.00\t>500\t>2000"
+      }
+    },
+    {
+      "name": "return_dto drawer values and tax-row removal verified",
+      "details": {}
+    },
+    {
+      "name": "sales grid row shows positive commission and GT",
+      "details": {
+        "row": "BA030AAB-E147-\u2026\tDETAILS\tSales\tDTO\t2026-04-30\tDT1150TAUPC01\tMYN\tDetails\tHandbags\tLevel 3\t-\t2026-04\t1\t\u20b96,490.00\t\u20b96,490.00\t\u20b9871.36\t\u20b9266.00\t>2000\t>2000"
+      }
+    }
+  ],
+  "evidence": {
+    "kpi_nsv_text": "TOTAL NSV\nDRILL \u2192\n\u20b91,27,02,900.00\n6,824 Order Qty (net)",
+    "cross_portal_snapshot_text": "CROSS-PORTAL SNAPSHOT\n6/6 portals live \u00a0\u00b7\u00a0 6,824 Order Qty (net) \u00a0\u00b7\u00a0 \u20b91,27,02,900.00 NSV\nCLICK A PORTAL TO FILTER\nLIVE\nAJIO (Direct Ship)\n\u20b90.00\n0 ORDER QTY (NET) \u00b7 0 DISC.\nExpected \u20b90.00\nLIVE\nAmazon\n\u20b90.00\n0 ORDER QTY (NET) \u00b7 0 DISC.\nExpected \u20b90.00\nLIVE\nFlipkart\n\u20b90.00\n0 ORDER QTY (NET) \u00b7 0 DISC.\nExpected \u20b90.00\nLIVE\nMyntra\n\u20b91,27,02,900.00\n6,824 ORDER QTY (NET) \u00b7 0 DISC.\nExpected \u20b978,09,879.48\nLIVE\nNykaa\n\u20b90.00\n0 ORDER QTY (NET) \u00b7 0 DISC.\nExpected \u20b90.00\nLIVE\nTata Cliq\n\u20b90.00\n0 ORDER QTY (NET) \u00b7 0 DISC.\nExpected \u20b90.00",
+    "myntra_tile_text": "LIVE\nMyntra\n\u20b91,27,02,900.00\n6,824 ORDER QTY (NET) \u00b7 0 DISC.\nExpected \u20b978,09,879.48",
+    "overview_error_text": "",
+    "sales_summary_text": "6,824 Order Qty (net) \u00b7 14,219 Sales \u2212 7,395 Returns \u00b7 21,614 rows",
+    "sales_table_headers": "ORDER ID\n\tBRAND\tSALE TYPE\tSTATUS\tPOSTING DATE\tITEM NO\n\tLOCATION\tMAIN CTG\tSUB-CAT\n\tLEVEL\tZONE\n\tMONTH\n\tQTY\n\tMRP\n\tNSV\n\tCOMMISSION\tGT\tPRICE RANGE (NSV)\tPRICE RANGE (NSV AFTER GT)\n",
+    "return_dto_grid_row_text": "83410B8C-556E-\u2026\tKAZO\tReturn\tDTO\t2026-04-30\tKZ01952BLACKXL01\tMYSRI\tApparel\tJeggings\tLevel 1\t-\t2026-04\t-1\t\u20b93,490.00\t\u20b9-3,490.00\t\u20b9-279.06\t\u20b9-207.00\t>500\t>2000",
+    "return_dto_drawer_text": "ORDER DETAIL\n83410B8C-556E-465B-96A1-EB3A80DB1DF1\nKZ01952BLACKXL01\nSALES DATA\nCategory\nBottomwear\nSub Category\nJeggings\nZone\n-\nStatus\nDTO\nQty\n-1\nMRP\n\u20b93,490.00\nDiscount\n\u20b90.00\nNSV\n\u20b9-3,490.00\nMonth\n2026-04\nTxn Type\nReturn\nEXPECTED CALCULATION\nCommission\t\u20b9-279.06\nFixed Fee\t\u20b9-61.00\nGT Charge\t\u20b9-207.00\nReturn Fee (Level/Zone)\t\u20b9112.00\nTotal Deductions\t\u20b9-435.06\nExpected Settlement\t\u20b9-2,847.94",
+    "sales_grid_row_text": "BA030AAB-E147-\u2026\tDETAILS\tSales\tDTO\t2026-04-30\tDT1150TAUPC01\tMYN\tDetails\tHandbags\tLevel 3\t-\t2026-04\t1\t\u20b96,490.00\t\u20b96,490.00\t\u20b9871.36\t\u20b9266.00\t>2000\t>2000",
+    "sales_error_text": ""
+  }
+}
