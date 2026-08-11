@@ -1,0 +1,41 @@
+{
+  "verdict": "fixed",
+  "user_reported_bug": "Google Doc Point 2 still shows 'Status Not Done': 'Fixed and Return Fees as per the logic to be applied and rest (GT charges and Commission) to be subtracted (-)'. Previously we were making ALL four (Commission, GT, Fixed Fee, Return Fee) show as either all-negative or mixed, but the client's exact business rule is: on return_dto rows, Fixed Fee AND Return Fee should be APPLIED as fresh POSITIVE charges (marketplace charges for handling the return + Level×Zone reverse-logistics), while GT charge and Commission should be SUBTRACTED with NEGATIVE sign (reversals of the sales-side deductions). GST/TCS/TDS remain zero.",
+  "summary": "No relevant testing skill found. Focused API and UI verification passed: return_dto rows now show negative Commission/GT, positive Fixed Fee/Return Fee, zero GST/TCS/TDS; Sales Ledger grid/drawer and Calculations drawer show the same convention for order 83410B8C-556E-465B-96A1-EB3A80DB1DF1.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/tests/bug_verify_return_dto_signs_api.py",
+    "/app/tests/bug_verify_return_dto_signs_ui_playwright.py",
+    "/app/test_reports/return_dto_signs_api_result.json",
+    "/app/test_reports/bug_verification_19.json",
+    "/app/test_reports/iteration_19.json"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Inspected /app/backend/routers/calculations.py: return_dto branch now uses fixed_fee = abs(fixed_fee_base), keeps commission/GT as negative reversals, return_fee positive, and tax fields zero. Frontend drawers render direct API values."
+  ],
+  "updated_files": [
+    "/app/tests/bug_verify_return_dto_signs_api.py",
+    "/app/tests/bug_verify_return_dto_signs_ui_playwright.py",
+    "/app/test_reports/return_dto_signs_api_result.json",
+    "/app/test_reports/bug_verification_19.json",
+    "/app/test_reports/iteration_19.json"
+  ],
+  "success_rate": {
+    "backend": "100%",
+    "frontend": "100%"
+  },
+  "seed_data_creation": "None. Used existing April 2026 Myntra recalculated preview data.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Validated preview only using REACT_APP_BACKEND_URL=https://marketplace-recon-1.preview.emergentagent.com. Exact order 83410B8C-556E-465B-96A1-EB3A80DB1DF1 has Commission ₹-279.06, GT ₹-207.00, Fixed Fee ₹61.00, Return Fee ₹112.00, Total Deductions ₹-313.06 in API, Sales Ledger drawer, and Calculations drawer.",
+  "rca_of_the_issue": "The prior bug was caused by treating return_dto Fixed Fee as a negative reversal. The current branch applies Fixed Fee as a fresh positive return handling charge while preserving negative reversals for Commission and GT. Runtime API and UI data now match the client rule. Regression checks passed: /api/sales/summary net_orders=6824, sales rows keep positive commission/GT/fixed fee, Excel export has 31 columns, unmapped_count=0, and commission ALL fallback has runtime matches."
+}

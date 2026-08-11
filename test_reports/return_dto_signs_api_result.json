@@ -1,0 +1,212 @@
+{
+  "base_url": "https://marketplace-recon-1.preview.emergentagent.com",
+  "checks": [
+    {
+      "name": "login",
+      "status": "passed",
+      "email": "admin@fundle.ai"
+    },
+    {
+      "name": "return_dto_signs_limit_5",
+      "status": "passed",
+      "total": 5443,
+      "samples": [
+        {
+          "online_order_id": "83410B8C-556E-465B-96A1-EB3A80DB1DF1",
+          "sales_id": "a752b5cd-e629-42ec-a383-ad1fa5ce9976",
+          "commission_incl_gst": -279.06,
+          "gt_charge": -207.0,
+          "fixed_fee_incl_gst": 61.0,
+          "return_fee": 112.0,
+          "total_deductions": -313.06,
+          "taxes": {
+            "tcs": 0,
+            "tds": 0,
+            "commission_gst": 0
+          }
+        },
+        {
+          "online_order_id": "CEFB5152-096A-495B-BBBB-31AF2587F659",
+          "sales_id": "a69a694d-02d9-4b8a-96bd-b1fad78a51e5",
+          "commission_incl_gst": -211.14,
+          "gt_charge": -207.0,
+          "fixed_fee_incl_gst": 61.0,
+          "return_fee": 112.0,
+          "total_deductions": -245.14,
+          "taxes": {
+            "tcs": 0,
+            "tds": 0,
+            "commission_gst": 0
+          }
+        },
+        {
+          "online_order_id": "D64EC1CA-0341-4B73-B607-D188CFBFCB1F",
+          "sales_id": "d597b1cc-dd03-4f3c-9154-9c10c91ea4a7",
+          "commission_incl_gst": -279.06,
+          "gt_charge": -207.0,
+          "fixed_fee_incl_gst": 61.0,
+          "return_fee": 112.0,
+          "total_deductions": -313.06,
+          "taxes": {
+            "tcs": 0,
+            "tds": 0,
+            "commission_gst": 0
+          }
+        },
+        {
+          "online_order_id": "DCCEDAF9-9581-4978-8EA6-F3678F381138",
+          "sales_id": "994ac013-7a5e-4a6d-be01-91268d9af9ac",
+          "commission_incl_gst": -234.01,
+          "gt_charge": -207.0,
+          "fixed_fee_incl_gst": 61.0,
+          "return_fee": 112.0,
+          "total_deductions": -268.0,
+          "taxes": {
+            "tcs": 0,
+            "tds": 0,
+            "commission_gst": 0
+          }
+        },
+        {
+          "online_order_id": "77AF71D5-53D8-4878-9CE6-A01FE2101BE8",
+          "sales_id": "bcb28a7b-b087-424f-a05a-d80eb01d26d6",
+          "commission_incl_gst": -236.56,
+          "gt_charge": -207.0,
+          "fixed_fee_incl_gst": 61.0,
+          "return_fee": 112.0,
+          "total_deductions": -270.56,
+          "taxes": {
+            "tcs": 0,
+            "tds": 0,
+            "commission_gst": 0
+          }
+        }
+      ]
+    },
+    {
+      "name": "sales_summary_net_orders",
+      "status": "passed",
+      "summary": {
+        "row_count": 21614,
+        "sales_rows": 14219,
+        "return_rows": 7395,
+        "net_orders": 6824,
+        "net_qty": 6824.0,
+        "nsv_total": 12702900.0
+      }
+    },
+    {
+      "name": "sales_row_signs_limit_5",
+      "status": "passed",
+      "samples": [
+        {
+          "online_order_id": "BA030AAB-E147-4FA2-847F-8B119D06AEC1",
+          "commission_incl_gst": 871.36,
+          "gt_charge": 266.0,
+          "fixed_fee_incl_gst": 61.0,
+          "return_fee": 0.0
+        },
+        {
+          "online_order_id": "5C096FFC-473B-47A8-B3DE-535371DBC079",
+          "commission_incl_gst": 321.56,
+          "gt_charge": 207.0,
+          "fixed_fee_incl_gst": 61.0,
+          "return_fee": 0.0
+        },
+        {
+          "online_order_id": "879F52C0-0F8A-4025-A6AE-2160DD93CC21",
+          "commission_incl_gst": 321.56,
+          "gt_charge": 207.0,
+          "fixed_fee_incl_gst": 61.0,
+          "return_fee": 0.0
+        },
+        {
+          "online_order_id": "92772EA3-F976-4FA9-9952-5665D1D5D72C",
+          "commission_incl_gst": 279.06,
+          "gt_charge": 207.0,
+          "fixed_fee_incl_gst": 61.0,
+          "return_fee": 0.0
+        },
+        {
+          "online_order_id": "17D47B7B-AFDF-4605-890E-CB361869E872",
+          "commission_incl_gst": 296.06,
+          "gt_charge": 207.0,
+          "fixed_fee_incl_gst": 61.0,
+          "return_fee": 0.0
+        }
+      ]
+    },
+    {
+      "name": "unmapped_count",
+      "status": "passed",
+      "unmapped_total": 0
+    },
+    {
+      "name": "excel_export_columns",
+      "status": "passed",
+      "column_count": 31,
+      "headers": [
+        "Portal",
+        "Brand",
+        "Sale Type",
+        "Order Status",
+        "Posting Date",
+        "Report Month",
+        "Online Order ID",
+        "Item No (SKU)",
+        "Sales Invoice No",
+        "Posting_Location Code",
+        "Main Ctg",
+        "Category",
+        "Sub Category",
+        "Level No",
+        "Zone",
+        "Qty",
+        "MRP",
+        "Total MRP",
+        "Customer Discount",
+        "NSV Value",
+        "NSV per Unit",
+        "NSV after GT",
+        "Price Range - Key (NSV)",
+        "Price Range - Key (NSV after GT)",
+        "Commission %",
+        "Commission (Expected)",
+        "GT Charge (Expected)",
+        "Fixed Fee (Expected)",
+        "Return Fee (Expected)",
+        "Total Deductions",
+        "Expected Settlement"
+      ]
+    },
+    {
+      "name": "commission_all_fallback_runtime",
+      "status": "passed",
+      "count": 57,
+      "sample": {
+        "online_order_id": "489E46C8-D468-4F9F-9570-3D71994BFB1A",
+        "sku": "KZ01623REDS01",
+        "order_type": "sales",
+        "breakdown": {
+          "commission_rule": {
+            "id": "7032aca6-399a-49d9-893f-ff895af4a163",
+            "commission_pct": 0.085,
+            "price_range": ">500",
+            "commission_model": "Split Commission and Logistics",
+            "matched_sub_category": "All"
+          }
+        }
+      }
+    }
+  ],
+  "exact_order": {
+    "online_order_id": "83410B8C-556E-465B-96A1-EB3A80DB1DF1",
+    "sales_id": "a752b5cd-e629-42ec-a383-ad1fa5ce9976",
+    "calculation_id": "18a0debf-2d84-4f01-83dc-488607c4d0a2",
+    "commission_incl_gst": -279.06,
+    "gt_charge": -207.0,
+    "fixed_fee_incl_gst": 61.0,
+    "return_fee": 112.0,
+    "total_deductions": -313.06
+  }
+}
