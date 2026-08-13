@@ -320,8 +320,29 @@ def compute_expected(sale: Dict[str, Any], masters: Dict[str, Any]) -> Dict[str,
     total_deductions = None
     expected_settlement = None
 
-    if order_type in ("rto", "internal_cancel"):
-        # Everything nullified
+    if order_type == "rto":
+        # RTO (Return To Origin) — undelivered order. Per client spec (2.2),
+        # display all four fee heads as NEGATIVE reversals (marketplace refunds
+        # all sales-side deductions since the order never completed). Net
+        # accounting effect on settlement is zero, but the reversal amounts
+        # are shown explicitly so the ledger surfaces WHAT was refunded.
+        if commission_pct is not None and gt_total is not None:
+            commission_base = -abs(commission_pct * (abs(nsv_val) - abs(gt_total)))
+        elif commission_pct is not None:
+            commission_base = -abs(commission_pct * abs(nsv_val))
+        else:
+            commission_base = 0.0
+        fixed_fee = -abs(fixed_fee_base) if fixed_fee_base is not None else 0.0
+        gt_charge_final = -abs(gt_total) if gt_total is not None else 0.0
+        return_fee_final = -abs(return_fee_master) if return_fee_master is not None else 0.0
+        nsv_after_gt = 0.0
+        total_deductions = 0.0
+        expected_settlement = 0.0
+        reasons = []
+    elif order_type == "internal_cancel":
+        # Internal Cancellation — order cancelled before dispatch. Everything
+        # nullified (settlement = 0). No fees shown since nothing was ever
+        # charged.
         commission_base = 0.0
         fixed_fee = 0.0
         gt_charge_final = 0.0
@@ -331,27 +352,21 @@ def compute_expected(sale: Dict[str, Any], masters: Dict[str, Any]) -> Dict[str,
         expected_settlement = 0.0
         reasons = []
     elif order_type == "return_dto":
-        # Return + DTO — per client business rule (2026-08 revision):
-        #   * Fixed Fee and Return Fee are APPLIED as fresh positive charges on
-        #     the return leg (the marketplace charges these for handling the
-        #     return + Level × Zone reverse-logistics).
-        #   * GT Charge and Commission are SUBTRACTED (shown negative) — they
-        #     represent the reversal of the sales-side deductions since the
-        #     order was cancelled after dispatch.
-        #   * NSV in the source file is already negative for these rows.
-        #   * GST / TCS / TDS not applicable.
+        # Return + DTO — per client spec (2.1):
+        #   * Commission = NEGATIVE reversal
+        #   * Fixed Fee  = ZERO (no fixed fee on the return leg — marketplace
+        #     doesn't charge a fresh fixed fee for DTO return processing)
+        #   * GT Charge  = NEGATIVE reversal
+        #   * Return Fee = POSITIVE (fresh Level × Zone reverse-logistics charge)
+        #   * GST / TCS / TDS not applicable
         signed_nsv = -abs(nsv_val)
         gt_charge_final = -abs(gt_total) if gt_total is not None else None
-        # nsv_after_gt on the return leg = signed NSV minus the reversed GT
-        # (which is negative), i.e., signed_nsv - (-abs(gt)) = signed_nsv + abs(gt).
         if gt_charge_final is not None:
             nsv_after_gt = signed_nsv - gt_charge_final
         if commission_pct is not None and nsv_after_gt is not None:
-            # Commission reversal = -(commission_pct * |nsv_after_gt|)
             commission_base = -abs(commission_pct * abs(nsv_after_gt))
-        if fixed_fee_base is not None:
-            # Fixed Fee is applied as a fresh positive charge on return_dto
-            fixed_fee = abs(fixed_fee_base)
+        # Fixed Fee explicitly ZERO for return_dto per spec
+        fixed_fee = 0.0
         return_fee_final = abs(return_fee_master) if return_fee_master is not None else None
         parts = [commission_base, fixed_fee, gt_charge_final, return_fee_final]
         if all(x is not None for x in parts) and nsv_after_gt is not None:

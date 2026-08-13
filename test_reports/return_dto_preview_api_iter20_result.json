@@ -1,0 +1,106 @@
+{
+  "base_url": "https://marketplace-recon-1.preview.emergentagent.com",
+  "production_touched": "no",
+  "checks": [
+    {
+      "name": "preview health",
+      "passed": true,
+      "status": {
+        "status": "ok",
+        "time": "2026-08-11T10:27:44.396274+00:00"
+      }
+    },
+    {
+      "name": "admin login",
+      "passed": true,
+      "user": {
+        "id": "3e02cdc0-90f5-4bc5-8b36-f93f388ae4a2",
+        "email": "admin@fundle.ai",
+        "name": "Administrator",
+        "role": "admin"
+      }
+    },
+    {
+      "name": "return_dto API sign convention",
+      "passed": true,
+      "total": 5443,
+      "tested_rows": 10
+    },
+    {
+      "name": "sales summary net_orders regression",
+      "passed": true,
+      "summary": {
+        "row_count": 21614,
+        "sales_rows": 14219,
+        "return_rows": 7395,
+        "net_orders": 6824,
+        "net_qty": 6824.0,
+        "nsv_total": 12702900.0
+      }
+    },
+    {
+      "name": "sales-side positive sign regression",
+      "passed": true,
+      "tested_rows": 10
+    },
+    {
+      "name": "sales export column count",
+      "passed": true,
+      "column_count": 31,
+      "headers": [
+        "Portal",
+        "Brand",
+        "Sale Type",
+        "Order Status",
+        "Posting Date",
+        "Report Month",
+        "Online Order ID",
+        "Item No (SKU)",
+        "Sales Invoice No",
+        "Posting_Location Code",
+        "Main Ctg",
+        "Category",
+        "Sub Category",
+        "Level No",
+        "Zone",
+        "Qty",
+        "MRP",
+        "Total MRP",
+        "Customer Discount",
+        "NSV Value",
+        "NSV per Unit",
+        "NSV after GT",
+        "Price Range - Key (NSV)",
+        "Price Range - Key (NSV after GT)",
+        "Commission %",
+        "Commission (Expected)",
+        "GT Charge (Expected)",
+        "Fixed Fee (Expected)",
+        "Return Fee (Expected)",
+        "Total Deductions",
+        "Expected Settlement"
+      ]
+    }
+  ],
+  "samples": {
+    "return_dto_first": {
+      "id": "18a0debf-2d84-4f01-83dc-488607c4d0a2",
+      "sales_id": "a752b5cd-e629-42ec-a383-ad1fa5ce9976",
+      "online_order_id": "83410B8C-556E-465B-96A1-EB3A80DB1DF1",
+      "commission_incl_gst": -279.06,
+      "fixed_fee_incl_gst": 61.0,
+      "gt_charge": -207.0,
+      "return_fee": 112.0,
+      "tcs": 0,
+      "tds": 0,
+      "commission_gst": 0
+    },
+    "sales_first": {
+      "id": "b3da1acb-5b79-4332-a9be-bcd5ca8dfaf3",
+      "commission_incl_gst": 871.36,
+      "fixed_fee_incl_gst": 61.0,
+      "gt_charge": 266.0
+    }
+  },
+  "passed": true
+}

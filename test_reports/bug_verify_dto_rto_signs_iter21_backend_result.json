@@ -1,0 +1,238 @@
+{
+  "base_url": "https://marketplace-recon-1.preview.emergentagent.com",
+  "checks": [
+    {
+      "name": "api_login",
+      "user": {
+        "id": "3e02cdc0-90f5-4bc5-8b36-f93f388ae4a2",
+        "email": "admin@fundle.ai",
+        "name": "Administrator",
+        "role": "admin"
+      }
+    },
+    {
+      "name": "api_return_dto_exact_limit10",
+      "total": 5443,
+      "sample": {
+        "online_order_id": "83410B8C-556E-465B-96A1-EB3A80DB1DF1",
+        "commission_incl_gst": -279.06,
+        "fixed_fee_incl_gst": 0.0,
+        "gt_charge": -207.0,
+        "return_fee": 112.0,
+        "tcs": 0,
+        "tds": 0,
+        "commission_gst": 0
+      }
+    },
+    {
+      "name": "api_rto_exact_limit10",
+      "total": 3705,
+      "sample": {
+        "online_order_id": "0D9ADFFB-4656-4924-9F65-DA7543BADD25",
+        "commission_incl_gst": -205.11,
+        "fixed_fee_incl_gst": -61.0,
+        "gt_charge": -207.0,
+        "return_fee": -112.0,
+        "expected_settlement": 0.0,
+        "total_deductions": 0.0
+      }
+    },
+    {
+      "name": "api_april_myntra_samples",
+      "dto_first": "83410B8C-556E-465B-96A1-EB3A80DB1DF1",
+      "rto_first": "0D9ADFFB-4656-4924-9F65-DA7543BADD25"
+    },
+    {
+      "name": "api_sales_regression",
+      "sample": {
+        "online_order_id": "BA030AAB-E147-4FA2-847F-8B119D06AEC1",
+        "commission_incl_gst": 871.36,
+        "fixed_fee_incl_gst": 61.0,
+        "gt_charge": 266.0,
+        "return_fee": 0.0
+      }
+    },
+    {
+      "name": "api_sales_summary_net_orders",
+      "summary": {
+        "row_count": 21614,
+        "sales_rows": 14219,
+        "return_rows": 7395,
+        "net_orders": 6824,
+        "net_qty": 6824.0,
+        "nsv_total": 12702900.0
+      }
+    },
+    {
+      "name": "api_sales_export_31_columns",
+      "column_count": 31,
+      "first_last_headers": [
+        "Portal",
+        "Expected Settlement"
+      ]
+    },
+    {
+      "name": "api_recalc_unmapped_zero",
+      "recalc": {
+        "processed": 21614,
+        "total_sales": 21614,
+        "unmapped_count": 0,
+        "fully_mapped_count": 21614
+      }
+    },
+    {
+      "name": "api_signs_after_recalc",
+      "dto_sample": {
+        "id": "441d08ec-b67b-45ac-b4e3-f9c8971e621c",
+        "sales_id": "a752b5cd-e629-42ec-a383-ad1fa5ce9976",
+        "upload_id": "2ae44043-40bc-4352-9a20-d1460a255229",
+        "online_order_id": "83410B8C-556E-465B-96A1-EB3A80DB1DF1",
+        "sku": "KZ01952BLACKXL01",
+        "portal": "myntra",
+        "computed_at": "2026-08-13T06:28:05.192488+00:00",
+        "commission_base": -279.06,
+        "commission_gst": 0,
+        "commission_incl_gst": -279.06,
+        "commission_pct": 0.085,
+        "fixed_fee": 0.0,
+        "fixed_fee_gst": 0,
+        "fixed_fee_incl_gst": 0.0,
+        "gt_charge": -207.0,
+        "return_fee": 112.0,
+        "tcs": 0,
+        "tds": 0,
+        "nsv_after_gt": -3283.0,
+        "total_deductions": -374.06,
+        "expected_settlement": -2908.95,
+        "order_type": "return_dto",
+        "is_return": true,
+        "unmapped": false,
+        "unmapped_reasons": [],
+        "breakdown": {
+          "isp": 3490.0,
+          "qty": -1.0,
+          "nsv_val": -3490.0,
+          "sub_category": "Jeggings",
+          "master_category": "APPAREL",
+          "zone": "Zonal",
+          "level": "Level 1",
+          "order_type": "return_dto",
+          "report_month": "2026-04",
+          "commission_rule": {
+            "id": "0da12c02-8ef5-4c7b-8989-3dc83fc4cc1d",
+            "commission_pct": 0.085,
+            "price_range": ">500",
+            "commission_model": "Split Commission and Logistics",
+            "matched_sub_category": "Jeggings"
+          },
+          "fixed_fee_slab": {
+            "id": "dcf3842f-04c6-4a16-8244-42f30b4f0eef",
+            "label": ">2000",
+            "fixed_fee": 61.0
+          },
+          "gt_charge_cell": {
+            "id": "2a2a7ae4-a134-4618-b5f7-d285f4fd4aa4",
+            "level": "Level 1",
+            "price_range": ">2000",
+            "unit_charge": 207.0,
+            "qty": -1.0
+          },
+          "return_fee_cell": {
+            "id": "14d40719-4c21-4480-894d-eb8da65a785d",
+            "zone": "Zonal",
+            "level": "Level 1",
+            "fee": 112.0,
+            "applied": true
+          },
+          "nsv_after_gt": -3283.0
+        },
+        "report_month": "2026-04"
+      },
+      "rto_sample": {
+        "id": "eb86f1f8-9606-4c34-910f-c54a792a10a0",
+        "sales_id": "c51f96f0-9dc1-4d6d-af81-5b17967d4d48",
+        "upload_id": "2ae44043-40bc-4352-9a20-d1460a255229",
+        "online_order_id": "0D9ADFFB-4656-4924-9F65-DA7543BADD25",
+        "sku": "KZ01962BRWNL01",
+        "portal": "myntra",
+        "computed_at": "2026-08-13T06:28:05.192235+00:00",
+        "commission_base": -205.11,
+        "commission_gst": 0,
+        "commission_incl_gst": -205.11,
+        "commission_pct": 0.085,
+        "fixed_fee": -61.0,
+        "fixed_fee_gst": 0,
+        "fixed_fee_incl_gst": -61.0,
+        "gt_charge": -207.0,
+        "return_fee": -112.0,
+        "tcs": 0,
+        "tds": 0,
+        "nsv_after_gt": 0.0,
+        "total_deductions": 0.0,
+        "expected_settlement": 0.0,
+        "order_type": "rto",
+        "is_return": false,
+        "unmapped": false,
+        "unmapped_reasons": [],
+        "breakdown": {
+          "isp": 2620.0,
+          "qty": -1.0,
+          "nsv_val": -2620.0,
+          "sub_category": "Tops",
+          "master_category": "APPAREL",
+          "zone": "Zonal",
+          "level": "Level 1",
+          "order_type": "rto",
+          "report_month": "2026-04",
+          "commission_rule": {
+            "id": "dafa7582-dde9-4ed2-a7ce-194431f7a02c",
+            "commission_pct": 0.085,
+            "price_range": ">500",
+            "commission_model": "Split Commission and Logistics",
+            "matched_sub_category": "Tops"
+          },
+          "fixed_fee_slab": {
+            "id": "dcf3842f-04c6-4a16-8244-42f30b4f0eef",
+            "label": ">2000",
+            "fixed_fee": 61.0
+          },
+          "gt_charge_cell": {
+            "id": "259b71e5-4b61-438c-9736-5ef8e7c46aaf",
+            "level": "Level 1",
+            "price_range": ">2000",
+            "unit_charge": 207.0,
+            "qty": -1.0
+          },
+          "return_fee_cell": {
+            "id": "14d40719-4c21-4480-894d-eb8da65a785d",
+            "zone": "Zonal",
+            "level": "Level 1",
+            "fee": 112.0,
+            "applied": false
+          },
+          "nsv_after_gt": 0.0
+        },
+        "report_month": "2026-04"
+      }
+    },
+    {
+      "name": "mongo_commission_all_fallback",
+      "sample": {
+        "online_order_id": "489E46C8-D468-4F9F-9570-3D71994BFB1A",
+        "sku": "KZ01623REDS01",
+        "commission_incl_gst": 631.04,
+        "breakdown": {
+          "commission_rule": {
+            "id": "7032aca6-399a-49d9-893f-ff895af4a163",
+            "commission_pct": 0.085,
+            "price_range": ">500",
+            "commission_model": "Split Commission and Logistics",
+            "matched_sub_category": "All"
+          }
+        }
+      }
+    }
+  ],
+  "failures": [],
+  "verdict": "passed"
+}

@@ -1,0 +1,98 @@
+{
+  "base_url": "https://marketplace-recon-1.preview.emergentagent.com",
+  "production_touched": "no",
+  "checks": [
+    {
+      "name": "admin login",
+      "passed": true
+    },
+    {
+      "name": "Sales Ledger grid return_dto negative Commission/GT",
+      "passed": true,
+      "row_text": "83410B8C-556E-\u2026 KAZO Return DTO 2026-04-30 KZ01952BLACKXL01 MYSRI Apparel Jeggings Level 1 - 2026-04 -1 \u20b93,490.00 \u20b9-3,490.00 \u20b9-279.06 \u20b9-207.00 >500 >2000"
+    },
+    {
+      "name": "Sales Ledger drawer sign convention and no tax rows",
+      "passed": true,
+      "rows": [
+        {
+          "label": "Commission",
+          "value": "\u20b9-279.06",
+          "valueClass": "px-3 py-2 border-b border-border/40 text-right  fin-neg"
+        },
+        {
+          "label": "Fixed Fee",
+          "value": "\u20b961.00",
+          "valueClass": "px-3 py-2 border-b border-border/40 text-right  fin-neg"
+        },
+        {
+          "label": "GT Charge",
+          "value": "\u20b9-207.00",
+          "valueClass": "px-3 py-2 border-b border-border/40 text-right  fin-neg"
+        },
+        {
+          "label": "Return Fee (Level/Zone)",
+          "value": "\u20b9112.00",
+          "valueClass": "px-3 py-2 border-b border-border/40 text-right  fin-neg"
+        },
+        {
+          "label": "Total Deductions",
+          "value": "\u20b9-313.06",
+          "valueClass": "px-3 py-2 border-b border-border/40 text-right font-semibold fin-neg"
+        },
+        {
+          "label": "Expected Settlement",
+          "value": "\u20b9-2,969.95",
+          "valueClass": "px-3 py-2 border-b border-border/40 text-right font-semibold fin-pos"
+        }
+      ]
+    },
+    {
+      "name": "Calculations grid return_dto signs",
+      "passed": true,
+      "row_text": "83410B8C-556E-\u2026 KZ01952BLACKXL01 Jeggings 2026-04 \u20b9-3,490.00 \u20b9-279.06 \u20b961.00 \u20b9-207.00 \u20b9-313.06 \u20b9-2,969.95 OK"
+    },
+    {
+      "name": "Calculations drawer sign convention and no tax rows",
+      "passed": true,
+      "rows": [
+        {
+          "label": "Commission",
+          "value": "\u20b9-279.06",
+          "valueClass": "px-3 py-2 border-b border-border/40 text-right  fin-neg"
+        },
+        {
+          "label": "Fixed Fee",
+          "value": "\u20b961.00",
+          "valueClass": "px-3 py-2 border-b border-border/40 text-right  fin-neg"
+        },
+        {
+          "label": "GT Charge",
+          "value": "\u20b9-207.00",
+          "valueClass": "px-3 py-2 border-b border-border/40 text-right  fin-neg"
+        },
+        {
+          "label": "Return Fee (Level/Zone)",
+          "value": "\u20b9112.00",
+          "valueClass": "px-3 py-2 border-b border-border/40 text-right  fin-neg"
+        },
+        {
+          "label": "Total Deductions",
+          "value": "\u20b9-313.06",
+          "valueClass": "px-3 py-2 border-b border-border/40 text-right font-semibold fin-neg"
+        },
+        {
+          "label": "Expected Settlement",
+          "value": "\u20b9-2,969.95",
+          "valueClass": "px-3 py-2 border-b border-border/40 text-right font-semibold fin-pos"
+        }
+      ]
+    },
+    {
+      "name": "no UI/API errors",
+      "passed": true,
+      "error_text": ""
+    }
+  ],
+  "passed": true
+}
