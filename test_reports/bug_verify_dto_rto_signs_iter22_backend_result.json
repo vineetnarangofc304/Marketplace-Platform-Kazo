@@ -1,0 +1,162 @@
+{
+  "base_url": "https://marketplace-recon-1.preview.emergentagent.com",
+  "checks": [
+    {
+      "name": "preview_admin_login",
+      "user": {
+        "id": "3e02cdc0-90f5-4bc5-8b36-f93f388ae4a2",
+        "email": "admin@fundle.ai",
+        "name": "Administrator",
+        "role": "admin"
+      }
+    },
+    {
+      "name": "api_return_dto_limit25_point_2_1",
+      "total": 5443,
+      "rows_checked": 25,
+      "first_row": {
+        "online_order_id": "83410B8C-556E-465B-96A1-EB3A80DB1DF1",
+        "sales_id": "a752b5cd-e629-42ec-a383-ad1fa5ce9976",
+        "order_type": "return_dto",
+        "commission_incl_gst": -279.06,
+        "fixed_fee_incl_gst": 0.0,
+        "gt_charge": -207.0,
+        "return_fee": 112.0,
+        "tcs": 0,
+        "tds": 0,
+        "commission_gst": 0,
+        "fixed_fee_gst": 0,
+        "total_deductions": -374.06,
+        "expected_settlement": -2908.95,
+        "unmapped": false,
+        "report_month": "2026-04",
+        "portal": "myntra"
+      }
+    },
+    {
+      "name": "api_rto_limit25_point_2_2",
+      "total": 3705,
+      "rows_checked": 25,
+      "first_row": {
+        "online_order_id": "0D9ADFFB-4656-4924-9F65-DA7543BADD25",
+        "sales_id": "c51f96f0-9dc1-4d6d-af81-5b17967d4d48",
+        "order_type": "rto",
+        "commission_incl_gst": -205.11,
+        "fixed_fee_incl_gst": -61.0,
+        "gt_charge": -207.0,
+        "return_fee": -112.0,
+        "tcs": 0,
+        "tds": 0,
+        "commission_gst": 0,
+        "fixed_fee_gst": 0,
+        "total_deductions": 0.0,
+        "expected_settlement": 0.0,
+        "unmapped": false,
+        "report_month": "2026-04",
+        "portal": "myntra"
+      }
+    },
+    {
+      "name": "api_april_myntra_limit25",
+      "dto_first": {
+        "online_order_id": "83410B8C-556E-465B-96A1-EB3A80DB1DF1",
+        "sales_id": "a752b5cd-e629-42ec-a383-ad1fa5ce9976",
+        "order_type": "return_dto",
+        "commission_incl_gst": -279.06,
+        "fixed_fee_incl_gst": 0.0,
+        "gt_charge": -207.0,
+        "return_fee": 112.0,
+        "tcs": 0,
+        "tds": 0,
+        "commission_gst": 0,
+        "fixed_fee_gst": 0,
+        "total_deductions": -374.06,
+        "expected_settlement": -2908.95,
+        "unmapped": false,
+        "report_month": "2026-04",
+        "portal": "myntra"
+      },
+      "rto_first": {
+        "online_order_id": "0D9ADFFB-4656-4924-9F65-DA7543BADD25",
+        "sales_id": "c51f96f0-9dc1-4d6d-af81-5b17967d4d48",
+        "order_type": "rto",
+        "commission_incl_gst": -205.11,
+        "fixed_fee_incl_gst": -61.0,
+        "gt_charge": -207.0,
+        "return_fee": -112.0,
+        "tcs": 0,
+        "tds": 0,
+        "commission_gst": 0,
+        "fixed_fee_gst": 0,
+        "total_deductions": 0.0,
+        "expected_settlement": 0.0,
+        "unmapped": false,
+        "report_month": "2026-04",
+        "portal": "myntra"
+      }
+    },
+    {
+      "name": "api_sales_rows_regression_limit25",
+      "first_row": {
+        "online_order_id": "BA030AAB-E147-4FA2-847F-8B119D06AEC1",
+        "sales_id": "3fc2c0d5-aca8-448a-91ae-51ecd5e58438",
+        "order_type": "sales",
+        "commission_incl_gst": 871.36,
+        "fixed_fee_incl_gst": 61.0,
+        "gt_charge": 266.0,
+        "return_fee": 0.0,
+        "tcs": 0,
+        "tds": 0,
+        "commission_gst": 0,
+        "fixed_fee_gst": 0,
+        "total_deductions": 1198.36,
+        "expected_settlement": 5025.64,
+        "unmapped": false,
+        "report_month": "2026-04",
+        "portal": "myntra"
+      }
+    },
+    {
+      "name": "api_sales_summary_net_orders",
+      "summary": {
+        "row_count": 21614,
+        "sales_rows": 14219,
+        "return_rows": 7395,
+        "net_orders": 6824,
+        "net_qty": 6824.0,
+        "nsv_total": 12702900.0
+      }
+    },
+    {
+      "name": "api_april_myntra_unmapped_zero",
+      "total": 0
+    },
+    {
+      "name": "api_sales_export_31_columns",
+      "column_count": 31,
+      "first_last_headers": [
+        "Portal",
+        "Expected Settlement"
+      ]
+    },
+    {
+      "name": "mongo_commission_all_fallback_active",
+      "sample": {
+        "online_order_id": "489E46C8-D468-4F9F-9570-3D71994BFB1A",
+        "sku": "KZ01623REDS01",
+        "commission_incl_gst": 631.04,
+        "breakdown": {
+          "commission_rule": {
+            "id": "7032aca6-399a-49d9-893f-ff895af4a163",
+            "commission_pct": 0.085,
+            "price_range": ">500",
+            "commission_model": "Split Commission and Logistics",
+            "matched_sub_category": "All"
+          }
+        }
+      }
+    }
+  ],
+  "failures": [],
+  "verdict": "passed"
+}

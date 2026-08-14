@@ -1,0 +1,44 @@
+{
+  "verdict": "fixed",
+  "user_reported_bug": "User reports Google Doc Point 2.1 (DTO) and 2.2 (RTO) still Pending. Google Doc text hasn't changed since previous iteration — all URLs in the doc point to https://kazob2b.fundlezone.com (production). Preview should be fully correct after iteration 21 fix. Please formally re-verify preview matches Point 2.1 and 2.2 spec, so we can definitively communicate 'production needs a redeploy'.",
+  "summary": "No relevant testing skill found. Focused PREVIEW-only verification passed: /api/calculations?order_type=return_dto&limit=25 satisfies Point 2.1 for all 25 rows, /api/calculations?order_type=rto&limit=25 satisfies Point 2.2 for all 25 rows, and the Sales Ledger drawer shows the same DTO/RTO signs after admin login. Regression checks passed for net_orders=6824, positive sales fees, sales return_fee=0, Excel export 31 columns, April/Myntra unmapped=0, and active commission ALL fallback. Production URL was not tested or touched by instruction.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/tests/bug_verify_dto_rto_signs_iter22_backend.py",
+    "/app/test_reports/bug_verify_dto_rto_signs_iter22_backend_result.json",
+    "/app/tests/bug_verify_dto_rto_signs_iter22_ui.py",
+    "/root/.emergent/automation_output/20260814_080717/console_20260814_080717.log"
+  ],
+  "action_items": [
+    "No preview code fix is needed. If production / Google Doc still reflects old pending behavior or production URLs, redeploy production from the verified preview build."
+  ],
+  "critical_code_review_comments": [
+    "Mandatory skill lookup completed before test plan; no relevant testing skill found.",
+    "No /app/memory/test_credentials.md file exists; required admin@fundle.ai/admin123 credential was validated via preview login.",
+    "Latest relevant commit a69c92f changes /app/backend/routers/calculations.py. Reviewed return_dto branch: commission and GT are negative, fixed_fee is explicitly 0.0, return_fee is positive, taxes are zero. Reviewed rto branch: commission, fixed_fee, GT, return_fee are negative reversals while total_deductions and expected_settlement remain 0.0."
+  ],
+  "updated_files": [
+    "/app/tests/bug_verify_dto_rto_signs_iter22_backend.py",
+    "/app/test_reports/bug_verify_dto_rto_signs_iter22_backend_result.json",
+    "/app/tests/bug_verify_dto_rto_signs_iter22_ui.py",
+    "/app/test_reports/bug_verification_22.json",
+    "/app/test_reports/iteration_22.json"
+  ],
+  "success_rate": {
+    "backend": "100%",
+    "frontend": "100%"
+  },
+  "seed_data_creation": "No seed data created. Existing preview data only; no production calls were made.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Iteration 22 was a formal preview re-verification only. Backend proof: DTO first row Commission -279.06 / Fixed Fee 0.0 / GT -207.0 / Return Fee +112.0; RTO first row Commission -205.11 / Fixed Fee -61.0 / GT -207.0 / Return Fee -112.0 / Total Deductions 0.0 / Expected Settlement 0.0. UI proof: Sales Ledger April 2026 Myntra drawer DTO showed Commission ₹-110.84, Fixed Fee ₹0.00, GT ₹-171.00, Return Fee ₹112.00; RTO showed all four fee heads negative with Total Deductions and Expected Settlement ₹0.00.",
+  "rca_of_the_issue": "Preview now implements the Google Doc Point 2.1/2.2 sign contract. The remaining user-reported mismatch is consistent with production/document URLs still pointing at https://kazob2b.fundlezone.com rather than the verified preview deployment; production was intentionally not tested. No mocked APIs were used."
+}
