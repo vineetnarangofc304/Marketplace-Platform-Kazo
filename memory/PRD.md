@@ -354,3 +354,22 @@ User: "Point 2.1 and 2.2 - Not resolved" (5th recurrence — reported after rede
   - `/app/tests/bug_verify_dto_rto_signs_iter23_backend.py`
   - `/app/tests/bug_verify_dto_rto_signs_iter23_ui.py`
   - `/app/test_reports/iteration_23.json`
+
+## Iteration 24 — Point 6 fix: RTO Total Deductions (2026-02, session 24)
+User: "point 2.1 and 6" — Google Doc updated with a new Point 6: "RTO - Sum of Total deductions should be Sum of Commission, Fixed Fee, GT Charge, Return Fee".
+
+### Fix delivered
+- `/app/backend/routers/calculations.py` — RTO branch: `total_deductions` now = `commission_base + fixed_fee + gt_charge_final + return_fee_final` (was hard-coded 0.0). Expected settlement stays 0 (net-zero refund semantics).
+- Recalculated all 21,614 Myntra rows on Preview so stored calc rows reflect the new logic.
+- Point 2.1 (DTO) signs verified as still correct: commission < 0, fixed_fee = 0, GT < 0, return_fee > 0.
+
+### Verified (bug_testing_agent iteration_24.json — 100% backend + frontend)
+- RTO API: 5 samples confirm `total_deductions == comm + ff + gt + rf` (e.g. -205.11 + -61 + -207 + -112 = -585.11).
+- RTO signs & settlement=0 preserved.
+- DTO Point 2.1 signs unchanged.
+- Sales Ledger Excel export Total Deductions column matches the sum for RTO rows.
+- Calculations UI table + drawer reflect the fix.
+
+### Production note
+User must redeploy Production for the code change to propagate, then click "Run Calculations" on the Calculations page to reprocess stored rows.
+

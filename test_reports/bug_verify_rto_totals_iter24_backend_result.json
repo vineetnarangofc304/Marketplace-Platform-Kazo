@@ -1,0 +1,283 @@
+{
+  "status": "passed",
+  "base_url": "https://settlement-intel-1.preview.emergentagent.com",
+  "ran_at": "2026-08-18T14:40:01.615894+00:00",
+  "evidence": {
+    "auth": {
+      "logged_in_as": "admin@fundle.ai",
+      "has_token": true
+    },
+    "rto_total": 3705,
+    "rto_samples": [
+      {
+        "order_id": "0D9ADFFB-4656-4924-9F65-DA7543BADD25",
+        "month": "2026-04",
+        "commission": -205.11,
+        "fixed_fee": -61.0,
+        "gt": -207.0,
+        "return_fee": -112.0,
+        "sum": -585.11,
+        "total_deductions": -585.11,
+        "expected_settlement": 0.0
+      },
+      {
+        "order_id": "1CD0D5B7-855F-4AAC-BF5B-B5598F593875",
+        "month": "2026-04",
+        "commission": -205.11,
+        "fixed_fee": -61.0,
+        "gt": -207.0,
+        "return_fee": -112.0,
+        "sum": -585.11,
+        "total_deductions": -585.11,
+        "expected_settlement": 0.0
+      },
+      {
+        "order_id": "F74AF20E-6E26-43BD-8747-8B3502D14EB6",
+        "month": "2026-04",
+        "commission": -201.54,
+        "fixed_fee": -61.0,
+        "gt": -207.0,
+        "return_fee": -112.0,
+        "sum": -581.54,
+        "total_deductions": -581.54,
+        "expected_settlement": 0.0
+      },
+      {
+        "order_id": "0C4E6C9D-C321-42CE-9C8D-B4B8CD275531",
+        "month": "2026-04",
+        "commission": -406.56,
+        "fixed_fee": -61.0,
+        "gt": -207.0,
+        "return_fee": -112.0,
+        "sum": -786.56,
+        "total_deductions": -786.56,
+        "expected_settlement": 0.0
+      },
+      {
+        "order_id": "247040F2-F53B-40AE-A5E0-B2B3FF32FECD",
+        "month": "2026-04",
+        "commission": -113.99,
+        "fixed_fee": -45.0,
+        "gt": -171.0,
+        "return_fee": -112.0,
+        "sum": -441.99,
+        "total_deductions": -441.99,
+        "expected_settlement": 0.0
+      }
+    ],
+    "return_dto_total": 5443,
+    "return_dto_samples": [
+      {
+        "order_id": "83410B8C-556E-465B-96A1-EB3A80DB1DF1",
+        "commission": -279.06,
+        "fixed_fee": 0.0,
+        "gt": -207.0,
+        "return_fee": 112.0,
+        "sum": -374.06,
+        "total_deductions": -374.06
+      },
+      {
+        "order_id": "CEFB5152-096A-495B-BBBB-31AF2587F659",
+        "commission": -211.14,
+        "fixed_fee": 0.0,
+        "gt": -207.0,
+        "return_fee": 112.0,
+        "sum": -306.14,
+        "total_deductions": -306.14
+      },
+      {
+        "order_id": "D64EC1CA-0341-4B73-B607-D188CFBFCB1F",
+        "commission": -279.06,
+        "fixed_fee": 0.0,
+        "gt": -207.0,
+        "return_fee": 112.0,
+        "sum": -374.06,
+        "total_deductions": -374.06
+      },
+      {
+        "order_id": "DCCEDAF9-9581-4978-8EA6-F3678F381138",
+        "commission": -234.01,
+        "fixed_fee": 0.0,
+        "gt": -207.0,
+        "return_fee": 112.0,
+        "sum": -329.01,
+        "total_deductions": -329.0
+      },
+      {
+        "order_id": "77AF71D5-53D8-4878-9CE6-A01FE2101BE8",
+        "commission": -236.56,
+        "fixed_fee": 0.0,
+        "gt": -207.0,
+        "return_fee": 112.0,
+        "sum": -331.56,
+        "total_deductions": -331.56
+      }
+    ],
+    "export": {
+      "month": "2026-04",
+      "checked_rto_rows": [
+        {
+          "order_id": "C267A216-9212-484B-823D-D70A04EC3CF4",
+          "commission": -46.92,
+          "fixed_fee": -27.0,
+          "gt": -94.0,
+          "return_fee": -112.0,
+          "sum": -279.92,
+          "total_deductions": -279.92,
+          "expected_settlement": 0.0
+        },
+        {
+          "order_id": "FCA1CA3B-C54B-4889-B737-83E822E0FF85",
+          "commission": -57.89,
+          "fixed_fee": -27.0,
+          "gt": -94.0,
+          "return_fee": -112.0,
+          "sum": -290.89,
+          "total_deductions": -290.88,
+          "expected_settlement": 0.0
+        },
+        {
+          "order_id": "CC4FA658-6065-4496-8296-F0B3B231B3CC",
+          "commission": -72.0,
+          "fixed_fee": -27.0,
+          "gt": -94.0,
+          "return_fee": -112.0,
+          "sum": -305.0,
+          "total_deductions": -305.0,
+          "expected_settlement": 0.0
+        },
+        {
+          "order_id": "4CB77A0E-8813-44EE-B31A-D18C873D45A1",
+          "commission": -65.96,
+          "fixed_fee": -27.0,
+          "gt": -94.0,
+          "return_fee": -112.0,
+          "sum": -298.96,
+          "total_deductions": -298.96,
+          "expected_settlement": 0.0
+        },
+        {
+          "order_id": "2662815C-DC6A-451F-A5A7-1098D1805395",
+          "commission": -42.67,
+          "fixed_fee": -27.0,
+          "gt": -94.0,
+          "return_fee": -112.0,
+          "sum": -275.67,
+          "total_deductions": -275.67,
+          "expected_settlement": 0.0
+        }
+      ],
+      "content_type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "bytes": 611551
+    },
+    "sales_total": 12246,
+    "return_total": 92,
+    "sales_return_regression_samples": {
+      "sales": [
+        {
+          "order_id": "BA030AAB-E147-4FA2-847F-8B119D06AEC1",
+          "commission": 871.36,
+          "fixed_fee": 61.0,
+          "gt": 266.0,
+          "return_fee": 0.0,
+          "sum": 1198.36,
+          "total_deductions": 1198.36,
+          "expected_settlement": 5025.64
+        },
+        {
+          "order_id": "5C096FFC-473B-47A8-B3DE-535371DBC079",
+          "commission": 321.56,
+          "fixed_fee": 61.0,
+          "gt": 207.0,
+          "return_fee": 0.0,
+          "sum": 589.56,
+          "total_deductions": 589.56,
+          "expected_settlement": 3193.44
+        },
+        {
+          "order_id": "879F52C0-0F8A-4025-A6AE-2160DD93CC21",
+          "commission": 321.56,
+          "fixed_fee": 61.0,
+          "gt": 207.0,
+          "return_fee": 0.0,
+          "sum": 589.56,
+          "total_deductions": 589.56,
+          "expected_settlement": 3193.44
+        },
+        {
+          "order_id": "92772EA3-F976-4FA9-9952-5665D1D5D72C",
+          "commission": 279.06,
+          "fixed_fee": 61.0,
+          "gt": 207.0,
+          "return_fee": 0.0,
+          "sum": 547.06,
+          "total_deductions": 547.06,
+          "expected_settlement": 2735.94
+        },
+        {
+          "order_id": "17D47B7B-AFDF-4605-890E-CB361869E872",
+          "commission": 296.06,
+          "fixed_fee": 61.0,
+          "gt": 207.0,
+          "return_fee": 0.0,
+          "sum": 564.06,
+          "total_deductions": 564.06,
+          "expected_settlement": 2918.94
+        }
+      ],
+      "return": [
+        {
+          "order_id": "25CD6C69-D6C7-4BF6-9C03-CC2791520E54",
+          "commission": -249.31,
+          "fixed_fee": -61.0,
+          "gt": -207.0,
+          "return_fee": 112.0,
+          "sum": -405.31,
+          "total_deductions": -405.31,
+          "expected_settlement": -2527.69
+        },
+        {
+          "order_id": "F4FE3227-3060-4479-BA71-13997FE4D7F7",
+          "commission": -236.56,
+          "fixed_fee": -61.0,
+          "gt": -207.0,
+          "return_fee": 112.0,
+          "sum": -392.56,
+          "total_deductions": -392.56,
+          "expected_settlement": -2390.45
+        },
+        {
+          "order_id": "0B527EF4-83F7-4B26-9EDB-F91FE22019F6",
+          "commission": -203.41,
+          "fixed_fee": -61.0,
+          "gt": -207.0,
+          "return_fee": 112.0,
+          "sum": -359.41,
+          "total_deductions": -359.4,
+          "expected_settlement": -2033.6
+        },
+        {
+          "order_id": "ADE5CEB6-ECE7-4A02-9E8A-998C39D49082",
+          "commission": -182.75,
+          "fixed_fee": -61.0,
+          "gt": -207.0,
+          "return_fee": 112.0,
+          "sum": -338.75,
+          "total_deductions": -338.75,
+          "expected_settlement": -1811.25
+        },
+        {
+          "order_id": "D8885A3A-2199-4BC1-AD5E-F9183A1F5249",
+          "commission": -296.06,
+          "fixed_fee": -61.0,
+          "gt": -207.0,
+          "return_fee": 112.0,
+          "sum": -452.06,
+          "total_deductions": -452.06,
+          "expected_settlement": -3030.94
+        }
+      ]
+    }
+  },
+  "failures": []
+}

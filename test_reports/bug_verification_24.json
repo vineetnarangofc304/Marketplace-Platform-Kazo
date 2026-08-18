@@ -1,0 +1,47 @@
+{
+  "verdict": "fixed",
+  "user_reported_bug": "Google Doc: Point 2.1 (DTO/return_dto sign conventions) and Point 6 (RTO Total Deductions must equal sum of Commission + Fixed Fee + GT + Return Fee, not zero). Doc source: https://docs.google.com/document/d/1wrReCWvXxkytYaLMn3FnwTkrukesxGCRc-lr1ksKXoA/edit — verbatim: 'Point 6. RTO - Sum of Total deductions should be Sum of Commission, Fixed Fee, GT Charge, Return Fee'. Point 2.1 spec: DTO commission NEGATIVE, fixed_fee ZERO, GT NEGATIVE, return_fee POSITIVE.",
+  "summary": "No relevant testing skill found. Focused Preview verification passed end to end: authenticated API checks confirmed RTO total_deductions now equals commission_incl_gst + fixed_fee_incl_gst + gt_charge + return_fee for 5 sampled rows, RTO signs remain negative with expected_settlement=0, return_dto Point 2.1 signs remain correct, Excel export Total Deductions matches the four heads, and the Calculations UI with portal=Myntra and order_type=rto displays the same totals in table and drawer. Sales and return order-type formulas/signs were spot-checked with 5 rows each with no regression found.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/tests/bug_verify_rto_totals_iter24_backend.py",
+    "/app/test_reports/bug_verify_rto_totals_iter24_backend_result.json",
+    "/app/tests/bug_verify_rto_totals_iter24_ui.py",
+    "/app/test_reports/bug_verify_rto_totals_iter24_ui_result.json"
+  ],
+  "action_items": [
+    "No preview fix needed for Google Doc Point 6 or Point 2.1 based on this focused verification."
+  ],
+  "critical_code_review_comments": [
+    "Mandatory skill lookup completed before the test plan: no relevant testing skill found for DTO/RTO total deductions calculations/export.",
+    "Focused test plan: inspect changed calculation/export code; prove RTO API total_deductions equals Commission + Fixed Fee + GT + Return Fee, prove RTO expected_settlement remains 0, prove return_dto Point 2.1 signs are unchanged, prove UI table/drawer and sales export reflect backend truth, and spot-check sales/return order types.",
+    "Reviewed /app/backend/routers/calculations.py lines 323-344: RTO now computes total_deductions = commission_base + fixed_fee + gt_charge_final + return_fee_final and expected_settlement = 0.0.",
+    "Reviewed /app/backend/routers/uploads_r.py lines 733-790: Excel export includes Total Deductions populated from calc.total_deductions.",
+    "Git inspection showed an uncommitted product diff only in backend/routers/calculations.py for the RTO total_deductions change; uploads_r.py had no export diff in this worktree. Untracked yarn.lock files are present but unrelated to this bug verification."
+  ],
+  "updated_files": [
+    "/app/tests/bug_verify_rto_totals_iter24_backend.py",
+    "/app/test_reports/bug_verify_rto_totals_iter24_backend_result.json",
+    "/app/tests/bug_verify_rto_totals_iter24_ui.py",
+    "/app/test_reports/bug_verify_rto_totals_iter24_ui_result.json",
+    "/app/test_reports/bug_verification_24.json",
+    "/app/test_reports/iteration_24.json"
+  ],
+  "success_rate": {
+    "backend": "100%",
+    "frontend": "100%"
+  },
+  "seed_data_creation": "No seed data created. Existing Preview Myntra calculation/sales/export data was used; no production URL was called.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Backend proof on Preview: /api/calculations?portal=myntra&order_type=rto total=3705; 5 RTO samples had all four fee heads negative, expected_settlement=0, and total_deductions matching the component sum (e.g. -205.11 + -61.00 + -207.00 + -112.00 = -585.11). /api/calculations?portal=myntra&order_type=return_dto total=5443; 5 DTO samples had commission<0, fixed_fee=0, gt<0, return_fee>0. /api/sales/export for report_month=2026-04 and order_status=RTO returned XLSX with 5 checked RTO rows matching the sum. UI proof: logged in as admin@fundle.ai, portal=Myntra, /calculations?order_type=rto showed 3705 rows and 5 row/drawer checks where table Total Deductions matched Commission + Fixed Fee + GT + Return Fee. No MOCKED APIs used.",
+  "rca_of_the_issue": "The prior user-visible failure was RTO total_deductions being persisted/displayed as zero despite fee heads being present. The current Preview code and recalculated data now persist and export total_deductions as the arithmetic sum of the four RTO fee heads while keeping RTO settlement net-zero. No remaining Preview symptoms were reproduced."
+}

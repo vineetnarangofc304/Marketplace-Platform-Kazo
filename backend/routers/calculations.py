@@ -336,7 +336,11 @@ def compute_expected(sale: Dict[str, Any], masters: Dict[str, Any]) -> Dict[str,
         gt_charge_final = -abs(gt_total) if gt_total is not None else 0.0
         return_fee_final = -abs(return_fee_master) if return_fee_master is not None else 0.0
         nsv_after_gt = 0.0
-        total_deductions = 0.0
+        # Per client spec (Point 6, 2026-02): RTO Total Deductions must equal
+        # the arithmetic sum of the four fee heads (Commission + Fixed Fee +
+        # GT + Return Fee) so ops can see WHAT was reversed. Settlement itself
+        # still nets to zero because these are refunds, not seller losses.
+        total_deductions = commission_base + fixed_fee + gt_charge_final + return_fee_final
         expected_settlement = 0.0
         reasons = []
     elif order_type == "internal_cancel":

@@ -1,0 +1,80 @@
+{
+  "status": "passed",
+  "base_url": "https://settlement-intel-1.preview.emergentagent.com",
+  "ran_at": "2026-08-18T14:41:25.397564+00:00",
+  "evidence": {
+    "checked_rows": [
+      {
+        "row_testid": "calc-row-c055da5e-a0be-49c6-8ec4-f621d053a73d",
+        "table_commission": -279.06,
+        "table_fixed_fee": -61.0,
+        "table_gt": -207.0,
+        "table_total_deductions": -659.06,
+        "drawer_commission": -279.06,
+        "drawer_fixed_fee": -61.0,
+        "drawer_gt": -207.0,
+        "drawer_return_fee": -112.0,
+        "component_sum": -659.06,
+        "drawer_total_deductions": -659.06,
+        "expected_settlement": 0.0
+      },
+      {
+        "row_testid": "calc-row-0df25e8f-fc35-48a4-b91d-53ae4756837e",
+        "table_commission": -104.21,
+        "table_fixed_fee": -45.0,
+        "table_gt": -171.0,
+        "table_total_deductions": -432.21,
+        "drawer_commission": -104.21,
+        "drawer_fixed_fee": -45.0,
+        "drawer_gt": -171.0,
+        "drawer_return_fee": -112.0,
+        "component_sum": -432.21,
+        "drawer_total_deductions": -432.21,
+        "expected_settlement": 0.0
+      },
+      {
+        "row_testid": "calc-row-0671d686-c16f-4b95-9c3c-e17e0a97b9d3",
+        "table_commission": -97.16,
+        "table_fixed_fee": -45.0,
+        "table_gt": -171.0,
+        "table_total_deductions": -425.15,
+        "drawer_commission": -97.16,
+        "drawer_fixed_fee": -45.0,
+        "drawer_gt": -171.0,
+        "drawer_return_fee": -112.0,
+        "component_sum": -425.16,
+        "drawer_total_deductions": -425.15,
+        "expected_settlement": 0.0
+      },
+      {
+        "row_testid": "calc-row-400cf467-fa36-40a9-84b4-21b8e90c06d9",
+        "table_commission": -125.29,
+        "table_fixed_fee": -45.0,
+        "table_gt": -171.0,
+        "table_total_deductions": -453.29,
+        "drawer_commission": -125.29,
+        "drawer_fixed_fee": -45.0,
+        "drawer_gt": -171.0,
+        "drawer_return_fee": -112.0,
+        "component_sum": -453.29,
+        "drawer_total_deductions": -453.29,
+        "expected_settlement": 0.0
+      },
+      {
+        "row_testid": "calc-row-a4a627cc-27ff-439d-9d46-34b83815918c",
+        "table_commission": -99.88,
+        "table_fixed_fee": -45.0,
+        "table_gt": -171.0,
+        "table_total_deductions": -427.88,
+        "drawer_commission": -99.88,
+        "drawer_fixed_fee": -45.0,
+        "drawer_gt": -171.0,
+        "drawer_return_fee": -112.0,
+        "component_sum": -427.88,
+        "drawer_total_deductions": -427.88,
+        "expected_settlement": 0.0
+      }
+    ]
+  },
+  "failures": []
+}
