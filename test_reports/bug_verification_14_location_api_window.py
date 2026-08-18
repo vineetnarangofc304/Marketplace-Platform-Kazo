@@ -1,7 +1,7 @@
 import json
 import requests
 
-BASE = "https://marketplace-recon-1.preview.emergentagent.com"
+BASE = "https://settlement-intel-1.preview.emergentagent.com"
 s = requests.Session()
 r = s.post(f"{BASE}/api/auth/login", json={"email": "admin@fundle.ai", "password": "admin123"}, timeout=30)
 r.raise_for_status()

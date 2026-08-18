@@ -7,7 +7,7 @@ blocked by assertions.
 
 try:
     await page.set_viewport_size({"width": 1920, "height": 1080})
-    base_url = "https://marketplace-recon-1.preview.emergentagent.com"
+    base_url = "https://settlement-intel-1.preview.emergentagent.com"
     assert "kazob2b.fundlezone.com" not in base_url, "Refusing to test production URL"
 
     seen_urls = []

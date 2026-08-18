@@ -8,7 +8,7 @@ import requests
 from pymongo import MongoClient
 
 
-BACKEND_URL = "https://marketplace-recon-1.preview.emergentagent.com".rstrip("/")
+BACKEND_URL = "https://settlement-intel-1.preview.emergentagent.com".rstrip("/")
 ADMIN_EMAIL = "admin@fundle.ai"
 ADMIN_PASSWORD = "admin123"
 

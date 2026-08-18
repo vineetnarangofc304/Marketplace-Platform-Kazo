@@ -1,6 +1,6 @@
 {
   "tool": "mcp_browser_automation",
-  "base_url": "https://marketplace-recon-1.preview.emergentagent.com",
+  "base_url": "https://settlement-intel-1.preview.emergentagent.com",
   "credentials": "admin@fundle.ai / admin123",
   "result": "passed",
   "checks": {

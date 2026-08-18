@@ -41,6 +41,6 @@
   "seed_data_creation": "None. Used existing April 2026 Myntra preview data.",
   "retest_needed": false,
   "should_main_agent_self_test": false,
-  "context_for_next_testing_agent": "Preview only: REACT_APP_BACKEND_URL=https://marketplace-recon-1.preview.emergentagent.com. Exact API /api/calculations?order_type=return_dto&limit=10 passed for all 10 rows. Exact sample order 83410B8C-556E-465B-96A1-EB3A80DB1DF1 shows Commission ₹-279.06, GT ₹-207.00, Fixed Fee ₹61.00, Return Fee ₹112.00 in API, Sales Ledger grid/drawer, and Calculations grid/drawer. /api/sales/summary for April 2026 Myntra returned net_orders=6824. Export XLSX returned 31 columns. No mocked APIs used.",
+  "context_for_next_testing_agent": "Preview only: REACT_APP_BACKEND_URL=https://settlement-intel-1.preview.emergentagent.com. Exact API /api/calculations?order_type=return_dto&limit=10 passed for all 10 rows. Exact sample order 83410B8C-556E-465B-96A1-EB3A80DB1DF1 shows Commission ₹-279.06, GT ₹-207.00, Fixed Fee ₹61.00, Return Fee ₹112.00 in API, Sales Ledger grid/drawer, and Calculations grid/drawer. /api/sales/summary for April 2026 Myntra returned net_orders=6824. Export XLSX returned 31 columns. No mocked APIs used.",
   "rca_of_the_issue": "The previously reported Point 2 symptom appears consistent with stale production rather than preview: preview runtime data now matches the client rule that Fixed/Return Fees are applied positive and GT/Commission are subtracted negative for return_dto. Production was intentionally not tested or touched per request."
 }

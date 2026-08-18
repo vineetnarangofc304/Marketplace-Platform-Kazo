@@ -22,7 +22,7 @@ async def read_charge_table(drawer_testid):
     return {r["label"]: r["value"] for r in rows if r.get("label")}
 
 try:
-    base_url = "https://marketplace-recon-1.preview.emergentagent.com"
+    base_url = "https://settlement-intel-1.preview.emergentagent.com"
     assert "kazob2b.fundlezone.com" not in base_url
     order_id = "326D677B-1384-40AD-A823-F0E9D470EC82"
 

@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 
-BASE = "https://marketplace-recon-1.preview.emergentagent.com"
+BASE = "https://settlement-intel-1.preview.emergentagent.com"
 OUT = Path("/app/test_reports/bug_verification_18_ui_results.json")
 RETURN_ORDER = "83410B8C-556E-465B-96A1-EB3A80DB1DF1"
 RETURN_ROW_TESTID = "sales-row-a752b5cd-e629-42ec-a383-ad1fa5ce9976"

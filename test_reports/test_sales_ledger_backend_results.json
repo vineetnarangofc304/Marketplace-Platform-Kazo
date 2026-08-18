@@ -1,5 +1,5 @@
 {
-  "api_base": "https://marketplace-recon-1.preview.emergentagent.com/api",
+  "api_base": "https://settlement-intel-1.preview.emergentagent.com/api",
   "checks": [
     {
       "name": "admin login",

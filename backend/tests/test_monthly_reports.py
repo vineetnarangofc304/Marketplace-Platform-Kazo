@@ -3,7 +3,7 @@ import os
 import requests
 import pytest
 
-BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://marketplace-recon-1.preview.emergentagent.com").rstrip("/")
+BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://settlement-intel-1.preview.emergentagent.com").rstrip("/")
 ADMIN_EMAIL = "admin@fundle.ai"
 ADMIN_PASSWORD = "admin123"
 MONTH = "2026-04"

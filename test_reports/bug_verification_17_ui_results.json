@@ -1,6 +1,6 @@
 {
   "verdict": "passed",
-  "base_url": "https://marketplace-recon-1.preview.emergentagent.com",
+  "base_url": "https://settlement-intel-1.preview.emergentagent.com",
   "skill_lookup": "No relevant testing skill found for 'Order Qty net KPI DTO reversal Sales Ledger'.",
   "login": "admin@fundle.ai/admin123 succeeded via UI",
   "overview": {

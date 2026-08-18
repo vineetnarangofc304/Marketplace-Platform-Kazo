@@ -339,3 +339,18 @@ User: "Changes" (following upload of `All Portal_Commercial -AI.xlsx`) → inter
 - P1: Automated Return-Velocity monthly email (Resend integration).
 - P2: SSO / tenant boundaries, white-label logo upload, `/api/health/ready` endpoint.
 - Backlog: True native Amazon settlement (MTR) tax-split parsing when a real file is provided.
+
+
+## Iteration 23 — Production-vs-Preview Verification (2026-02, session 23)
+User: "Point 2.1 and 2.2 - Not resolved" (5th recurrence — reported after redeploy to production).
+
+### Investigation & outcome — no code change needed
+- **bug_testing_agent (iter 23) verified on Preview:**
+  - `/api/calculations?order_type=return_dto` → 5/5 sampled rows: commission < 0, fixed_fee = 0, gt_charge < 0, return_fee > 0 ✅ (Point 2.1)
+  - `/api/calculations?order_type=rto` → 5/5 sampled rows: all four fee heads < 0 ✅ (Point 2.2)
+  - UI (Calculations table, Calculations drawer, Sales Ledger drawer) shows correct signs.
+- **Root cause of user report:** Production still serves stale stored calculation rows even after redeploying the code. Fresh code + old computed rows in `db.calculations` = same displayed values. Fix on production side = click **"Run Calculations"** button (calls `POST /api/calculations/run` with `recalculate: true`) to reprocess all rows.
+- **No preview code changes** were made in this session. Test artefacts written:
+  - `/app/tests/bug_verify_dto_rto_signs_iter23_backend.py`
+  - `/app/tests/bug_verify_dto_rto_signs_iter23_ui.py`
+  - `/app/test_reports/iteration_23.json`

@@ -7,7 +7,7 @@ import openpyxl
 import requests
 
 
-BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://marketplace-recon-1.preview.emergentagent.com").rstrip("/")
+BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://settlement-intel-1.preview.emergentagent.com").rstrip("/")
 API = f"{BASE_URL}/api"
 OUT = Path("/app/test_reports/bug_verification_17_backend_results.json")
 

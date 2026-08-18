@@ -1,5 +1,5 @@
 {
-  "backend_url": "https://marketplace-recon-1.preview.emergentagent.com",
+  "backend_url": "https://settlement-intel-1.preview.emergentagent.com",
   "checks": [
     {
       "name": "auth_login",

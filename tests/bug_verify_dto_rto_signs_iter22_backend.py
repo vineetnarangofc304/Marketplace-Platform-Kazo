@@ -15,7 +15,7 @@ import requests
 from pymongo import MongoClient
 
 
-BASE_URL = os.environ.get("PREVIEW_BASE_URL", "https://marketplace-recon-1.preview.emergentagent.com")
+BASE_URL = os.environ.get("PREVIEW_BASE_URL", "https://settlement-intel-1.preview.emergentagent.com")
 assert "kazob2b.fundlezone.com" not in BASE_URL, "Refusing to test production URL"
 API = BASE_URL.rstrip("/") + "/api"
 OUT = Path("/app/test_reports/bug_verify_dto_rto_signs_iter22_backend_result.json")

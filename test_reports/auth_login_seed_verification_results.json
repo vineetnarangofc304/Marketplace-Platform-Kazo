@@ -1,6 +1,6 @@
 {
   "all_ok": true,
-  "backend_url": "https://marketplace-recon-1.preview.emergentagent.com",
+  "backend_url": "https://settlement-intel-1.preview.emergentagent.com",
   "expected_admin_emails": [
     "admin@fundle.ai",
     "admin@kazo.com"
@@ -30,7 +30,7 @@
   },
   "live_api": {
     "all_ok": true,
-    "api_url": "https://marketplace-recon-1.preview.emergentagent.com/api",
+    "api_url": "https://settlement-intel-1.preview.emergentagent.com/api",
     "logins": [
       {
         "email": "admin@fundle.ai",

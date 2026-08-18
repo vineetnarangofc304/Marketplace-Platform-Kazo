@@ -7,7 +7,7 @@ inside an async function with `page` already available.
 try:
     await page.set_viewport_size({"width": 1920, "height": 1080})
 
-    base_url = "https://marketplace-recon-1.preview.emergentagent.com"
+    base_url = "https://settlement-intel-1.preview.emergentagent.com"
 
     async def goto_retry(url):
         last_error = None

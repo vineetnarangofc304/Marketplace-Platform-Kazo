@@ -5,7 +5,7 @@ import json
 import re
 from pathlib import Path
 
-BASE_URL = "https://marketplace-recon-1.preview.emergentagent.com"
+BASE_URL = "https://settlement-intel-1.preview.emergentagent.com"
 ORDER_ID = "83410B8C-556E-465B-96A1-EB3A80DB1DF1"
 ORDER_PREFIX = "83410B8C-556E"
 SALES_ID = "a752b5cd-e629-42ec-a383-ad1fa5ce9976"

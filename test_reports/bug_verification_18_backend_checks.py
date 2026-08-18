@@ -18,7 +18,7 @@ import requests
 
 
 OUT = Path("/app/test_reports/bug_verification_18_backend_results.json")
-BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://marketplace-recon-1.preview.emergentagent.com").rstrip("/")
+BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://settlement-intel-1.preview.emergentagent.com").rstrip("/")
 API = f"{BASE_URL}/api"
 PARAMS = {"period_type": "month", "period_value": "2026-04", "portal": "myntra"}
 

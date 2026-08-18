@@ -1,0 +1,46 @@
+{
+  "verdict": "fixed",
+  "user_reported_bug": "Point 2.1 and 2.2 - Not resolved. Google Doc spec: Point 2.1 (DTO / return_dto order type): Commission NEGATIVE, Fixed Fee ZERO, GT Charge NEGATIVE, Return Fee (Level/Zone) POSITIVE; Point 2.2 (RTO order type): Commission NEGATIVE, Fixed Fee NEGATIVE, GT Charge NEGATIVE, Return Fee NEGATIVE. User tested on production https://kazob2b.fundlezone.com and reports both are still not working. User just redeployed to production per system notification.",
+  "summary": "No relevant testing skill found. Focused PREVIEW-only verification passed: /api/calculations?portal=myntra&order_type=return_dto returned 5/5 sampled rows with commission < 0, fixed_fee = 0, gt_charge < 0, return_fee > 0; /api/calculations?portal=myntra&order_type=rto returned 5/5 sampled rows with all four fee heads negative. UI verification passed after admin login with portal pinned to Myntra: Calculations table, Calculations drawer, and Sales Ledger drawer all displayed the expected DTO/RTO signs. Production was intentionally not called per instruction; if production still shows old signs, the remaining action is production redeploy/recalculate=true against stored calc rows.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/tests/bug_verify_dto_rto_signs_iter23_backend.py",
+    "/app/test_reports/bug_verify_dto_rto_signs_iter23_backend_result.json",
+    "/app/tests/bug_verify_dto_rto_signs_iter23_ui.py",
+    "/root/.emergent/automation_output/20260818_105119/console_20260818_105119.log"
+  ],
+  "action_items": [
+    "No preview code fix is needed for Points 2.1/2.2.",
+    "If production still differs, run production calculations with recalculate=true / Run Calculations after confirming the latest preview build is deployed; stale stored calculation rows are the likely remaining cause."
+  ],
+  "critical_code_review_comments": [
+    "Mandatory skill lookup completed before test plan: no relevant testing skill found.",
+    "Reviewed /app/backend/routers/calculations.py lines 323-370: rto sets commission, fixed_fee, gt_charge, and return_fee to negative; return_dto sets commission and gt_charge negative, fixed_fee to 0.0, and return_fee positive.",
+    "Reviewed /app/frontend/src/pages/Calculations.jsx and /app/frontend/src/pages/SalesLedger.jsx: drawers render raw backend calculation values through fmtCurrency; the Calculations table shows commission/fixed/GT signs, while return_fee is displayed in the drawer expected-charges table.",
+    "Latest commit inspected: 1397156 'Points 2.1 & 2.2 Fully Fixed on Preview — Production Just Needs Redeploy'. Product files had no uncommitted diff in the inspected calculation/frontend files; many pre-existing test/report files are modified in git status."
+  ],
+  "updated_files": [
+    "/app/tests/bug_verify_dto_rto_signs_iter23_backend.py",
+    "/app/test_reports/bug_verify_dto_rto_signs_iter23_backend_result.json",
+    "/app/tests/bug_verify_dto_rto_signs_iter23_ui.py",
+    "/app/test_reports/bug_verification_23.json",
+    "/app/test_reports/iteration_23.json"
+  ],
+  "success_rate": {
+    "backend": "100%",
+    "frontend": "100%"
+  },
+  "seed_data_creation": "No seed data created. Existing preview data was used; production URL was not called.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Backend proof on preview: return_dto total=5443, first sampled row commission=-11.76, fixed_fee=0.0, gt_charge=-59.0, return_fee=112.0; rto total=3705, first sampled row commission=-30.59, fixed_fee=-27.0, gt_charge=-59.0, return_fee=-112.0. UI proof: Calculations drawer DTO showed Commission ₹-11.76 / Fixed Fee ₹0.00 / GT ₹-59.00 / Return Fee ₹112.00; RTO showed Commission ₹-279.06 / Fixed Fee ₹-61.00 / GT ₹-207.00 / Return Fee ₹-112.00. Sales Ledger drawer DTO/RTO also passed with portal set to Myntra.",
+  "rca_of_the_issue": "The preview backend and UI satisfy the Google Doc Point 2.1/2.2 sign contract. Because production was explicitly out of scope and not touched, any continued production mismatch is most consistent with production running stale code or serving stale persisted calculation rows that need a production Run Calculations/recalculate=true after deploy. No mocked APIs were used."
+}

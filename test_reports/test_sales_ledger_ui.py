@@ -5,7 +5,7 @@ try:
     await page.set_viewport_size({"width": 1920, "height": 1080})
     print("STEP: viewport set")
 
-    await page.goto("https://marketplace-recon-1.preview.emergentagent.com/login", wait_until="networkidle")
+    await page.goto("https://settlement-intel-1.preview.emergentagent.com/login", wait_until="networkidle")
     print("STEP: login page loaded")
     if await page.get_by_test_id("login-form").count() > 0:
         await page.get_by_test_id("login-email").fill("admin@fundle.ai")
@@ -17,7 +17,7 @@ try:
         print("INFO: already authenticated")
 
     await page.evaluate("localStorage.setItem('fundle_portal', 'myntra')")
-    await page.goto("https://marketplace-recon-1.preview.emergentagent.com/sales?period_type=month&period_value=2026-04", wait_until="networkidle")
+    await page.goto("https://settlement-intel-1.preview.emergentagent.com/sales?period_type=month&period_value=2026-04", wait_until="networkidle")
     await page.wait_for_selector('[data-testid="sales-page"]', timeout=30000)
     await page.wait_for_timeout(1500)
     print("STEP: sales page loaded")
@@ -97,7 +97,7 @@ try:
         print("FAIL: sales Export Excel did not download an .xlsx file")
 
     # Calculations drawer expected-charge rows exclude removed taxes/GST.
-    await page.goto("https://marketplace-recon-1.preview.emergentagent.com/calculations?period_type=month&period_value=2026-04&order_type=return_dto", wait_until="networkidle")
+    await page.goto("https://settlement-intel-1.preview.emergentagent.com/calculations?period_type=month&period_value=2026-04&order_type=return_dto", wait_until="networkidle")
     await page.wait_for_selector('[data-testid="calculations-page"]', timeout=30000)
     await page.wait_for_timeout(2000)
     if await page.get_by_test_id("portal-switcher-select").count() > 0:
@@ -132,7 +132,7 @@ try:
 
     # Smoke render pages that consume calculations.
     for path, selector in [("/", "text=Marketplace Command Center"), ("/reports", '[data-testid="reports-page"]'), ("/reconciliation", '[data-testid="reconciliation-page"]')]:
-        await page.goto("https://marketplace-recon-1.preview.emergentagent.com" + path, wait_until="networkidle")
+        await page.goto("https://settlement-intel-1.preview.emergentagent.com" + path, wait_until="networkidle")
         await page.wait_for_timeout(1200)
         if await page.locator(selector).count() > 0:
             print(f"PASS: page renders {path}")

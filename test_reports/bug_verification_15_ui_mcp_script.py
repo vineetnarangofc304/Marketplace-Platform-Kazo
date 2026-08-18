@@ -5,14 +5,14 @@ executes the body inside an async function with a pre-created `page` object.
 """
 
 await page.set_viewport_size({"width": 1920, "height": 1080})
-await page.goto('https://marketplace-recon-1.preview.emergentagent.com/login', wait_until='networkidle')
+await page.goto('https://settlement-intel-1.preview.emergentagent.com/login', wait_until='networkidle')
 await page.fill('[data-testid="login-email"]', 'admin@fundle.ai')
 await page.fill('[data-testid="login-password"]', 'admin123')
 await page.click('[data-testid="login-submit"]')
 await page.wait_for_selector('[data-testid="overview-page"]', timeout=20000)
 await page.evaluate("""() => localStorage.setItem('fundle_portal', 'myntra')""")
 
-await page.goto('https://marketplace-recon-1.preview.emergentagent.com/sales?period_type=month&period_value=2026-04&portal=myntra', wait_until='networkidle')
+await page.goto('https://settlement-intel-1.preview.emergentagent.com/sales?period_type=month&period_value=2026-04&portal=myntra', wait_until='networkidle')
 await page.wait_for_selector('[data-testid="sales-page"]', timeout=20000)
 await page.wait_for_function("""() => document.querySelectorAll('tr[data-testid^="sales-row-"]').length >= 20""", timeout=20000)
 summary_text = await page.locator('[data-testid="sales-summary"]').inner_text()
@@ -45,5 +45,5 @@ assert not any(word in drawer_text for word in ['GST', 'TCS', 'TDS'])
 await page.click('[data-testid="close-drawer"]')
 
 for path, selector in [('/', '[data-testid="overview-page"]'), ('/reports', '[data-testid="reports-page"]'), ('/reconciliation', '[data-testid="recon-page"]')]:
-  await page.goto('https://marketplace-recon-1.preview.emergentagent.com' + path, wait_until='networkidle')
+  await page.goto('https://settlement-intel-1.preview.emergentagent.com' + path, wait_until='networkidle')
   await page.wait_for_selector(selector, timeout=20000)

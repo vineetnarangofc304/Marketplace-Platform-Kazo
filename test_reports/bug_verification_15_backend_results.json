@@ -1,5 +1,5 @@
 {
-  "api_base": "https://marketplace-recon-1.preview.emergentagent.com/api",
+  "api_base": "https://settlement-intel-1.preview.emergentagent.com/api",
   "db_checks": {
     "sales_row_count": 21614,
     "missing_location_count": 0,

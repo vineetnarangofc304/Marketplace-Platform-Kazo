@@ -40,6 +40,6 @@
   "seed_data_creation": "No seed data created and no production URL accessed. Tests used existing preview data and admin@fundle.ai/admin123.",
   "retest_needed": false,
   "should_main_agent_self_test": false,
-  "context_for_next_testing_agent": "Mandatory skill lookup was performed with 'Sales Ledger net Order Qty DTO reversal'; no relevant testing skill found. API checks used REACT_APP_BACKEND_URL=https://marketplace-recon-1.preview.emergentagent.com and confirmed /api/sales/summary={sales_rows:14219, return_rows:7395, net_orders:6824}. UI verified order 326D677B-1384-40AD-A823-F0E9D470EC82 in Sales Ledger and Calculations drawers with Commission ₹-110.84, Fixed Fee ₹-45.00, GT Charge ₹-171.00, Return Fee ₹112.00.",
+  "context_for_next_testing_agent": "Mandatory skill lookup was performed with 'Sales Ledger net Order Qty DTO reversal'; no relevant testing skill found. API checks used REACT_APP_BACKEND_URL=https://settlement-intel-1.preview.emergentagent.com and confirmed /api/sales/summary={sales_rows:14219, return_rows:7395, net_orders:6824}. UI verified order 326D677B-1384-40AD-A823-F0E9D470EC82 in Sales Ledger and Calculations drawers with Commission ₹-110.84, Fixed Fee ₹-45.00, GT Charge ₹-171.00, Return Fee ₹112.00.",
   "rca_of_the_issue": "The reported symptoms do not reproduce on preview. Evidence supports the agent note that production is stale/not redeployed: preview already contains and serves the point-1 net order quantity and point-2 DTO reversal fixes."
 }

@@ -36,6 +36,6 @@
   "seed_data_creation": "None. Used existing April 2026 Myntra recalculated preview data.",
   "retest_needed": false,
   "should_main_agent_self_test": false,
-  "context_for_next_testing_agent": "Validated preview only using REACT_APP_BACKEND_URL=https://marketplace-recon-1.preview.emergentagent.com. Exact order 83410B8C-556E-465B-96A1-EB3A80DB1DF1 has Commission ₹-279.06, GT ₹-207.00, Fixed Fee ₹61.00, Return Fee ₹112.00, Total Deductions ₹-313.06 in API, Sales Ledger drawer, and Calculations drawer.",
+  "context_for_next_testing_agent": "Validated preview only using REACT_APP_BACKEND_URL=https://settlement-intel-1.preview.emergentagent.com. Exact order 83410B8C-556E-465B-96A1-EB3A80DB1DF1 has Commission ₹-279.06, GT ₹-207.00, Fixed Fee ₹61.00, Return Fee ₹112.00, Total Deductions ₹-313.06 in API, Sales Ledger drawer, and Calculations drawer.",
   "rca_of_the_issue": "The prior bug was caused by treating return_dto Fixed Fee as a negative reversal. The current branch applies Fixed Fee as a fresh positive return handling charge while preserving negative reversals for Commission and GT. Runtime API and UI data now match the client rule. Regression checks passed: /api/sales/summary net_orders=6824, sales rows keep positive commission/GT/fixed fee, Excel export has 31 columns, unmapped_count=0, and commission ALL fallback has runtime matches."
 }

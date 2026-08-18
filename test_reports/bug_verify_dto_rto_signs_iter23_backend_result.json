@@ -1,0 +1,190 @@
+{
+  "base_url": "https://settlement-intel-1.preview.emergentagent.com",
+  "production_called": false,
+  "checks": {
+    "return_dto": {
+      "total": 5443,
+      "sample_count": 5,
+      "all_first_5_match_spec": true,
+      "first_5": [
+        {
+          "id": "70260b16-5f4e-43b5-935f-dcb114a77290",
+          "sales_id": "aff8b39f-ed1f-48ab-bbfb-a02aa3f146ff",
+          "online_order_id": "C1256672-9678-4D76-8486-6DAE59C0CAA8",
+          "order_type": "return_dto",
+          "commission_incl_gst": -11.76,
+          "fixed_fee_incl_gst": 0.0,
+          "gt_charge": -59.0,
+          "return_fee": 112.0,
+          "total_deductions": 41.24,
+          "expected_settlement": -188.24,
+          "report_month": "2026-04",
+          "unmapped": false
+        },
+        {
+          "id": "677d942b-f474-42df-b06a-830390383418",
+          "sales_id": "c2142a6a-1f7b-4ff7-9b88-8e3b70fc9d0f",
+          "online_order_id": "07251B08-0AEB-489F-BD6B-2B83C4FA8F78",
+          "order_type": "return_dto",
+          "commission_incl_gst": -12.4,
+          "fixed_fee_incl_gst": 0.0,
+          "gt_charge": -59.0,
+          "return_fee": 112.0,
+          "total_deductions": 40.6,
+          "expected_settlement": -195.6,
+          "report_month": "2026-04",
+          "unmapped": false
+        },
+        {
+          "id": "f36d0ee6-2ff1-4c92-b4c0-62fea1816485",
+          "sales_id": "ffc3d188-3e21-4189-9eaa-42cf222f88ae",
+          "online_order_id": "9F4BB1E9-BB18-499F-AF65-28055B8030A3",
+          "order_type": "return_dto",
+          "commission_incl_gst": -13.6,
+          "fixed_fee_incl_gst": 0.0,
+          "gt_charge": -59.0,
+          "return_fee": 112.0,
+          "total_deductions": 39.4,
+          "expected_settlement": -209.4,
+          "report_month": "2026-04",
+          "unmapped": false
+        },
+        {
+          "id": "006be59a-db94-4442-8c39-1b8acfc6ccc2",
+          "sales_id": "83ea0ce1-d608-4659-b3cb-db12682b887f",
+          "online_order_id": "066B5C32-DE2B-4D69-910E-DDAB1BBA5F4C",
+          "order_type": "return_dto",
+          "commission_incl_gst": -13.6,
+          "fixed_fee_incl_gst": 0.0,
+          "gt_charge": -59.0,
+          "return_fee": 112.0,
+          "total_deductions": 39.4,
+          "expected_settlement": -209.4,
+          "report_month": "2026-04",
+          "unmapped": false
+        },
+        {
+          "id": "329b6434-eb29-4b9a-99df-e3e25fb4d72b",
+          "sales_id": "e4a98934-bc04-4c60-8d77-80769e2dfd38",
+          "online_order_id": "23DCC6AD-B201-4B44-9286-688F8ADF77F6",
+          "order_type": "return_dto",
+          "commission_incl_gst": -14.56,
+          "fixed_fee_incl_gst": 0.0,
+          "gt_charge": -59.0,
+          "return_fee": 112.0,
+          "total_deductions": 38.44,
+          "expected_settlement": -220.44,
+          "report_month": "2026-04",
+          "unmapped": false
+        }
+      ],
+      "by_sale_first_row": {
+        "id": "70260b16-5f4e-43b5-935f-dcb114a77290",
+        "sales_id": "aff8b39f-ed1f-48ab-bbfb-a02aa3f146ff",
+        "online_order_id": "C1256672-9678-4D76-8486-6DAE59C0CAA8",
+        "order_type": "return_dto",
+        "commission_incl_gst": -11.76,
+        "fixed_fee_incl_gst": 0.0,
+        "gt_charge": -59.0,
+        "return_fee": 112.0,
+        "total_deductions": 41.24,
+        "expected_settlement": -188.24,
+        "report_month": "2026-04",
+        "unmapped": false
+      }
+    },
+    "rto": {
+      "total": 3705,
+      "sample_count": 5,
+      "all_first_5_match_spec": true,
+      "first_5": [
+        {
+          "id": "63e7c5a1-1ee8-4488-81b0-3b53530c8567",
+          "sales_id": "631761c3-1e25-4ce2-9d84-3bffc1c22b29",
+          "online_order_id": "DF8C98A7-F9D9-4EF3-B433-EC11A2A18952",
+          "order_type": "rto",
+          "commission_incl_gst": -30.59,
+          "fixed_fee_incl_gst": -27.0,
+          "gt_charge": -59.0,
+          "return_fee": -112.0,
+          "total_deductions": 0.0,
+          "expected_settlement": 0.0,
+          "report_month": "2026-04",
+          "unmapped": false
+        },
+        {
+          "id": "943b9746-db31-4d76-8873-f2e9bead7be5",
+          "sales_id": "aefbcbd7-cdce-47b6-b5fd-ad65d3b777fa",
+          "online_order_id": "9B2E013D-EE2E-4C85-8C1E-F78D3FF3F973",
+          "order_type": "rto",
+          "commission_incl_gst": -72.51,
+          "fixed_fee_incl_gst": -27.0,
+          "gt_charge": -94.0,
+          "return_fee": -112.0,
+          "total_deductions": 0.0,
+          "expected_settlement": 0.0,
+          "report_month": "2026-04",
+          "unmapped": false
+        },
+        {
+          "id": "1561432d-0f6f-4d05-a531-b7f7e2cd544b",
+          "sales_id": "3082c5bc-f0b8-4d5a-86a2-4b03486092ef",
+          "online_order_id": "64D6A2CF-D165-41C7-B5E4-FD8BBFB1C403",
+          "order_type": "rto",
+          "commission_incl_gst": -69.87,
+          "fixed_fee_incl_gst": -27.0,
+          "gt_charge": -94.0,
+          "return_fee": -112.0,
+          "total_deductions": 0.0,
+          "expected_settlement": 0.0,
+          "report_month": "2026-04",
+          "unmapped": false
+        },
+        {
+          "id": "1318a6af-aaf1-4c22-a14c-0a0d0db4ee61",
+          "sales_id": "6574064f-abbe-4da7-931c-0c401d239a44",
+          "online_order_id": "3E778912-3FC8-4DAD-91B4-3103D10B5A27",
+          "order_type": "rto",
+          "commission_incl_gst": -521.36,
+          "fixed_fee_incl_gst": -61.0,
+          "gt_charge": -266.0,
+          "return_fee": -194.0,
+          "total_deductions": 0.0,
+          "expected_settlement": 0.0,
+          "report_month": "2026-04",
+          "unmapped": false
+        },
+        {
+          "id": "288eb9aa-fe53-4a93-9b87-d6325ec7152b",
+          "sales_id": "b627e401-c241-45d7-8413-0368560be049",
+          "online_order_id": "765411CB-365E-4832-BA47-112404FE3CC7",
+          "order_type": "rto",
+          "commission_incl_gst": -65.96,
+          "fixed_fee_incl_gst": -27.0,
+          "gt_charge": -94.0,
+          "return_fee": -112.0,
+          "total_deductions": 0.0,
+          "expected_settlement": 0.0,
+          "report_month": "2026-04",
+          "unmapped": false
+        }
+      ],
+      "by_sale_first_row": {
+        "id": "63e7c5a1-1ee8-4488-81b0-3b53530c8567",
+        "sales_id": "631761c3-1e25-4ce2-9d84-3bffc1c22b29",
+        "online_order_id": "DF8C98A7-F9D9-4EF3-B433-EC11A2A18952",
+        "order_type": "rto",
+        "commission_incl_gst": -30.59,
+        "fixed_fee_incl_gst": -27.0,
+        "gt_charge": -59.0,
+        "return_fee": -112.0,
+        "total_deductions": 0.0,
+        "expected_settlement": 0.0,
+        "report_month": "2026-04",
+        "unmapped": false
+      }
+    }
+  },
+  "verdict": "pass",
+  "failures": []
+}

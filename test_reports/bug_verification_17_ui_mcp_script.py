@@ -1,6 +1,6 @@
 try:
     await page.set_viewport_size({"width": 1920, "height": 1080})
-    base = "https://marketplace-recon-1.preview.emergentagent.com"
+    base = "https://settlement-intel-1.preview.emergentagent.com"
 
     print("STEP 1: login as admin@fundle.ai")
     await page.goto(base + "/login", wait_until="domcontentloaded")

@@ -47,7 +47,7 @@ try:
     # Force Myntra portal in the PortalContext-backed localStorage before the app loads.
     await page.add_init_script("localStorage.setItem('fundle_portal', 'myntra');")
 
-    await page.goto("https://marketplace-recon-1.preview.emergentagent.com/login", wait_until="domcontentloaded")
+    await page.goto("https://settlement-intel-1.preview.emergentagent.com/login", wait_until="domcontentloaded")
     await page.wait_for_selector('[data-testid="login-form"]', timeout=15000)
     await page.fill('[data-testid="login-email"]', "admin@fundle.ai")
     await page.fill('[data-testid="login-password"]', "admin123")
@@ -57,7 +57,7 @@ try:
     print("Login submitted")
 
     # Sales Ledger grid + drawer for exact return_dto row.
-    await page.goto("https://marketplace-recon-1.preview.emergentagent.com/sales?period_type=month&period_value=2026-04&portal=myntra", wait_until="domcontentloaded")
+    await page.goto("https://settlement-intel-1.preview.emergentagent.com/sales?period_type=month&period_value=2026-04&portal=myntra", wait_until="domcontentloaded")
     await page.wait_for_selector('[data-testid="sales-page"]', timeout=20000)
     await page.fill('[data-testid="sales-search"]', ORDER_ID)
     row = page.locator(f'[data-testid="sales-row-{SALES_ID}"]')
@@ -88,7 +88,7 @@ try:
     await page.wait_for_timeout(300)
 
     # Calculations page drawer for same order.
-    await page.goto(f"https://marketplace-recon-1.preview.emergentagent.com/calculations?period_type=month&period_value=2026-04&order_type=return_dto&search={ORDER_ID}", wait_until="domcontentloaded")
+    await page.goto(f"https://settlement-intel-1.preview.emergentagent.com/calculations?period_type=month&period_value=2026-04&order_type=return_dto&search={ORDER_ID}", wait_until="domcontentloaded")
     await page.wait_for_selector('[data-testid="calculations-page"]', timeout=20000)
     calc_row = page.locator(f'[data-testid="calc-row-{CALC_ID}"]')
     try:
