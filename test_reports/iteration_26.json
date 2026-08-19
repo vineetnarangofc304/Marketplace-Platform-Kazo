@@ -1,0 +1,40 @@
+{
+  "verdict": "fixed",
+  "user_reported_bug": "User updated Google Doc Point 6 (RTO) spec (19 Aug 2026): Commission NEGATIVE, Fixed Fee NEGATIVE, GT Charge NEGATIVE, Return Fee (Level/Zone) ZERO — NOT DONE (was previously negative, must now be 0). Also confirm Point 2.1 DTO: Commission NEGATIVE, Fixed Fee ZERO, GT NEGATIVE, Return Fee POSITIVE.",
+  "summary": "No relevant testing skill found. Focused verification passed: backend /api/calculations samples for RTO and return_dto match the revised sign conventions, RTO totals/settlement are correct, and both Calculations and Sales Ledger drawers display the expected values and color classes.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/tests/verify_rto_dto_signs.py",
+    "/app/tests/verify_rto_dto_ui_playwright.py",
+    "/app/test_reports/rto_dto_backend_evidence.json"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Inspected /app/backend/routers/calculations.py: RTO branch now hard-codes return_fee_final = 0.0 and sums commission + fixed_fee + gt_charge + 0 while keeping expected_settlement = 0.0.",
+    "Inspected /app/frontend/src/pages/Calculations.jsx and /app/frontend/src/pages/SalesLedger.jsx: drawer rows render Return Fee via signClass, making zero values neutral and positive DTO return fees red. Git status still shows backend/routers/calculations.py modified and frontend/yarn.lock/yarn.lock untracked."
+  ],
+  "updated_files": [
+    "/app/tests/verify_rto_dto_signs.py",
+    "/app/tests/verify_rto_dto_ui_playwright.py",
+    "/app/test_reports/rto_dto_backend_evidence.json",
+    "/app/test_reports/bug_verification_26.json",
+    "/app/test_reports/iteration_26.json"
+  ],
+  "success_rate": {
+    "backend": "100%",
+    "frontend": "100%"
+  },
+  "seed_data_creation": "No seed data created; used existing preview Myntra calculation rows.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Backend evidence: rto_total=3705, return_dto_total=5443. Five RTO samples all had commission<0, fixed_fee<0, gt_charge<0, return_fee=0.0, total_deductions=sum of three negatives, expected_settlement=0.0. Five DTO samples all had commission<0, fixed_fee=0.0, gt_charge<0, return_fee>0. UI evidence: Calculations RTO drawer showed Return Fee ₹0.00 neutral; Sales Ledger DTO drawer for order 83410B8C-556E-465B-96A1-EB3A80DB1DF1 showed Commission/GT green negative, Fixed Fee ₹0.00 neutral, Return Fee ₹112.00 red positive.",
+  "rca_of_the_issue": "The previous RTO branch treated Return Fee as a negative reversal. The fix changes RTO Return Fee to explicit zero per Point 6, without changing DTO where Return Fee remains a positive reverse-logistics charge. Regression smoke checked sales and return samples retained their expected signs. No mocked APIs were used."
+}

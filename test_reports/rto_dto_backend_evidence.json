@@ -1,0 +1,230 @@
+{
+  "api_base": "https://settlement-intel-1.preview.emergentagent.com/api",
+  "rto_total": 3705,
+  "return_dto_total": 5443,
+  "rto_sample_5": [
+    {
+      "id": "da5e9f5c-b00b-4756-b79e-83bd13fe21ef",
+      "sales_id": "c51f96f0-9dc1-4d6d-af81-5b17967d4d48",
+      "online_order_id": "0D9ADFFB-4656-4924-9F65-DA7543BADD25",
+      "sku": "KZ01962BRWNL01",
+      "order_type": "rto",
+      "commission_incl_gst": -205.11,
+      "fixed_fee_incl_gst": -61.0,
+      "gt_charge": -207.0,
+      "return_fee": 0.0,
+      "total_deductions": -473.11,
+      "expected_settlement": 0.0
+    },
+    {
+      "id": "0123d32e-6bd8-451c-9c7e-51ce0b9a95b0",
+      "sales_id": "8216a20f-080a-458f-b006-75c22d3fdc3c",
+      "online_order_id": "1CD0D5B7-855F-4AAC-BF5B-B5598F593875",
+      "sku": "KZ01793PORMTXS01",
+      "order_type": "rto",
+      "commission_incl_gst": -205.11,
+      "fixed_fee_incl_gst": -61.0,
+      "gt_charge": -207.0,
+      "return_fee": 0.0,
+      "total_deductions": -473.11,
+      "expected_settlement": 0.0
+    },
+    {
+      "id": "aee00169-d888-409b-a295-40dfaf145ae0",
+      "sales_id": "6f110671-3947-4bc2-8429-dccc18e08364",
+      "online_order_id": "F74AF20E-6E26-43BD-8747-8B3502D14EB6",
+      "sku": "KZ01790WHTMTXL01",
+      "order_type": "rto",
+      "commission_incl_gst": -201.54,
+      "fixed_fee_incl_gst": -61.0,
+      "gt_charge": -207.0,
+      "return_fee": 0.0,
+      "total_deductions": -469.54,
+      "expected_settlement": 0.0
+    },
+    {
+      "id": "7fd320a1-32cb-4709-9357-fa5e65010ab1",
+      "sales_id": "f629e723-a502-4c63-a64d-1b4154625057",
+      "online_order_id": "0C4E6C9D-C321-42CE-9C8D-B4B8CD275531",
+      "sku": "KZ01609DKWSHL01",
+      "order_type": "rto",
+      "commission_incl_gst": -406.56,
+      "fixed_fee_incl_gst": -61.0,
+      "gt_charge": -207.0,
+      "return_fee": 0.0,
+      "total_deductions": -674.56,
+      "expected_settlement": 0.0
+    },
+    {
+      "id": "ffd2a9ef-0500-4f03-b778-159128c52723",
+      "sales_id": "26c8c8e2-0075-4178-bdfa-e4b50d4100f2",
+      "online_order_id": "247040F2-F53B-40AE-A5E0-B2B3FF32FECD",
+      "sku": "KZ01591REDMTM01",
+      "order_type": "rto",
+      "commission_incl_gst": -113.99,
+      "fixed_fee_incl_gst": -45.0,
+      "gt_charge": -171.0,
+      "return_fee": 0.0,
+      "total_deductions": -329.99,
+      "expected_settlement": 0.0
+    }
+  ],
+  "return_dto_sample_5": [
+    {
+      "id": "51bc1f54-b863-4115-b111-dcbe0f842d76",
+      "sales_id": "a752b5cd-e629-42ec-a383-ad1fa5ce9976",
+      "online_order_id": "83410B8C-556E-465B-96A1-EB3A80DB1DF1",
+      "sku": "KZ01952BLACKXL01",
+      "order_type": "return_dto",
+      "commission_incl_gst": -279.06,
+      "fixed_fee_incl_gst": 0.0,
+      "gt_charge": -207.0,
+      "return_fee": 112.0,
+      "total_deductions": -374.06,
+      "expected_settlement": -2908.95
+    },
+    {
+      "id": "c116ca74-62dd-4fc9-b464-30c510872cea",
+      "sales_id": "a69a694d-02d9-4b8a-96bd-b1fad78a51e5",
+      "online_order_id": "CEFB5152-096A-495B-BBBB-31AF2587F659",
+      "sku": "KZ02011BLKMTXS01",
+      "order_type": "return_dto",
+      "commission_incl_gst": -211.14,
+      "fixed_fee_incl_gst": 0.0,
+      "gt_charge": -207.0,
+      "return_fee": 112.0,
+      "total_deductions": -306.14,
+      "expected_settlement": -2177.86
+    },
+    {
+      "id": "d3f1ba97-2468-493c-ab22-8554f4a259a0",
+      "sales_id": "d597b1cc-dd03-4f3c-9154-9c10c91ea4a7",
+      "online_order_id": "D64EC1CA-0341-4B73-B607-D188CFBFCB1F",
+      "sku": "KZ01907WHITEM01",
+      "order_type": "return_dto",
+      "commission_incl_gst": -279.06,
+      "fixed_fee_incl_gst": 0.0,
+      "gt_charge": -207.0,
+      "return_fee": 112.0,
+      "total_deductions": -374.06,
+      "expected_settlement": -2908.95
+    },
+    {
+      "id": "ddaf8423-e41a-4dfd-9837-58b7764c49b5",
+      "sales_id": "994ac013-7a5e-4a6d-be01-91268d9af9ac",
+      "online_order_id": "DCCEDAF9-9581-4978-8EA6-F3678F381138",
+      "sku": "KZ01690BLKMTL01",
+      "order_type": "return_dto",
+      "commission_incl_gst": -234.01,
+      "fixed_fee_incl_gst": 0.0,
+      "gt_charge": -207.0,
+      "return_fee": 112.0,
+      "total_deductions": -329.0,
+      "expected_settlement": -2423.99
+    },
+    {
+      "id": "318c17d3-3037-4ab7-86d7-2da7e7bf6a75",
+      "sales_id": "bcb28a7b-b087-424f-a05a-d80eb01d26d6",
+      "online_order_id": "77AF71D5-53D8-4878-9CE6-A01FE2101BE8",
+      "sku": "KZ01961CREMM01",
+      "order_type": "return_dto",
+      "commission_incl_gst": -236.56,
+      "fixed_fee_incl_gst": 0.0,
+      "gt_charge": -207.0,
+      "return_fee": 112.0,
+      "total_deductions": -331.56,
+      "expected_settlement": -2451.45
+    }
+  ],
+  "violations": [],
+  "sales_return_smoke": {
+    "sales": {
+      "total": 12246,
+      "sample": [
+        {
+          "id": "b38072f1-d295-4aee-904f-dcf70265c6d8",
+          "sales_id": "3fc2c0d5-aca8-448a-91ae-51ecd5e58438",
+          "online_order_id": "BA030AAB-E147-4FA2-847F-8B119D06AEC1",
+          "sku": "DT1150TAUPC01",
+          "order_type": "sales",
+          "commission_incl_gst": 871.36,
+          "fixed_fee_incl_gst": 61.0,
+          "gt_charge": 266.0,
+          "return_fee": 0.0,
+          "total_deductions": 1198.36,
+          "expected_settlement": 5025.64
+        },
+        {
+          "id": "2b4ca7cc-1874-422f-903c-500c69f9467e",
+          "sales_id": "f9fe56b5-6e1e-4a1a-b154-dfd2aa8d2a5e",
+          "online_order_id": "5C096FFC-473B-47A8-B3DE-535371DBC079",
+          "sku": "KZ01725BRNMTXL01",
+          "order_type": "sales",
+          "commission_incl_gst": 321.56,
+          "fixed_fee_incl_gst": 61.0,
+          "gt_charge": 207.0,
+          "return_fee": 0.0,
+          "total_deductions": 589.56,
+          "expected_settlement": 3193.44
+        },
+        {
+          "id": "e9d55163-56a7-4cd9-889b-fb5c0ac313cf",
+          "sales_id": "95c59c89-9dac-4c66-afb1-9a916a3071a8",
+          "online_order_id": "879F52C0-0F8A-4025-A6AE-2160DD93CC21",
+          "sku": "KZ01725BRNMTM01",
+          "order_type": "sales",
+          "commission_incl_gst": 321.56,
+          "fixed_fee_incl_gst": 61.0,
+          "gt_charge": 207.0,
+          "return_fee": 0.0,
+          "total_deductions": 589.56,
+          "expected_settlement": 3193.44
+        }
+      ]
+    },
+    "return": {
+      "total": 92,
+      "sample": [
+        {
+          "id": "46de0f00-0846-4236-a95c-184695deaa91",
+          "sales_id": "0256da86-7f51-4847-863d-629e097a6343",
+          "online_order_id": "25CD6C69-D6C7-4BF6-9C03-CC2791520E54",
+          "sku": "KZ02021BEIGEM01",
+          "order_type": "return",
+          "commission_incl_gst": -249.31,
+          "fixed_fee_incl_gst": -61.0,
+          "gt_charge": -207.0,
+          "return_fee": 112.0,
+          "total_deductions": -405.31,
+          "expected_settlement": -2527.69
+        },
+        {
+          "id": "2cd8f3ca-1013-44fd-abfd-f711862949db",
+          "sales_id": "b24bfccb-e46f-4ac3-a4ef-92a68b22316f",
+          "online_order_id": "F4FE3227-3060-4479-BA71-13997FE4D7F7",
+          "sku": "KZ02010BLKMTM01",
+          "order_type": "return",
+          "commission_incl_gst": -236.56,
+          "fixed_fee_incl_gst": -61.0,
+          "gt_charge": -207.0,
+          "return_fee": 112.0,
+          "total_deductions": -392.56,
+          "expected_settlement": -2390.45
+        },
+        {
+          "id": "86bcdb62-5e81-4874-a374-512b6696aace",
+          "sales_id": "8a49786d-8532-42c9-ab85-5545aa637363",
+          "online_order_id": "0B527EF4-83F7-4B26-9EDB-F91FE22019F6",
+          "sku": "KZ02010BLKMTM01",
+          "order_type": "return",
+          "commission_incl_gst": -203.41,
+          "fixed_fee_incl_gst": -61.0,
+          "gt_charge": -207.0,
+          "return_fee": 112.0,
+          "total_deductions": -359.4,
+          "expected_settlement": -2033.6
+        }
+      ]
+    }
+  }
+}

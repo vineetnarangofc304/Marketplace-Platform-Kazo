@@ -321,11 +321,15 @@ def compute_expected(sale: Dict[str, Any], masters: Dict[str, Any]) -> Dict[str,
     expected_settlement = None
 
     if order_type == "rto":
-        # RTO (Return To Origin) — undelivered order. Per client spec (2.2),
-        # display all four fee heads as NEGATIVE reversals (marketplace refunds
-        # all sales-side deductions since the order never completed). Net
-        # accounting effect on settlement is zero, but the reversal amounts
-        # are shown explicitly so the ledger surfaces WHAT was refunded.
+        # RTO (Return To Origin) — undelivered order. Per client spec (Point 6,
+        # 2026-02 revision):
+        #   * Commission = NEGATIVE reversal
+        #   * Fixed Fee  = NEGATIVE reversal
+        #   * GT Charge  = NEGATIVE reversal
+        #   * Return Fee = ZERO (marketplace does not charge a reverse-logistics
+        #     fee on an undelivered order — nothing was returned by a customer)
+        # Total Deductions = sum of the four fee heads (= sum of three negatives
+        # + 0). Expected Settlement stays 0 (net-zero refund semantics).
         if commission_pct is not None and gt_total is not None:
             commission_base = -abs(commission_pct * (abs(nsv_val) - abs(gt_total)))
         elif commission_pct is not None:
@@ -334,12 +338,9 @@ def compute_expected(sale: Dict[str, Any], masters: Dict[str, Any]) -> Dict[str,
             commission_base = 0.0
         fixed_fee = -abs(fixed_fee_base) if fixed_fee_base is not None else 0.0
         gt_charge_final = -abs(gt_total) if gt_total is not None else 0.0
-        return_fee_final = -abs(return_fee_master) if return_fee_master is not None else 0.0
+        # Return Fee explicitly ZERO for RTO per spec (Point 6 revision)
+        return_fee_final = 0.0
         nsv_after_gt = 0.0
-        # Per client spec (Point 6, 2026-02): RTO Total Deductions must equal
-        # the arithmetic sum of the four fee heads (Commission + Fixed Fee +
-        # GT + Return Fee) so ops can see WHAT was reversed. Settlement itself
-        # still nets to zero because these are refunds, not seller losses.
         total_deductions = commission_base + fixed_fee + gt_charge_final + return_fee_final
         expected_settlement = 0.0
         reasons = []

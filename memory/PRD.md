@@ -396,3 +396,21 @@ Sample DTO row `C1256672-9678-4D76-...`:
 
 RTO, sales-type, and Sales Ledger drawer regressions all passed.
 
+
+## Iteration 26 — RTO Return Fee = ZERO (2026-02, session 26)
+User revised Point 6 (RTO) spec (19 Aug 2026):
+- Commission NEGATIVE ✅ (already Done)
+- Fixed Fee NEGATIVE ✅ (already Done)
+- GT Charge NEGATIVE ✅ (already Done)
+- **Return Fee (Level/Zone): ZERO** (previously was negative; now must be exactly 0)
+
+### Fix
+- `/app/backend/routers/calculations.py` — RTO branch: `return_fee_final = 0.0` (was `-abs(return_fee_master)`). Total Deductions now = Commission + Fixed Fee + GT + 0. Settlement stays 0.
+- Recalculated all 21,614 Myntra rows on Preview.
+
+### Verified (bug_testing_agent iteration_26.json — 100% backend + frontend)
+- RTO sample: commission=-205.11, fixed_fee=-61, gt=-207, return_fee=0.0, total_deductions=-473.11, settlement=0.0.
+- DTO Point 2.1 regression: 0 violations across 2000 sampled rows (comm<0, ff=0, gt<0, rf>0).
+- Calculations UI RTO drawer: Return Fee ₹0.00 neutral ✅
+- Sales Ledger DTO drawer: Commission green negative, Fixed Fee ₹0 neutral, GT green negative, Return Fee red positive ✅
+
