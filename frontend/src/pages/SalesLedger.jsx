@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import api from "@/lib/api";
-import { fmtCurrency, fmtInt } from "@/lib/format";
+import { fmtCurrency, fmtInt, signClass, settlementClass } from "@/lib/format";
 import { Search, X, Filter, Download } from "lucide-react";
 import PeriodSelector from "@/components/PeriodSelector";
 import { SortableTh, nextDir } from "@/components/SortableTable";
@@ -212,8 +212,8 @@ export default function SalesLedger() {
                   <td className="grid-cell text-right">{fmtInt(r.qty)}</td>
                   <td className="grid-cell text-right">{fmtCurrency(r.mrp)}</td>
                   <td className="grid-cell text-right">{fmtCurrency(r.nsv_val)}</td>
-                  <td className={`grid-cell text-right ${(c.commission_incl_gst || 0) < 0 ? "fin-pos" : "fin-neg"}`}>{c.commission_incl_gst != null ? fmtCurrency(c.commission_incl_gst) : "—"}</td>
-                  <td className={`grid-cell text-right ${(c.gt_charge || 0) < 0 ? "fin-pos" : "fin-neg"}`}>{c.gt_charge != null ? fmtCurrency(c.gt_charge) : "—"}</td>
+                  <td className={`grid-cell text-right ${signClass(c.commission_incl_gst)}`}>{c.commission_incl_gst != null ? fmtCurrency(c.commission_incl_gst) : "—"}</td>
+                  <td className={`grid-cell text-right ${signClass(c.gt_charge)}`}>{c.gt_charge != null ? fmtCurrency(c.gt_charge) : "—"}</td>
                   <td className="grid-cell mono text-[10px] text-slate-500">{crule.price_range || "—"}</td>
                   <td className="grid-cell mono text-[10px] text-slate-500">{gtCell.price_range || "—"}</td>
                 </tr>
@@ -255,17 +255,19 @@ export default function SalesLedger() {
                   <div className="overline mb-2">Expected Calculation</div>
                   <table className="w-full text-xs mono border border-border">
                     <tbody>
-                      {[["Commission", calc.commission_incl_gst, "neg"],
-                        ["Fixed Fee", calc.fixed_fee_incl_gst, "neg"],
-                        ["GT Charge", calc.gt_charge, "neg"],
-                        ["Return Fee (Level/Zone)", calc.return_fee, "neg"],
-                        ["Total Deductions", calc.total_deductions, "neg", true],
-                        ["Expected Settlement", calc.expected_settlement, "pos", true]].map(([k, v, tone, bold]) => (
+                      {[["Commission", calc.commission_incl_gst],
+                        ["Fixed Fee", calc.fixed_fee_incl_gst],
+                        ["GT Charge", calc.gt_charge],
+                        ["Return Fee (Level/Zone)", calc.return_fee],
+                        ["Total Deductions", calc.total_deductions, "sign", true],
+                        ["Expected Settlement", calc.expected_settlement, "settlement", true]].map(([k, v, kind, bold]) => {
+                        const cls = kind === "settlement" ? settlementClass(v) : signClass(v);
+                        return (
                         <tr key={k}>
                           <td className={`px-3 py-2 border-b border-border/40 ${bold ? "font-semibold" : "text-slate-500"}`}>{k}</td>
-                          <td className={`px-3 py-2 border-b border-border/40 text-right ${bold ? "font-semibold" : ""} ${tone === "neg" ? "fin-neg" : "fin-pos"}`}>{fmtCurrency(v)}</td>
+                          <td className={`px-3 py-2 border-b border-border/40 text-right ${bold ? "font-semibold" : ""} ${cls}`}>{fmtCurrency(v)}</td>
                         </tr>
-                      ))}
+                      );})}
                     </tbody>
                   </table>
                 </div>

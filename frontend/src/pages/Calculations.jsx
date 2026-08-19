@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import api, { formatApiError } from "@/lib/api";
-import { fmtCurrency, fmtInt } from "@/lib/format";
+import { fmtCurrency, fmtInt, signClass, settlementClass } from "@/lib/format";
 import { toast } from "sonner";
 import { PlayCircle, RefreshCw, Search, X, Filter } from "lucide-react";
 import PeriodSelector from "@/components/PeriodSelector";
@@ -174,11 +174,11 @@ export default function Calculations() {
                 <td className="grid-cell text-slate-600">{c.breakdown?.sub_category}</td>
                 <td className="grid-cell text-slate-500">{c.report_month || "—"}</td>
                 <td className="grid-cell text-right">{fmtCurrency(c.breakdown?.nsv_val)}</td>
-                <td className="grid-cell text-right fin-neg">{fmtCurrency(c.commission_incl_gst)}</td>
-                <td className="grid-cell text-right fin-neg">{fmtCurrency(c.fixed_fee_incl_gst)}</td>
-                <td className="grid-cell text-right fin-neg">{fmtCurrency(c.gt_charge)}</td>
-                <td className="grid-cell text-right fin-neg font-semibold">{fmtCurrency(c.total_deductions)}</td>
-                <td className="grid-cell text-right fin-pos font-semibold">{fmtCurrency(c.expected_settlement)}</td>
+                <td className={`grid-cell text-right ${signClass(c.commission_incl_gst)}`}>{fmtCurrency(c.commission_incl_gst)}</td>
+                <td className={`grid-cell text-right ${signClass(c.fixed_fee_incl_gst)}`}>{fmtCurrency(c.fixed_fee_incl_gst)}</td>
+                <td className={`grid-cell text-right ${signClass(c.gt_charge)}`}>{fmtCurrency(c.gt_charge)}</td>
+                <td className={`grid-cell text-right font-semibold ${signClass(c.total_deductions)}`}>{fmtCurrency(c.total_deductions)}</td>
+                <td className={`grid-cell text-right font-semibold ${settlementClass(c.expected_settlement)}`}>{fmtCurrency(c.expected_settlement)}</td>
                 <td className="grid-cell">
                   {c.unmapped ? (
                     <span className="chip chip-high" title={(c.unmapped_reasons || []).join(" · ")}>Unmapped</span>
@@ -250,18 +250,20 @@ function CalcDrawer({ data, onClose }) {
               <table className="w-full text-xs mono border border-border">
                 <tbody>
                   {[
-                    ["Commission", c.commission_incl_gst, "neg"],
-                    ["Fixed Fee", c.fixed_fee_incl_gst, "neg"],
-                    ["GT Charge", c.gt_charge, "neg"],
-                    ["Return Fee (Level/Zone)", c.return_fee, "neg"],
-                    ["Total Deductions", c.total_deductions, "neg", true],
-                    ["Expected Settlement", c.expected_settlement, "pos", true],
-                  ].map(([k, v, tone, bold]) => (
+                    ["Commission", c.commission_incl_gst],
+                    ["Fixed Fee", c.fixed_fee_incl_gst],
+                    ["GT Charge", c.gt_charge],
+                    ["Return Fee (Level/Zone)", c.return_fee],
+                    ["Total Deductions", c.total_deductions, "sign", true],
+                    ["Expected Settlement", c.expected_settlement, "settlement", true],
+                  ].map(([k, v, kind, bold]) => {
+                    const cls = kind === "settlement" ? settlementClass(v) : signClass(v);
+                    return (
                     <tr key={k}>
                       <td className={`px-3 py-2 border-b border-border/40 ${bold ? "font-semibold" : "text-slate-500"}`}>{k}</td>
-                      <td className={`px-3 py-2 border-b border-border/40 text-right ${bold ? "font-semibold" : ""} ${tone === "neg" ? "fin-neg" : tone === "pos" ? "fin-pos" : ""}`}>{fmtCurrency(v)}</td>
+                      <td className={`px-3 py-2 border-b border-border/40 text-right ${bold ? "font-semibold" : ""} ${cls}`}>{fmtCurrency(v)}</td>
                     </tr>
-                  ))}
+                  );})}
                 </tbody>
               </table>
             </div>

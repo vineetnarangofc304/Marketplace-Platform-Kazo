@@ -373,3 +373,26 @@ User: "point 2.1 and 6" — Google Doc updated with a new Point 6: "RTO - Sum of
 ### Production note
 User must redeploy Production for the code change to propagate, then click "Run Calculations" on the Calculations page to reprocess stored rows.
 
+
+## Iteration 25 — Value-driven sign colouring (2026-02, session 25)
+User feedback: "RTO corrected but DTO - No change after re calculation also".
+
+### Root cause
+Backend DTO values were already correct (commission < 0, fixed = 0, GT < 0, return_fee > 0 per Point 2.1), but the UI hard-coded all fee cells to `fin-neg` (red) regardless of sign. Result: a DTO reversal (Commission = -₹279) rendered visually identical to a fresh charge (Return Fee = +₹112). User couldn't visually tell them apart and reported "no change".
+
+### Fix
+- `/app/frontend/src/lib/format.js` — new helpers `signClass(v)` (positive → red charge, negative → green credit, zero → neutral) and `settlementClass(v)` (positive → green, negative → red).
+- `/app/frontend/src/pages/Calculations.jsx` — table row + drawer use `signClass` / `settlementClass` instead of hard-coded `fin-neg` / `fin-pos`.
+- `/app/frontend/src/pages/SalesLedger.jsx` — same.
+
+### Verified (bug_testing_agent iteration_25.json — 100% frontend)
+Sample DTO row `C1256672-9678-4D76-...`:
+- Commission ₹-11.76 → `fin-pos` green ✅ (reversal / credit)
+- Fixed Fee ₹0.00 → neutral (no colour) ✅
+- GT ₹-59.00 → `fin-pos` green ✅
+- Return Fee ₹112.00 → `fin-neg` red ✅ (fresh charge)
+- Total Deductions ₹41.24 → `fin-neg` red ✅
+- Expected Settlement ₹-188.24 → `fin-neg` red ✅ (seller loses)
+
+RTO, sales-type, and Sales Ledger drawer regressions all passed.
+
