@@ -414,3 +414,29 @@ User revised Point 6 (RTO) spec (19 Aug 2026):
 - Calculations UI RTO drawer: Return Fee ₹0.00 neutral ✅
 - Sales Ledger DTO drawer: Commission green negative, Fixed Fee ₹0 neutral, GT green negative, Return Fee red positive ✅
 
+
+## Iteration 27–28 — Sales+DTO leg + rounding fix (2026-02, session 27-28)
+User showed production screenshots (19 Aug 2026):
+- RTO: Return Fee still ₹-112 (production DB stale)
+- DTO: Sales-leg row (order_status=DTO, txn_type=Sales) showing POSITIVE charges — user expects DTO signs even on the Sales leg per Point 2.1.
+
+### Root cause
+Classifier previously mapped Sales+DTO → `sales` (positive charges) and only Return+DTO → `return_dto` (correct reversal signs). User expected any status=DTO row to show DTO signs regardless of txn_type.
+
+### Fix
+- `/app/backend/routers/calculations.py`
+  - New `order_type = "sale_dto"` for status=DTO + txn_type=Sales (5,210 preview rows).
+  - `sale_dto` compute branch: commission NEG, fixed_fee ZERO, GT NEG, return_fee POS. `expected_settlement = 0` on this leg so aggregate does NOT double-count the real DTO loss (which stays on the paired Return+DTO row).
+  - Rounding-drift fix: fee heads are rounded to 2 dp FIRST, then `total_deductions` is computed from the rounded values. Removes the ₹0.01 drift found on 574/5,210 sale_dto rows in iteration_27.
+- Preview recalculated all 21,614 Myntra rows.
+
+### Verified (bug_testing_agent iteration_28 — 100% backend + frontend)
+- sale_dto: 5,210/5,210 rows correct signs, settlement=0, total_deductions=sum-of-4-heads with 0.00 drift.
+- return_dto: 5,443/5,443 regression clean.
+- rto: 3,705/3,705 regression clean (return_fee=0, settlement=0).
+- sales/return: 7,036/7,036 + 92/92 regressions clean.
+- UI drawers show sale_dto with Commission green negative, Fixed Fee ₹0 neutral, GT green negative, Return Fee red positive.
+
+### Production note
+User must redeploy production, then click "Run Calculations" on the Calculations page to reprocess stored rows.
+

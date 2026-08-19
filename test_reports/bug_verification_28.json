@@ -1,0 +1,45 @@
+{
+  "verdict": "fixed",
+  "user_reported_bug": "Retest after fix. Google Doc Point 2.1 (DTO) + Point 6 (RTO): Sales+DTO leg must display DTO signs (comm neg, fixed=0, GT neg, return_fee pos). RTO return_fee must be 0. Previous iteration_27 reported 574/5210 sale_dto rows had a ₹0.01 rounding drift on total_deductions vs sum-of-4-heads.",
+  "summary": "No relevant testing skill found. Focused backend/API retest on preview passed the exact DTO/RTO contract: all 5,210 sale_dto rows have DTO signs, expected_settlement=0, and 0 total_deductions rounding mismatches. Regression checks also passed for all return_dto, rto, sales, and return rows; UI spot-check confirmed the sale_dto drawer displays the same corrected signs and total arithmetic. No MOCKED APIs were used.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/tests/bug_verify_iteration_28_backend.py",
+    "/app/tests/bug_verify_iteration_28_ui_playwright.py",
+    "/app/test_reports/iteration_28_backend_evidence.json",
+    "/app/test_reports/iteration_28_ui_evidence.json"
+  ],
+  "action_items": [
+    "None for preview; if production still shows stale values, deploy this fix there and rerun/recalculate affected calculation rows."
+  ],
+  "critical_code_review_comments": [
+    "Reviewed uncommitted /app/backend/routers/calculations.py: visible fee heads are rounded first (r_comm/r_ff/r_gt/r_rf) and total_deductions is derived from those rounded values, addressing the previous ₹0.01 drift root cause.",
+    "Reviewed /app/backend/routers/calculations.py: sale_dto classification and branch now enforce commission negative, fixed fee zero, GT negative, return fee positive, expected settlement zero.",
+    "Reviewed /app/backend/routers/calculations.py: RTO branch explicitly sets return_fee_final = 0.0 while commission/fixed/GT are negative reversals. No backend ERROR/Traceback entries were found in focused supervisor log check."
+  ],
+  "updated_files": [
+    "/app/tests/bug_verify_iteration_28_backend.py",
+    "/app/tests/bug_verify_iteration_28_ui_playwright.py",
+    "/app/test_reports/iteration_28_backend_evidence.json",
+    "/app/test_reports/iteration_28_ui_evidence.json",
+    "/app/test_reports/bug_verification_28.json",
+    "/app/test_reports/iteration_28.json"
+  ],
+  "success_rate": {
+    "backend": "100% focused pass: sale_dto 5,210/5,210, return_dto 5,443/5,443, rto 3,705/3,705, sales 7,036/7,036, return 92/92 passed sign and arithmetic checks relevant to each type.",
+    "frontend": "100% focused spot-check: searched a sale_dto order in Calculations, opened drawer, and verified displayed signs/classes plus total = commission + fixed + GT + return_fee."
+  },
+  "seed_data_creation": "No seed data created; used existing preview calculation rows and admin@fundle.ai/admin123 credentials.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Backend URL tested: https://settlement-intel-1.preview.emergentagent.com. Authenticated API paging with limit=2000 fetched all requested rows. sale_dto had 0/5,210 rounding mismatches, fixing the iteration_27 failure where 574 rows drifted by ₹0.01. UI sample order BA030AAB-E147-4FA2-847F-8B119D06AEC1 displayed Commission ₹-871.36, Fixed ₹0.00, GT ₹-266.00, Return Fee ₹194.00, Total ₹-943.36, Expected Settlement ₹0.00.",
+  "rca_of_the_issue": "The previous failure was caused by total_deductions being rounded independently from unrounded component sums. The inspected fix rounds each displayed fee head first, then sums those rounded values into total_deductions, so the API/UI identity now holds exactly."
+}

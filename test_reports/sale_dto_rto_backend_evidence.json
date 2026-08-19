@@ -1,0 +1,553 @@
+{
+  "base_url": "https://settlement-intel-1.preview.emergentagent.com",
+  "period": {
+    "period_type": "month",
+    "period_value": "2026-04",
+    "portal": "myntra"
+  },
+  "checks": {
+    "count_parity": {
+      "sales_status_DTO_txn_Sales": 5210,
+      "calc_order_type_sale_dto": 5210,
+      "sales_status_DTO_txn_Return": 5443,
+      "calc_order_type_return_dto": 5443,
+      "sales_status_RTO_any_txn": 3705,
+      "calc_order_type_rto": 3705,
+      "sales_status_Delivered_txn_Sales": 7036,
+      "calc_order_type_sales": 7036
+    },
+    "sale_dto_samples": [
+      {
+        "order_id": "BA030AAB-E147-4FA2-847F-8B119D06AEC1",
+        "sales_id": "3fc2c0d5-aca8-448a-91ae-51ecd5e58438",
+        "order_status": "DTO",
+        "txn_type": "Sales",
+        "order_type": "sale_dto",
+        "commission": -871.36,
+        "fixed_fee": 0.0,
+        "gt_charge": -266.0,
+        "return_fee": 194.0,
+        "total_deductions": -943.36,
+        "expected_settlement": 0.0
+      },
+      {
+        "order_id": "5C096FFC-473B-47A8-B3DE-535371DBC079",
+        "sales_id": "f9fe56b5-6e1e-4a1a-b154-dfd2aa8d2a5e",
+        "order_status": "DTO",
+        "txn_type": "Sales",
+        "order_type": "sale_dto",
+        "commission": -321.56,
+        "fixed_fee": 0.0,
+        "gt_charge": -207.0,
+        "return_fee": 112.0,
+        "total_deductions": -416.56,
+        "expected_settlement": 0.0
+      },
+      {
+        "order_id": "17D47B7B-AFDF-4605-890E-CB361869E872",
+        "sales_id": "27e267ae-f727-4fa3-a021-c1b44c73f9ae",
+        "order_status": "DTO",
+        "txn_type": "Sales",
+        "order_type": "sale_dto",
+        "commission": -296.06,
+        "fixed_fee": 0.0,
+        "gt_charge": -207.0,
+        "return_fee": 112.0,
+        "total_deductions": -391.06,
+        "expected_settlement": 0.0
+      },
+      {
+        "order_id": "AF811D3E-BC97-4D8A-A4D7-C41B79284BD0",
+        "sales_id": "ca7c24c2-ae3e-4d08-8929-ff457b09ef87",
+        "order_status": "DTO",
+        "txn_type": "Sales",
+        "order_type": "sale_dto",
+        "commission": -236.56,
+        "fixed_fee": 0.0,
+        "gt_charge": -207.0,
+        "return_fee": 112.0,
+        "total_deductions": -331.56,
+        "expected_settlement": 0.0
+      },
+      {
+        "order_id": "92C6CC9E-4A75-4085-AB6B-039C3E544DAA",
+        "sales_id": "df261d2c-3cc8-4a82-b245-5018ca6e0f3f",
+        "order_status": "DTO",
+        "txn_type": "Sales",
+        "order_type": "sale_dto",
+        "commission": -203.49,
+        "fixed_fee": 0.0,
+        "gt_charge": -207.0,
+        "return_fee": 112.0,
+        "total_deductions": -298.49,
+        "expected_settlement": 0.0
+      }
+    ],
+    "return_dto_samples": [
+      {
+        "order_id": "83410B8C-556E-465B-96A1-EB3A80DB1DF1",
+        "sales_id": "a752b5cd-e629-42ec-a383-ad1fa5ce9976",
+        "order_status": "DTO",
+        "txn_type": "Return",
+        "order_type": "return_dto",
+        "commission": -279.06,
+        "fixed_fee": 0.0,
+        "gt_charge": -207.0,
+        "return_fee": 112.0,
+        "total_deductions": -374.06,
+        "expected_settlement": -2908.95
+      },
+      {
+        "order_id": "CEFB5152-096A-495B-BBBB-31AF2587F659",
+        "sales_id": "a69a694d-02d9-4b8a-96bd-b1fad78a51e5",
+        "order_status": "DTO",
+        "txn_type": "Return",
+        "order_type": "return_dto",
+        "commission": -211.14,
+        "fixed_fee": 0.0,
+        "gt_charge": -207.0,
+        "return_fee": 112.0,
+        "total_deductions": -306.14,
+        "expected_settlement": -2177.86
+      },
+      {
+        "order_id": "D64EC1CA-0341-4B73-B607-D188CFBFCB1F",
+        "sales_id": "d597b1cc-dd03-4f3c-9154-9c10c91ea4a7",
+        "order_status": "DTO",
+        "txn_type": "Return",
+        "order_type": "return_dto",
+        "commission": -279.06,
+        "fixed_fee": 0.0,
+        "gt_charge": -207.0,
+        "return_fee": 112.0,
+        "total_deductions": -374.06,
+        "expected_settlement": -2908.95
+      },
+      {
+        "order_id": "DCCEDAF9-9581-4978-8EA6-F3678F381138",
+        "sales_id": "994ac013-7a5e-4a6d-be01-91268d9af9ac",
+        "order_status": "DTO",
+        "txn_type": "Return",
+        "order_type": "return_dto",
+        "commission": -234.01,
+        "fixed_fee": 0.0,
+        "gt_charge": -207.0,
+        "return_fee": 112.0,
+        "total_deductions": -329.0,
+        "expected_settlement": -2423.99
+      },
+      {
+        "order_id": "77AF71D5-53D8-4878-9CE6-A01FE2101BE8",
+        "sales_id": "bcb28a7b-b087-424f-a05a-d80eb01d26d6",
+        "order_status": "DTO",
+        "txn_type": "Return",
+        "order_type": "return_dto",
+        "commission": -236.56,
+        "fixed_fee": 0.0,
+        "gt_charge": -207.0,
+        "return_fee": 112.0,
+        "total_deductions": -331.56,
+        "expected_settlement": -2451.45
+      }
+    ],
+    "rto_samples": [
+      {
+        "order_id": "0D9ADFFB-4656-4924-9F65-DA7543BADD25",
+        "sales_id": "c51f96f0-9dc1-4d6d-af81-5b17967d4d48",
+        "order_status": "RTO",
+        "txn_type": "Return",
+        "order_type": "rto",
+        "commission": -205.11,
+        "fixed_fee": -61.0,
+        "gt_charge": -207.0,
+        "return_fee": 0.0,
+        "total_deductions": -473.11,
+        "expected_settlement": 0.0
+      },
+      {
+        "order_id": "1CD0D5B7-855F-4AAC-BF5B-B5598F593875",
+        "sales_id": "8216a20f-080a-458f-b006-75c22d3fdc3c",
+        "order_status": "RTO",
+        "txn_type": "Return",
+        "order_type": "rto",
+        "commission": -205.11,
+        "fixed_fee": -61.0,
+        "gt_charge": -207.0,
+        "return_fee": 0.0,
+        "total_deductions": -473.11,
+        "expected_settlement": 0.0
+      },
+      {
+        "order_id": "F74AF20E-6E26-43BD-8747-8B3502D14EB6",
+        "sales_id": "6f110671-3947-4bc2-8429-dccc18e08364",
+        "order_status": "RTO",
+        "txn_type": "Return",
+        "order_type": "rto",
+        "commission": -201.54,
+        "fixed_fee": -61.0,
+        "gt_charge": -207.0,
+        "return_fee": 0.0,
+        "total_deductions": -469.54,
+        "expected_settlement": 0.0
+      },
+      {
+        "order_id": "0C4E6C9D-C321-42CE-9C8D-B4B8CD275531",
+        "sales_id": "f629e723-a502-4c63-a64d-1b4154625057",
+        "order_status": "RTO",
+        "txn_type": "Return",
+        "order_type": "rto",
+        "commission": -406.56,
+        "fixed_fee": -61.0,
+        "gt_charge": -207.0,
+        "return_fee": 0.0,
+        "total_deductions": -674.56,
+        "expected_settlement": 0.0
+      },
+      {
+        "order_id": "247040F2-F53B-40AE-A5E0-B2B3FF32FECD",
+        "sales_id": "26c8c8e2-0075-4178-bdfa-e4b50d4100f2",
+        "order_status": "RTO",
+        "txn_type": "Return",
+        "order_type": "rto",
+        "commission": -113.99,
+        "fixed_fee": -45.0,
+        "gt_charge": -171.0,
+        "return_fee": 0.0,
+        "total_deductions": -329.99,
+        "expected_settlement": 0.0
+      }
+    ],
+    "sales_samples": [
+      {
+        "order_id": "879F52C0-0F8A-4025-A6AE-2160DD93CC21",
+        "sales_id": "95c59c89-9dac-4c66-afb1-9a916a3071a8",
+        "order_status": "Delivered",
+        "txn_type": "Sales",
+        "order_type": "sales",
+        "commission": 321.56,
+        "fixed_fee": 61.0,
+        "gt_charge": 207.0,
+        "return_fee": 0.0,
+        "total_deductions": 589.56,
+        "expected_settlement": 3193.44
+      },
+      {
+        "order_id": "92772EA3-F976-4FA9-9952-5665D1D5D72C",
+        "sales_id": "d7ff8249-0a5e-4ff0-ac92-135bf8f19994",
+        "order_status": "Delivered",
+        "txn_type": "Sales",
+        "order_type": "sales",
+        "commission": 279.06,
+        "fixed_fee": 61.0,
+        "gt_charge": 207.0,
+        "return_fee": 0.0,
+        "total_deductions": 547.06,
+        "expected_settlement": 2735.94
+      },
+      {
+        "order_id": "C52F2F40-B13C-480A-A3C7-957385889D3A",
+        "sales_id": "c6490bcc-d7e0-4771-9092-00d436d38591",
+        "order_status": "Delivered",
+        "txn_type": "Sales",
+        "order_type": "sales",
+        "commission": 310.59,
+        "fixed_fee": 61.0,
+        "gt_charge": 207.0,
+        "return_fee": 0.0,
+        "total_deductions": 578.59,
+        "expected_settlement": 3075.41
+      },
+      {
+        "order_id": "32EAD44E-E8C0-45F4-A759-E954CEC5D622",
+        "sales_id": "0f58f349-7021-4fbe-b74b-29d0488dd364",
+        "order_status": "Delivered",
+        "txn_type": "Sales",
+        "order_type": "sales",
+        "commission": 203.49,
+        "fixed_fee": 61.0,
+        "gt_charge": 207.0,
+        "return_fee": 0.0,
+        "total_deductions": 471.49,
+        "expected_settlement": 1922.51
+      },
+      {
+        "order_id": "C36F264B-651B-4AEF-8A39-A943D7D78A7C",
+        "sales_id": "1a25c0e1-245a-480c-aaa3-83fdf3aa3451",
+        "order_status": "Delivered",
+        "txn_type": "Sales",
+        "order_type": "sales",
+        "commission": 182.84,
+        "fixed_fee": 61.0,
+        "gt_charge": 207.0,
+        "return_fee": 0.0,
+        "total_deductions": 450.84,
+        "expected_settlement": 1700.16
+      }
+    ]
+  },
+  "violations": {
+    "sale_dto": {
+      "count": 574,
+      "samples": [
+        {
+          "sales_id": "8f80cde9-f437-4258-bb8e-be091aa2a9d2",
+          "values": [
+            -113.14,
+            0.0,
+            -171.0,
+            112.0
+          ],
+          "total_deductions": -172.13,
+          "displayed_parts_sum": -172.14,
+          "expected_settlement": 0.0
+        },
+        {
+          "sales_id": "46589f69-bda5-40ae-a1b4-03e11b9148f5",
+          "values": [
+            -117.39,
+            0.0,
+            -171.0,
+            112.0
+          ],
+          "total_deductions": -176.38,
+          "displayed_parts_sum": -176.39,
+          "expected_settlement": 0.0
+        },
+        {
+          "sales_id": "6744aa1f-153f-4315-924d-00b0fcdfd461",
+          "values": [
+            -230.78,
+            0.0,
+            -313.0,
+            276.0
+          ],
+          "total_deductions": -267.77,
+          "displayed_parts_sum": -267.78,
+          "expected_settlement": 0.0
+        },
+        {
+          "sales_id": "e371b462-517c-4e1e-9d74-c106b27f057d",
+          "values": [
+            -84.23,
+            0.0,
+            -171.0,
+            112.0
+          ],
+          "total_deductions": -143.24,
+          "displayed_parts_sum": -143.23,
+          "expected_settlement": 0.0
+        },
+        {
+          "sales_id": "bf22cc26-9932-4708-a866-9d74fb16aa87",
+          "values": [
+            -84.23,
+            0.0,
+            -171.0,
+            112.0
+          ],
+          "total_deductions": -143.24,
+          "displayed_parts_sum": -143.23,
+          "expected_settlement": 0.0
+        },
+        {
+          "sales_id": "1fcbb9ab-066c-4f46-a496-dd027c30809a",
+          "values": [
+            -418.63,
+            0.0,
+            -207.0,
+            112.0
+          ],
+          "total_deductions": -513.62,
+          "displayed_parts_sum": -513.63,
+          "expected_settlement": 0.0
+        },
+        {
+          "sales_id": "6e49e474-7f5d-4b0e-af00-1b7a802775af",
+          "values": [
+            -88.32,
+            0.0,
+            -171.0,
+            112.0
+          ],
+          "total_deductions": -147.31,
+          "displayed_parts_sum": -147.32,
+          "expected_settlement": 0.0
+        },
+        {
+          "sales_id": "ebd8db0c-4062-4fd8-b824-14c52d8ed0d8",
+          "values": [
+            -85.77,
+            0.0,
+            -171.0,
+            112.0
+          ],
+          "total_deductions": -144.76,
+          "displayed_parts_sum": -144.77,
+          "expected_settlement": 0.0
+        },
+        {
+          "sales_id": "5d35ac5b-e555-4856-9b99-e7eba5920517",
+          "values": [
+            -110.76,
+            0.0,
+            -171.0,
+            112.0
+          ],
+          "total_deductions": -169.75,
+          "displayed_parts_sum": -169.76,
+          "expected_settlement": 0.0
+        },
+        {
+          "sales_id": "f8cd37a6-3fbc-4111-9632-829e8d986245",
+          "values": [
+            -117.39,
+            0.0,
+            -171.0,
+            112.0
+          ],
+          "total_deductions": -176.38,
+          "displayed_parts_sum": -176.39,
+          "expected_settlement": 0.0
+        },
+        {
+          "sales_id": "6daba77c-7268-4ff5-b347-b18fa9ccbad7",
+          "values": [
+            -195.76,
+            0.0,
+            -207.0,
+            112.0
+          ],
+          "total_deductions": -290.75,
+          "displayed_parts_sum": -290.76,
+          "expected_settlement": 0.0
+        },
+        {
+          "sales_id": "83b4d804-39d6-46fc-9c4e-af0da4ce575a",
+          "values": [
+            -97.16,
+            0.0,
+            -171.0,
+            112.0
+          ],
+          "total_deductions": -156.15,
+          "displayed_parts_sum": -156.16,
+          "expected_settlement": 0.0
+        },
+        {
+          "sales_id": "83f71042-b652-4d25-9fb5-93161760f36f",
+          "values": [
+            -97.16,
+            0.0,
+            -171.0,
+            112.0
+          ],
+          "total_deductions": -156.15,
+          "displayed_parts_sum": -156.16,
+          "expected_settlement": 0.0
+        },
+        {
+          "sales_id": "d96caf3a-5da5-482f-bb70-4f8a35585427",
+          "values": [
+            -173.15,
+            0.0,
+            -207.0,
+            112.0
+          ],
+          "total_deductions": -268.14,
+          "displayed_parts_sum": -268.15,
+          "expected_settlement": 0.0
+        },
+        {
+          "sales_id": "545ba79f-8ab5-4e8b-8a6e-ca699a606a77",
+          "values": [
+            -84.23,
+            0.0,
+            -171.0,
+            112.0
+          ],
+          "total_deductions": -143.24,
+          "displayed_parts_sum": -143.23,
+          "expected_settlement": 0.0
+        },
+        {
+          "sales_id": "7f3e5022-e0f8-4c7b-a483-4d155d2334ba",
+          "values": [
+            -224.15,
+            0.0,
+            -207.0,
+            112.0
+          ],
+          "total_deductions": -319.14,
+          "displayed_parts_sum": -319.15,
+          "expected_settlement": 0.0
+        },
+        {
+          "sales_id": "1175fafb-48b1-440a-ba23-dbba052623ae",
+          "values": [
+            -61.29,
+            0.0,
+            -94.0,
+            112.0
+          ],
+          "total_deductions": -43.28,
+          "displayed_parts_sum": -43.29,
+          "expected_settlement": 0.0
+        },
+        {
+          "sales_id": "a1684b9d-6704-4261-9e9e-2ffd897c4325",
+          "values": [
+            -136.59,
+            0.0,
+            -277.0,
+            276.0
+          ],
+          "total_deductions": -137.6,
+          "displayed_parts_sum": -137.59,
+          "expected_settlement": 0.0
+        },
+        {
+          "sales_id": "47eb1987-6d39-4b08-9e29-bae7e5e3c1e0",
+          "values": [
+            -44.29,
+            0.0,
+            -94.0,
+            112.0
+          ],
+          "total_deductions": -26.28,
+          "displayed_parts_sum": -26.29,
+          "expected_settlement": 0.0
+        },
+        {
+          "sales_id": "2b5b1f82-63c1-4326-bb72-681cfc6a4dde",
+          "values": [
+            -126.4,
+            0.0,
+            -171.0,
+            112.0
+          ],
+          "total_deductions": -185.39,
+          "displayed_parts_sum": -185.4,
+          "expected_settlement": 0.0
+        }
+      ]
+    },
+    "return_dto": {
+      "count": 0,
+      "samples": []
+    },
+    "rto": {
+      "count": 0,
+      "samples": []
+    },
+    "sales": {
+      "count": 0,
+      "samples": []
+    }
+  },
+  "login_user": {
+    "id": "3e02cdc0-90f5-4bc5-8b36-f93f388ae4a2",
+    "email": "admin@fundle.ai",
+    "name": "Administrator",
+    "role": "admin"
+  }
+}

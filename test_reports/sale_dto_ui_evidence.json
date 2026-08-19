@@ -1,0 +1,25 @@
+{
+  "base_url": "https://settlement-intel-1.preview.emergentagent.com",
+  "credentials": "admin@fundle.ai / admin123",
+  "period": "2026-04",
+  "portal": "myntra",
+  "result": "passed_for_sale_dto_drawer_signs",
+  "sales_ledger_drawer": {
+    "source": {"Status": "DTO", "Txn Type": "Sales"},
+    "Commission": {"value": "₹-871.36", "class_contains": "fin-pos"},
+    "Fixed Fee": {"value": "₹0.00", "class_contains": "neutral/no fin class"},
+    "GT Charge": {"value": "₹-266.00", "class_contains": "fin-pos"},
+    "Return Fee (Level/Zone)": {"value": "₹194.00", "class_contains": "fin-neg"},
+    "Expected Settlement": {"value": "₹0.00", "class_contains": "neutral/no fin class"}
+  },
+  "calculations_drawer": {
+    "source": {"Order Status": "DTO", "order_type_query": "sale_dto"},
+    "Commission": {"value": "₹-46.92", "class_contains": "fin-pos"},
+    "Fixed Fee": {"value": "₹0.00", "class_contains": "neutral/no fin class"},
+    "GT Charge": {"value": "₹-94.00", "class_contains": "fin-pos"},
+    "Return Fee (Level/Zone)": {"value": "₹112.00", "class_contains": "fin-neg"},
+    "Expected Settlement": {"value": "₹0.00", "class_contains": "neutral/no fin class"}
+  },
+  "console_log": "/root/.emergent/automation_output/20260819_083850/console_20260819_083850.log",
+  "console_errors": "No app error messages detected; only Cloudflare RUM aborts and unrelated chart-size warnings were logged."
+}

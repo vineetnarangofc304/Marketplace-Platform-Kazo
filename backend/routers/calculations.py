@@ -163,18 +163,17 @@ def _extract_report_month(sale: Dict[str, Any]) -> Optional[str]:
 
 def _classify_order(order_status: Optional[str], txn_type: Optional[str]) -> str:
     """Classify an order-item row into one of:
-        sales | return | return_dto | rto | internal_cancel
+        sales | return | sale_dto | return_dto | rto | internal_cancel
 
-    Rules (per business, 2026-07):
+    Rules (per business, 2026-08 revision — updated Point 2.1):
       - order_status == 'RTO'                    → rto              (nullified; both Sales+RTO and Return+RTO)
       - order_status == 'Internal Cancellation'  → internal_cancel  (nullified; both sides)
-      - txn_type == 'Return' AND order_status == 'DTO'
-                                                 → return_dto       (only Fixed Fee applies as Return Fee)
-      - txn_type == 'Return' (any other status)  → return           (sign-flipped, general return)
-      - else                                     → sales            (Sales+Delivered, Sales+DTO, etc.)
-    Note: Sales+DTO rows are treated as normal sales; the corresponding
-    Return+DTO row (a separate file row) applies the fixed-fee reversal.
-    Net effect for a DTO order = seller loses the fixed fee.
+      - order_status == 'DTO' AND txn_type == 'Return'
+                                                 → return_dto       (return leg — full DTO reversal math + return fee)
+      - order_status == 'DTO' AND txn_type != 'Return'
+                                                 → sale_dto         (sales leg of a DTO pair — displays DTO signs per Point 2.1 but settlement stays 0 to avoid double-count against the return leg)
+      - txn_type == 'Return' (any other status)  → return            (sign-flipped, general return)
+      - else                                     → sales            (Sales+Delivered)
     Matching is case-insensitive.
     """
     os_ = (order_status or "").strip().upper()
@@ -184,8 +183,10 @@ def _classify_order(order_status: Optional[str], txn_type: Optional[str]) -> str
         return "rto"
     if os_ == "INTERNAL CANCELLATION":
         return "internal_cancel"
-    if is_return_txn and os_ == "DTO":
+    if os_ == "DTO" and is_return_txn:
         return "return_dto"
+    if os_ == "DTO":
+        return "sale_dto"
     if is_return_txn:
         return "return"
     return "sales"
@@ -255,7 +256,7 @@ def compute_expected(sale: Dict[str, Any], masters: Dict[str, Any]) -> Dict[str,
         reasons.append(f"Zone '{zone_raw}' not recognized and no default configured")
 
     order_type = _classify_order(sale.get("order_status"), sale.get("txn_type"))
-    is_return = order_type in ("return", "return_dto")
+    is_return = order_type in ("return", "return_dto", "sale_dto")
 
     breakdown: Dict[str, Any] = {
         "isp": round(isp_abs, 2), "qty": qty, "nsv_val": round(nsv_val, 2),
@@ -278,13 +279,13 @@ def compute_expected(sale: Dict[str, Any], masters: Dict[str, Any]) -> Dict[str,
     return_fee_master = float(return_fee_cell["fee"]) if return_fee_cell else None
 
     # Reason accounting (per component missing) — only applies for order types that need them
-    if order_type in ("sales", "return", "return_dto") and crule is None:
+    if order_type in ("sales", "return", "return_dto", "sale_dto") and crule is None:
         reasons.append(f"No commission rule for {master_cat}/{sub_category} @ ISP ₹{isp_abs}")
     if order_type in ("sales", "return") and ff is None:
         reasons.append(f"No fixed fee slab for ISP ₹{isp_abs}")
-    if order_type in ("sales", "return", "return_dto") and gt_cell is None:
+    if order_type in ("sales", "return", "return_dto", "sale_dto") and gt_cell is None:
         reasons.append(f"No GT charge for {sub_category} / {level} @ ISP ₹{isp_abs}")
-    if order_type in ("return", "return_dto") and return_fee_cell is None:
+    if order_type in ("return", "return_dto", "sale_dto") and return_fee_cell is None:
         reasons.append(f"No return fee for level={level} zone={zone}")
 
     breakdown["commission_rule"] = {
@@ -307,7 +308,7 @@ def compute_expected(sale: Dict[str, Any], masters: Dict[str, Any]) -> Dict[str,
     breakdown["return_fee_cell"] = {
         "id": return_fee_cell.get("id") if return_fee_cell else None,
         "zone": zone, "level": level, "fee": return_fee_master,
-        "applied": order_type in ("return", "return_dto"),
+        "applied": order_type in ("return", "return_dto", "sale_dto"),
     }
 
     # ---- Apply order-type-specific arithmetic ----
@@ -356,6 +357,29 @@ def compute_expected(sale: Dict[str, Any], masters: Dict[str, Any]) -> Dict[str,
         total_deductions = 0.0
         expected_settlement = 0.0
         reasons = []
+    elif order_type == "sale_dto":
+        # Sales leg of a DTO pair (order_status='DTO', txn_type='Sales'). Per
+        # client spec (Point 2.1 revised, 2026-02): display DTO reversal signs
+        # even on the sales leg so ops can see WHY this "sale" won't settle:
+        #   * Commission = NEGATIVE reversal
+        #   * Fixed Fee  = ZERO
+        #   * GT Charge  = NEGATIVE reversal
+        #   * Return Fee = POSITIVE (fresh Level × Zone reverse-logistics charge)
+        # Total Deductions = arithmetic sum of the four heads. Expected
+        # Settlement stays 0 on this leg so the aggregate does NOT double-count
+        # the real seller loss — that loss is fully reflected on the paired
+        # Return+DTO row via the `return_dto` branch below.
+        commission_base = -abs(commission_pct * (abs(nsv_val) - abs(gt_total))) if (commission_pct is not None and gt_total is not None) else (
+            -abs(commission_pct * abs(nsv_val)) if commission_pct is not None else None
+        )
+        fixed_fee = 0.0
+        gt_charge_final = -abs(gt_total) if gt_total is not None else None
+        return_fee_final = abs(return_fee_master) if return_fee_master is not None else None
+        nsv_after_gt = 0.0
+        parts = [commission_base, fixed_fee, gt_charge_final, return_fee_final]
+        if all(x is not None for x in parts):
+            total_deductions = sum(parts)
+        expected_settlement = 0.0
     elif order_type == "return_dto":
         # Return + DTO — per client spec (2.1):
         #   * Commission = NEGATIVE reversal
@@ -412,17 +436,31 @@ def compute_expected(sale: Dict[str, Any], masters: Dict[str, Any]) -> Dict[str,
     def _round(v):
         return None if v is None else round(v, 2)
 
+    # Round fee heads first, then derive total_deductions from the ROUNDED
+    # values so the visible identity `total = comm + ff + gt + rf` holds
+    # exactly (avoids ₹0.01 drift where independent rounding of a raw sum
+    # can differ from the sum of rounded parts).
+    r_comm = _round(commission_base)
+    r_ff   = _round(fixed_fee)
+    r_gt   = _round(gt_charge_final)
+    r_rf   = _round(return_fee_final)
+    if all(x is not None for x in (r_comm, r_ff, r_gt, r_rf)):
+        total_deductions = round((r_comm or 0) + (r_ff or 0) + (r_gt or 0) + (r_rf or 0), 2)
+        # Keep the settlement identity for order types that use it.
+        if order_type in ("sales", "return", "return_dto") and nsv_after_gt is not None:
+            expected_settlement = round(round(nsv_after_gt, 2) - total_deductions, 2)
+
     # GST + TCS/TDS retained in the payload for backwards-compat but always 0.
     return {
-        "commission_base": _round(commission_base),
+        "commission_base": r_comm,
         "commission_gst": 0,
-        "commission_incl_gst": _round(commission_base),
+        "commission_incl_gst": r_comm,
         "commission_pct": commission_pct,
-        "fixed_fee": _round(fixed_fee),
+        "fixed_fee": r_ff,
         "fixed_fee_gst": 0,
-        "fixed_fee_incl_gst": _round(fixed_fee),
-        "gt_charge": _round(gt_charge_final),
-        "return_fee": _round(return_fee_final),
+        "fixed_fee_incl_gst": r_ff,
+        "gt_charge": r_gt,
+        "return_fee": r_rf,
         "tcs": 0,
         "tds": 0,
         "nsv_after_gt": _round(nsv_after_gt),
@@ -653,7 +691,7 @@ async def list_calculations(
     sub_category: Optional[str] = None,
     master_category: Optional[str] = None,
     zone: Optional[str] = None,
-    order_type: Optional[str] = None,   # sales | return_dto | return | rto | internal_cancel
+    order_type: Optional[str] = None,   # sales | sale_dto | return_dto | return | rto | internal_cancel
     severity_flag: Optional[str] = None,  # 'unmapped' or 'mapped'
     unmapped_only: bool = False,
     limit: int = Query(200, le=2000),

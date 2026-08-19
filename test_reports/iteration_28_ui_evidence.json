@@ -1,0 +1,20 @@
+{
+  "base_url": "https://settlement-intel-1.preview.emergentagent.com",
+  "flow": "UI calculations drawer spot-check for sale_dto DTO signs and displayed total arithmetic",
+  "authenticated_as": "admin@fundle.ai",
+  "sample_order_id": "BA030AAB-E147-4FA2-847F-8B119D06AEC1",
+  "route": "/calculations?order_type=sale_dto&search=BA030AAB-E147-4FA2-847F-8B119D06AEC1",
+  "row_count_text": "1 rows · component-level breakdown · click row for full trail",
+  "table_row_text": "BA030AAB-E147-…DT1150TAUPC01Handbags2026-04₹6,490.00₹-871.36₹0.00₹-266.00₹-943.36₹0.00OK",
+  "drawer_values": {
+    "Commission": {"value": "₹-871.36", "class_contains": "fin-pos"},
+    "Fixed Fee": {"value": "₹0.00", "class_contains": "neutral"},
+    "GT Charge": {"value": "₹-266.00", "class_contains": "fin-pos"},
+    "Return Fee (Level/Zone)": {"value": "₹194.00", "class_contains": "fin-neg"},
+    "Total Deductions": {"value": "₹-943.36", "class_contains": "fin-pos"},
+    "Expected Settlement": {"value": "₹0.00", "class_contains": "neutral"}
+  },
+  "displayed_total_check": "-871.36 + 0.00 + -266.00 + 194.00 = -943.36",
+  "error_messages_found": false,
+  "result": "passed"
+}

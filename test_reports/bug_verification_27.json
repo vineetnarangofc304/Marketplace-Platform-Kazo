@@ -1,0 +1,58 @@
+{
+  "verdict": "not_fixed",
+  "user_reported_bug": "User confirmed on production 19-Aug-2026:\n1. RTO Return Fee still shows -112 (should be 0) — production has stale calc rows\n2. DTO 'no changes' — user showed a Sales+DTO leg row (order_status=DTO, txn_type=Sales, positive NSV) where commission/fixed/GT show as POSITIVE charges. User expects DTO signs (comm neg, fixed=0, GT neg, return_fee pos) on ANY row with order_status=DTO regardless of txn_type.",
+  "summary": "No relevant testing skill found. Focused preview verification found the main DTO/RTO sign symptoms are fixed (sale_dto signs, return_dto signs, all RTO return_fee=0, delivered sales positive, and sale_dto UI drawer colors passed), but the requested sale_dto total_deductions equality is not fixed: 574 of 5,210 sale_dto rows have total_deductions off by ₹0.01 from commission + fixed_fee + GT + return_fee.",
+  "backend_issues": {
+    "critical": [
+      {
+        "endpoint": "/api/calculations?period_type=month&period_value=2026-04&portal=myntra&order_type=sale_dto",
+        "issue": "574/5,210 sale_dto rows do not satisfy total_deductions == commission_incl_gst + fixed_fee_incl_gst + gt_charge + return_fee using returned/displayed rounded values. Example: commission=-113.14, fixed=0.00, GT=-171.00, return_fee=112.00 sums to -172.14, but API returns total_deductions=-172.13.",
+        "priority": "HIGH"
+      }
+    ],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {
+        "flow": "sale_dto calculation drawer/table totals",
+        "issue": "UI consumes the backend total_deductions value, so affected sale_dto rows can visibly show a total that differs by ₹0.01 from the sum of the displayed fee heads.",
+        "affected_selectors": ["[data-testid^=\"calc-row-\"]", "[data-testid=\"calc-drawer\"]", "[data-testid=\"sales-drawer\"]"]
+      }
+    ],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/tests/bug_verify_sale_dto_rto_backend.py",
+    "/app/tests/bug_verify_sale_dto_ui_playwright.py",
+    "/app/test_reports/sale_dto_rto_backend_evidence.json",
+    "/app/test_reports/sale_dto_ui_evidence.json"
+  ],
+  "action_items": [
+    "Fix sale_dto total_deductions rounding so the returned/displayed total equals the sum of returned/displayed commission, fixed_fee, gt_charge, and return_fee.",
+    "After the rounding fix, rerun/recalculate Myntra April 2026 calculations and retest sale_dto totals plus DTO/RTO signs."
+  ],
+  "critical_code_review_comments": [
+    "Reviewed /app/backend/routers/calculations.py: _classify_order correctly classifies order_status=DTO + txn_type=Sales as order_type='sale_dto'.",
+    "Reviewed /app/backend/routers/calculations.py: RTO branch explicitly sets return_fee_final = 0.0 and existing preview API rows confirm all 3,705 RTO rows have return_fee exactly 0 with expected_settlement 0.",
+    "Likely RCA for remaining failure: sale_dto branch sums unrounded component values for total_deductions, then the API rounds each fee head and total independently, creating ₹0.01 display/API mismatches."
+  ],
+  "updated_files": [
+    "/app/tests/bug_verify_sale_dto_rto_backend.py",
+    "/app/tests/bug_verify_sale_dto_ui_playwright.py",
+    "/app/test_reports/sale_dto_rto_backend_evidence.json",
+    "/app/test_reports/sale_dto_ui_evidence.json",
+    "/app/test_reports/bug_verification_27.json",
+    "/app/test_reports/iteration_27.json"
+  ],
+  "success_rate": {
+    "backend": "Partial: DTO/RTO/sales sign checks passed, but sale_dto total_deductions equality failed on 574/5,210 rows",
+    "frontend": "100% for tested sale_dto drawer sign/color behavior"
+  },
+  "seed_data_creation": "No seed data created; used existing preview Myntra April 2026 sales and calculation rows. Did not run recalculation, so stale rows would have been detected.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Backend counts matched source rows: sale_dto=5210, return_dto=5443, rto=3705, delivered sales=7036. No sign violations were found for return_dto, rto, or delivered sales. sale_dto sign/settlement checks passed, but 574 sale_dto rows have a one-paisa total_deductions mismatch. UI verification as admin@fundle.ai showed Sales Ledger DTO+Sales drawer and Calculations sale_dto drawer with Commission/GT green negative, Fixed Fee neutral zero, Return Fee red positive, Expected Settlement zero.",
+  "rca_of_the_issue": "The original DTO Sales-leg signs and RTO return_fee symptoms appear fixed in preview. Remaining not_fixed verdict is for the explicit sale_dto total_deductions contract: total is rounded independently from fee heads, so some rows differ by ₹0.01 from the visible/API component sum. No mocked APIs were used."
+}
