@@ -1,7 +1,8 @@
-"""One-off Fundle marketing asset generator — 5 LinkedIn infographics.
+"""Fundle marketing infographics — v2 with the ACTUAL Fundle logo as a
+Gemini Nano Banana reference image, and marketplace names rendered in each
+brand's recognizable colour + typographic style.
 
-Uses Gemini Nano Banana (gemini-3.1-flash-image-preview) via the Emergent
-LLM key. Run: `python /app/marketing_assets/generate_infographics.py`.
+Run: python /app/marketing_assets/generate_infographics.py
 """
 import asyncio
 import base64
@@ -10,98 +11,144 @@ import sys
 from pathlib import Path
 
 from dotenv import load_dotenv
-from emergentintegrations.llm.chat import LlmChat, UserMessage
+from emergentintegrations.llm.chat import LlmChat, UserMessage, ImageContent
 
 load_dotenv("/app/backend/.env")
 
 API_KEY = os.getenv("EMERGENT_LLM_KEY")
 if not API_KEY:
-    print("EMERGENT_LLM_KEY missing from /app/backend/.env")
+    print("EMERGENT_LLM_KEY missing")
     sys.exit(1)
 
 OUT_DIR = Path("/app/marketing_assets")
-OUT_DIR.mkdir(exist_ok=True)
+LOGO_PATH = OUT_DIR / "logos" / "fundle.png"
 
-# Consistent brand system for every image
-BRAND = (
-    "Design language: enterprise SaaS infographic for LinkedIn (1200x1200 square, safe margins). "
-    "Fundle brand palette — deep navy #0B1E3B primary background, off-white #F5F1EA canvas panels, "
-    "vibrant coral accent #FF6B4A, mint green #6BC7A0 for positive metrics, warm gold #F1B24A for highlights. "
-    "Typography — bold sans-serif (Nunito Sans style), tight letter-spacing, clear hierarchy. "
-    "Style — flat vector, subtle drop shadows, thin 1px borders, generous whitespace, "
-    "high-contrast readable numbers, clean geometric icons (no emojis, no photos, no faces). "
-    "Include the wordmark 'Powered by Fundle' in the bottom-right in muted gold. "
-    "The composition should feel like a Stripe / Notion / Linear marketing card — premium, minimal, confident."
+# Encode the Fundle logo once — Nano Banana treats it as the mandatory
+# reference to preserve exactly.
+with LOGO_PATH.open("rb") as f:
+    FUNDLE_LOGO_B64 = base64.b64encode(f.read()).decode("utf-8")
+
+BRAND_SYSTEM = (
+    "Design language: enterprise SaaS infographic for LinkedIn (square 1024x1024). "
+    "Deep navy #0B1E3B primary background, off-white #F5F1EA canvas panels, "
+    "coral accent #FF6B4A, mint #6BC7A0 for positives, gold #F1B24A for highlights. "
+    "Bold sans-serif typography (Nunito Sans style), tight letter-spacing, clear hierarchy, "
+    "generous whitespace, thin 1px borders, subtle drop shadows, geometric line icons. "
+    "No emojis, no photos, no faces. Premium Stripe / Linear feel."
+)
+
+FUNDLE_LOGO_RULE = (
+    "MANDATORY: Leave the specified logo region as a clean solid navy #0B1E3B rectangle. "
+    "Do NOT draw the Fundle logo, do NOT draw any text or graphic in the reserved logo area — "
+    "we will composite the actual logo file over that area in post-processing. "
+    "The attached image is only a colour/style reference for the rest of the composition. "
+    "Reserved logo areas per prompt: "
+    "01_platform_overview → top-left 320x140 px block; "
+    "02_modules_inside → bottom-right 290x110 px block; "
+    "03_workflow → top-left 400x210 px block; "
+    "04_multi_marketplace → top-left 280x130 px block; "
+    "05_benefits_roi → top-left 350x150 px block."
+)
+
+MARKETPLACE_STYLE = (
+    "Where marketplace names appear (Myntra, Amazon, AJIO, Nykaa, Tata CLiQ, Flipkart), "
+    "render each name as a clean brand-styled wordmark in its recognisable brand colour: "
+    "  * Myntra — bold hot-pink wordmark 'myntra' with slight italic, on white pill. "
+    "  * amazon — lowercase black wordmark 'amazon' with a small orange upward curved arrow "
+    "underneath (Amazon smile), on white pill. "
+    "  * AJIO — bold uppercase red-black 'AJIO' wordmark on white pill. "
+    "  * Nykaa — bold pink italic 'Nykaa' wordmark on white pill. "
+    "  * Tata CLiQ — 'Tata CLiQ' wordmark, purple, on white pill. "
+    "  * Flipkart — 'Flipkart' wordmark in Flipkart blue, next to a small yellow shopping "
+    "bag icon, on white pill. "
+    "Do NOT use any copyrighted logo files — these are typographic representations."
 )
 
 POSTS = [
     {
         "slug": "01_platform_overview",
-        "title": "Fundle Finance OS at a Glance",
         "prompt": (
             "Hero infographic titled 'Fundle Finance OS — Marketplace Finance, Reconciled'. "
-            "Layout: bold headline at top, a large centered hex-shaped diagram in the middle showing 6 marketplace "
-            "logos-as-tiles (Myntra, Amazon, AJIO, Nykaa, Tata Cliq, Flipkart) flowing into a single 'Fundle' core "
-            "node, which then splits into 4 outcome badges labeled 'Expected Charges', 'Auto Reconciliation', "
-            "'Leakage Detected', 'One-Click Recovery'. Bottom strip shows 3 stat pills: '6 marketplaces live', "
-            "'21,000+ orders reconciled', '<1% unmapped'. No stock photos, no faces."
+            "Header row: place the attached Fundle logo at the top-left of the title bar "
+            "(preserve it exactly). Below the title, a large centered diagram: six "
+            "marketplace pill-tiles arranged in a hexagon (Myntra top-left, amazon top, "
+            "AJIO top-right, Nykaa bottom-right, Tata CLiQ bottom, Flipkart bottom-left), "
+            "each pill flowing an arrow into a central navy diamond labelled 'Finance OS'. "
+            "From the central diamond, four outbound arrows lead to four outcome badges on "
+            "the right side: 'Expected Charges' (gold), 'Auto Reconciliation' (mint), "
+            "'Leakage Detected' (coral), 'One-Click Recovery' (gold). "
+            "Bottom strip has three stat pills on off-white: '6 marketplaces live', "
+            "'21,000+ orders reconciled', '<1% unmapped'. "
+            "Do NOT put the Fundle logo in the centre — only in the top-left header."
         ),
     },
     {
         "slug": "02_modules_inside",
-        "title": "Inside the Platform — 8 Modules Every Finance Team Needs",
         "prompt": (
             "Grid infographic titled 'Inside Fundle — 8 Purpose-Built Modules'. "
-            "Show a clean 4x2 grid of module cards, each card contains a single vector icon, a module name and one line: "
-            "1) Uploads — 'Drop XLSX, we auto-map columns'  "
-            "2) Calculations — 'Rule-based expected charges'  "
-            "3) Sales Ledger — '31-column drillable ledger'  "
-            "4) Reconciliation — 'Match settlement vs expected'  "
-            "5) Discrepancies — 'Every rupee of variance surfaced'  "
-            "6) Recovery — 'Track claims to closure'  "
-            "7) Reports — 'One-click monthly Excel export'  "
-            "8) AI Insights — 'Morning Brief for CFOs'. "
-            "Consistent icon style throughout — thin-stroke line icons in coral, on white cards, over the navy background."
+            "Place the attached Fundle logo at the bottom-right sign-off spot on an "
+            "off-white pill (preserve exactly). Body: a 4x2 grid of eight module cards on "
+            "off-white with thin coral borders. Each card has a single thin-stroke line icon "
+            "in coral, a bold module name, and a one-line description: "
+            "Uploads — 'Drop XLSX, we auto-map columns'; "
+            "Calculations — 'Rule-based expected charges'; "
+            "Sales Ledger — '31-column drillable ledger'; "
+            "Reconciliation — 'Match settlement vs expected'; "
+            "Discrepancies — 'Every rupee of variance surfaced'; "
+            "Recovery — 'Track claims to closure'; "
+            "Reports — 'One-click monthly Excel export'; "
+            "AI Insights — 'Morning Brief for CFOs'. "
+            "No marketplace tiles in this one — modules only."
         ),
     },
     {
         "slug": "03_workflow",
-        "title": "The Workflow — From Upload to Recovery",
         "prompt": (
             "Horizontal workflow diagram titled 'From Excel to Recovered Rupees in 5 Steps'. "
-            "Left-to-right flow with 5 large numbered pill nodes connected by arrows, each pill has an icon and label: "
-            "Step 1 'Upload' (cloud arrow-up), Step 2 'Calculate' (calculator), Step 3 'Reconcile' (two arrows meeting), "
-            "Step 4 'Flag Discrepancies' (magnifying glass on rupee), Step 5 'Recover' (checkmark shield). "
-            "Below each node a tiny caption: 'Drop XLSX', 'Rule engine', 'Match rows', 'Score variance', 'Close claims'. "
-            "Above the flow show a single stat: 'Median cycle time: minutes, not weeks'. Coral arrows on navy."
+            "Place the attached Fundle logo in the top-left header (preserve exactly). "
+            "Subtitle in mint: 'Median cycle time: minutes, not weeks'. "
+            "Below the header: five large numbered pill nodes (1..5) in a left-to-right flow, "
+            "connected by thick coral arrows. Each pill contains a thin-stroke icon and a bold "
+            "label: 1 Upload (cloud arrow-up), 2 Calculate (calculator), 3 Reconcile (two arrows "
+            "meeting), 4 Flag (magnifying glass over ₹ symbol), 5 Recover (checkmark shield). "
+            "Underneath each pill a tiny caption in muted gold: 'Drop XLSX', 'Rule engine', "
+            "'Match rows', 'Score variance', 'Close claims'. "
+            "No marketplace tiles."
         ),
     },
     {
         "slug": "04_multi_marketplace",
-        "title": "One Platform — Six Marketplaces",
         "prompt": (
-            "Infographic titled 'One Ledger. Six Marketplaces. Zero Excel Chaos.'. "
-            "Left half — a semicircle radiating from a central 'Fundle' badge, with 6 marketplace name tiles arranged "
-            "around it: Myntra, Amazon, AJIO, Nykaa, Tata Cliq, Flipkart. Each tile is a rounded rectangle in off-white "
-            "with the marketplace name typeset (no marketplace logos — just typography). "
-            "Right half — a comparison card titled 'Before vs After' with two columns: "
-            "Before — '6 different XLSX formats', '3 people, 4 days', 'commission errors caught monthly (maybe)'. "
-            "After — 'One normalized ledger', '2 clicks, 2 minutes', 'variance caught in real time'. "
-            "Use coral tick marks for the After column, muted grey crosses for Before."
+            "Split-composition infographic titled 'One Ledger. Six Marketplaces. Zero Excel "
+            "Chaos.'. Place the attached Fundle logo in the top-left of the title bar "
+            "(preserve exactly). "
+            "Left half: a semicircle radiating out from a central navy circle labelled 'Finance "
+            "OS'. Six marketplace name-pills arranged around the semicircle in brand style — "
+            "Myntra (hot pink), amazon (with orange smile), AJIO (red-black), Nykaa (pink italic), "
+            "Tata CLiQ (purple), Flipkart (blue with yellow bag). Do NOT place the Fundle logo "
+            "in this centre circle — the centre must say 'Finance OS' text only. "
+            "Right half: a Before-vs-After comparison card with two columns: "
+            "Before column (muted grey ✕ marks): '6 different XLSX formats', '3 people, 4 days', "
+            "'commission errors caught monthly (maybe)'. "
+            "After column (coral ✓ marks): 'One normalised ledger', '2 clicks, 2 minutes', "
+            "'variance caught in real time'."
         ),
     },
     {
         "slug": "05_benefits_roi",
-        "title": "The Benefits — Why Finance Teams Switch",
         "prompt": (
-            "Bold stats infographic titled 'What Fundle Recovers For You'. "
-            "Show 4 large stat blocks in a 2x2 grid, each with a huge coral number, a short caption, and a mini icon: "
-            "Block 1 — '95%+' 'of settlements auto-reconciled' (target icon)  "
-            "Block 2 — '<48h' 'from upload to recovery pack' (clock icon)  "
-            "Block 3 — '6' 'marketplaces on day one' (globe icon)  "
-            "Block 4 — '0' 'lines of Excel formulas required' (spreadsheet crossed out). "
-            "Below the grid a single call-to-action strip in coral: 'Book a demo → fundlezone.com'. "
-            "Premium enterprise SaaS visual language."
+            "Bold ROI stats infographic titled 'What Fundle Recovers For You'. "
+            "Place the attached Fundle logo in the top-left header (preserve exactly, keep its "
+            "original colours). Below the header, a 2x2 grid of four large stat cards on "
+            "off-white with thin borders. Each card has a HUGE coral number, a caption below, "
+            "and a small line icon in the corner: "
+            "Card 1 — '95%+' 'of settlements auto-reconciled' (target icon)  "
+            "Card 2 — '<48h' 'from upload to recovery pack' (clock icon)  "
+            "Card 3 — '6' 'marketplaces on day one' (globe icon)  "
+            "Card 4 — '0' 'lines of Excel formulas required' (spreadsheet with slash icon). "
+            "Bottom of the composition: a full-width coral CTA strip 'Book a demo → "
+            "fundlezone.com' in bold off-white type. "
+            "No marketplace tiles."
         ),
     },
 ]
@@ -110,26 +157,29 @@ POSTS = [
 async def generate_one(post: dict) -> None:
     slug = post["slug"]
     out = OUT_DIR / f"{slug}.png"
-    if out.exists():
-        print(f"[skip] {out.name} already exists")
-        return
-
     chat = LlmChat(
         api_key=API_KEY,
-        session_id=f"fundle-marketing-{slug}",
-        system_message="You are a senior brand designer producing enterprise SaaS marketing infographics.",
+        session_id=f"fundle-marketing-v2-{slug}",
+        system_message="You are a senior brand designer producing enterprise SaaS marketing infographics. Follow logo preservation rules precisely.",
     )
     chat.with_model("gemini", "gemini-3.1-flash-image-preview").with_params(modalities=["image", "text"])
 
-    full_prompt = f"{post['prompt']}\n\n{BRAND}"
-    msg = UserMessage(text=full_prompt)
+    full_prompt = "\n\n".join([
+        post["prompt"],
+        FUNDLE_LOGO_RULE,
+        MARKETPLACE_STYLE,
+        BRAND_SYSTEM,
+    ])
+    msg = UserMessage(
+        text=full_prompt,
+        file_contents=[ImageContent(FUNDLE_LOGO_B64)],
+    )
     print(f"[gen ] {slug} ...")
     text, images = await chat.send_message_multimodal_response(msg)
     if not images:
-        print(f"[fail] {slug}: no image returned — response preview: {(text or '')[:120]}")
+        print(f"[fail] {slug}: no image — {(text or '')[:120]}")
         return
-    img = images[0]
-    image_bytes = base64.b64decode(img["data"])
+    image_bytes = base64.b64decode(images[0]["data"])
     out.write_bytes(image_bytes)
     print(f"[ok  ] {slug} → {out} ({len(image_bytes) // 1024} KB)")
 
