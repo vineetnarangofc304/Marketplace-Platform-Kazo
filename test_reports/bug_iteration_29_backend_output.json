@@ -1,0 +1,157 @@
+{
+  "base": "https://settlement-intel-1.preview.emergentagent.com",
+  "checks": {
+    "count_internal_cancel": 73,
+    "count_return": 92,
+    "count_return_dto": 5443,
+    "count_rto": 1787,
+    "count_sale_dto": 0,
+    "count_sales": 14219,
+    "expected_count_mismatches": {},
+    "return_dto_sign_total_failures_sample": [],
+    "return_sign_failures_sample": [],
+    "rows_fetched_internal_cancel": 73,
+    "rows_fetched_return": 92,
+    "rows_fetched_return_dto": 5443,
+    "rows_fetched_rto": 1787,
+    "rows_fetched_sale_dto": 0,
+    "rows_fetched_sales": 14219,
+    "rto_sign_settlement_failures_sample": [],
+    "sales_dto_rto_cross_refs": {
+      "DTO": {
+        "sales_total": 5210,
+        "samples": [
+          {
+            "calc_order_type": "sales",
+            "commission": 871.36,
+            "fixed_fee": 61.0,
+            "gt_charge": 266.0,
+            "ok": true,
+            "order_id": "BA030AAB-E147-4FA2-847F-8B119D06AEC1",
+            "return_fee": 0.0,
+            "sale_status": "DTO",
+            "sale_txn_type": "Sales",
+            "sales_id": "3fc2c0d5-aca8-448a-91ae-51ecd5e58438"
+          },
+          {
+            "calc_order_type": "sales",
+            "commission": 236.56,
+            "fixed_fee": 61.0,
+            "gt_charge": 207.0,
+            "ok": true,
+            "order_id": "675CD92C-0296-4957-9EA1-40AABCFB4DFC",
+            "return_fee": 0.0,
+            "sale_status": "DTO",
+            "sale_txn_type": "Sales",
+            "sales_id": "157de669-c5be-4d16-ad9a-605eac201425"
+          },
+          {
+            "calc_order_type": "sales",
+            "commission": 205.11,
+            "fixed_fee": 61.0,
+            "gt_charge": 207.0,
+            "ok": true,
+            "order_id": "D0272EB4-4C6C-4C3D-B5FE-6CEDCF75C16C",
+            "return_fee": 0.0,
+            "sale_status": "DTO",
+            "sale_txn_type": "Sales",
+            "sales_id": "515334ab-c535-4201-a667-e7d8a6ed133d"
+          },
+          {
+            "calc_order_type": "sales",
+            "commission": 402.39,
+            "fixed_fee": 61.0,
+            "gt_charge": 207.0,
+            "ok": true,
+            "order_id": "83A996AF-C85B-4240-95A0-BDE7F00525A8",
+            "return_fee": 0.0,
+            "sale_status": "DTO",
+            "sale_txn_type": "Sales",
+            "sales_id": "f1bc31c5-e1b2-4b5e-adfe-0c83293dfb58"
+          },
+          {
+            "calc_order_type": "sales",
+            "commission": 341.19,
+            "fixed_fee": 61.0,
+            "gt_charge": 207.0,
+            "ok": true,
+            "order_id": "F4BFF689-55FC-42AD-AD13-FC5404A96B07",
+            "return_fee": 0.0,
+            "sale_status": "DTO",
+            "sale_txn_type": "Sales",
+            "sales_id": "3c5f2c30-8059-4028-852b-c7649bb37948"
+          }
+        ]
+      },
+      "RTO": {
+        "sales_total": 1918,
+        "samples": [
+          {
+            "calc_order_type": "sales",
+            "commission": 129.2,
+            "fixed_fee": 45.0,
+            "gt_charge": 171.0,
+            "ok": true,
+            "order_id": "A1BDD283-03D4-4486-B5C2-FA092B5158D3",
+            "return_fee": 0.0,
+            "sale_status": "RTO",
+            "sale_txn_type": "Sales",
+            "sales_id": "67dfed4f-b494-445d-bbc0-359357014d19"
+          },
+          {
+            "calc_order_type": "sales",
+            "commission": 85.85,
+            "fixed_fee": 45.0,
+            "gt_charge": 171.0,
+            "ok": true,
+            "order_id": "99D638B3-6D98-458B-97ED-150A32F9DE00",
+            "return_fee": 0.0,
+            "sale_status": "RTO",
+            "sale_txn_type": "Sales",
+            "sales_id": "7f919680-a6fd-4030-abea-1617b3d251e9"
+          },
+          {
+            "calc_order_type": "sales",
+            "commission": 170.26,
+            "fixed_fee": 61.0,
+            "gt_charge": 266.0,
+            "ok": true,
+            "order_id": "C756EB96-5F36-4AA8-818E-752FD6A1EFE5",
+            "return_fee": 0.0,
+            "sale_status": "RTO",
+            "sale_txn_type": "Sales",
+            "sales_id": "c86be9e1-7d8b-4c45-8582-02dda71a0377"
+          },
+          {
+            "calc_order_type": "sales",
+            "commission": 133.96,
+            "fixed_fee": 45.0,
+            "gt_charge": 171.0,
+            "ok": true,
+            "order_id": "BAB60A67-3F80-4B8F-A296-3B484D3DCD01",
+            "return_fee": 0.0,
+            "sale_status": "RTO",
+            "sale_txn_type": "Sales",
+            "sales_id": "ba93cef3-adce-4e5d-8bd3-d59cc1ccb2b4"
+          },
+          {
+            "calc_order_type": "sales",
+            "commission": 364.06,
+            "fixed_fee": 61.0,
+            "gt_charge": 207.0,
+            "ok": true,
+            "order_id": "23B6176D-B84C-4BD3-BA59-2A86D8F19AF2",
+            "return_fee": 0.0,
+            "sale_status": "RTO",
+            "sale_txn_type": "Sales",
+            "sales_id": "090e9198-97aa-4944-b45b-295ed82d8116"
+          }
+        ]
+      }
+    },
+    "sales_negative_fee_failures_sample": [],
+    "sales_return_fee_nonzero_sample": []
+  },
+  "failures": [],
+  "login_email": "admin@fundle.ai"
+}

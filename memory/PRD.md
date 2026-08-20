@@ -440,3 +440,23 @@ Classifier previously mapped Sales+DTO → `sales` (positive charges) and only R
 ### Production note
 User must redeploy production, then click "Run Calculations" on the Calculations page to reprocess stored rows.
 
+
+## Iteration 29 — Revert Sales-leg reversal (2026-02, session 29)
+User clarification: "RTO and DTO this logic is for *Return* flag only .. for *sales* it should be as previous".
+
+### Change
+Reverted iteration_27 `sale_dto` experiment. Reversal logic (Point 2.1 / Point 6) now applies **only when txn_type=Return**:
+- Sales+DTO → `sales` (positive charges as before)
+- Return+DTO → `return_dto` (Point 2.1 signs)
+- Sales+RTO → `sales` (positive charges as before)
+- Return+RTO → `rto` (Point 6 signs, return_fee=0)
+- Internal Cancellation → `internal_cancel` (both legs zero, unchanged)
+
+### Verified (bug_testing_agent iteration_29 — 100% backend + frontend)
+Counts: sales=14,219 · return=92 · return_dto=5,443 · rto=1,787 · internal_cancel=73 · sale_dto=**0** (removed).
+- Sales+DTO rows show POSITIVE Commission/Fixed/GT (normal sale) ✅
+- Sales+RTO rows show POSITIVE Commission/Fixed/GT ✅
+- Return+DTO signs correct per Point 2.1 ✅
+- Return+RTO signs correct per Point 6 with return_fee=0 ✅
+- UI Sales Ledger drawers match expected colours on both leg types.
+

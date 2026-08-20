@@ -1,0 +1,41 @@
+{
+  "verdict": "fixed",
+  "user_reported_bug": "User directive (19-Aug-2026 late): 'RTO and DTO this logic is for *Return* flag only .. for *sales* it should be as previous'. The reversal logic for DTO and RTO must ONLY apply to txn_type=Return rows. Sales-side rows (Sales+DTO, Sales+RTO) must be treated as normal sales (positive fee charges), same as regular Delivered sales.",
+  "summary": "No relevant testing skill found. Focused backend/API and Sales Ledger UI verification confirms DTO/RTO reversal logic now applies only to Return rows: return_dto and rto rows have the required reversal signs, Sales+DTO and Sales+RTO rows remain order_type=sales with positive commission/fixed/GT and zero return fee, and sale_dto count is 0.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/test_reports/bug_iteration_29_backend.py",
+    "/app/test_reports/bug_iteration_29_backend_output.json",
+    "/app/test_reports/bug_iteration_29_ui_playwright.py",
+    "/app/test_reports/bug_verification_29.json",
+    "/app/test_reports/iteration_29.json"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Inspected backend/routers/calculations.py diff: _classify_order now returns 'sales' immediately for non-Return txn_type, so Sales+DTO/Sales+RTO no longer enter return_dto/rto/sale_dto reversal branches; sale_dto calculation branch was removed. No blocking comments."
+  ],
+  "updated_files": [
+    "/app/test_reports/bug_iteration_29_backend.py",
+    "/app/test_reports/bug_iteration_29_backend_output.json",
+    "/app/test_reports/bug_iteration_29_ui_playwright.py",
+    "/app/test_reports/bug_verification_29.json",
+    "/app/test_reports/iteration_29.json"
+  ],
+  "success_rate": {
+    "backend": "100%",
+    "frontend": "100%"
+  },
+  "seed_data_creation": "None. Used existing preview data and admin@fundle.ai / admin123.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Backend evidence: /api/calculations counts matched expected preview counts exactly: sales=14219, return=92, return_dto=5443, rto=1787, internal_cancel=73, sale_dto=0. All 5443 return_dto rows passed comm<0, fixed_fee=0, GT<0, return_fee>0, total_deductions=sum of four heads. All 1787 rto rows passed comm<0, fixed<0, GT<0, return_fee=0, settlement=0. All sales rows had no negative commission/fixed/GT and return_fee=0. /api/sales + /api/calculations/by-sale cross-reference passed 5 Sales+DTO samples out of 5210 total and 5 Sales+RTO samples out of 1918 total with positive commission/fixed/GT and return_fee=0. UI evidence: Sales Ledger drawer for Sales+DTO showed red positive Commission ₹871.36, Fixed Fee ₹61.00, GT ₹266.00, Return Fee ₹0.00 neutral; Return+DTO drawer showed green negative Commission ₹-110.84, Fixed Fee ₹0.00 neutral, green negative GT ₹-171.00, red positive Return Fee ₹112.00.",
+  "rca_of_the_issue": "Prior iteration introduced sale_dto behavior that treated the Sales leg of DTO pairs with reversal signs. The current code reverts classification so only txn_type containing Return can become return_dto/rto/internal_cancel/return; non-Return rows fall through to normal sales arithmetic. No MOCKED APIs used."
+}
