@@ -1,0 +1,38 @@
+{
+  "summary": "Iteration 32 — verification-only round to confirm the PREVIEW build serves /marketing correctly (production kazob2b.fundlezone.com was NOT touched, per instruction). ALL 5 requested checks PASS. (1) GET https://settlement-intel-1.preview.emergentagent.com/marketing -> HTTP 200, HTML contains <div id=\"root\">, <title> = 'Fundle Marketplace AutoPilot · Reconciliation'; after hydration data-testid='marketing-login-page' renders the Marketing Studio login card (no blank page). (2) JS bundle served by the preview is the CRA dev bundle /static/js/bundle.js (6.34 MB, HTTP 200) — grep confirms it contains 'Marketing Studio' (2 hits), 'marketing-login-page', 'marketing-gallery-page' and '/api/marketing/login', proving the Marketing page is compiled into the current build. (3) Sign-in with marketing@fundle.ai / market123 -> data-testid='marketing-gallery-page' visible, 5 post cards rendered (20 elements matching the marketing-post-* testid prefix incl. per-card copy/delete/PNG controls), all 5 images loaded with naturalWidth>0, 0 stuck 'Loading…' placeholders, 0 error elements, 0 pageerrors; session persists across a reload. (4) Regression: main app login (admin@fundle.ai / admin123) redirects to / and the Overview 'Marketplace Finance Command Center' renders with KPIs, 6 portal tiles and charts — no blank page, 0 console/page errors. (5) POST /api/marketing/login returns 200 with a JWT (role=marketing) and POST /api/auth/login returns 200 with an admin JWT — marketing router is live in the preview backend. Backend regression: pytest /app/backend/tests/test_marketing_studio.py -n0 => 17/17 PASSED in 20s. CONCLUSION: the preview build is healthy; the reported production blank page at kazob2b.fundlezone.com/marketing is consistent with a stale deployed build (deployment lag) — the user needs to redeploy production. No code fix required here.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "POST /api/marketing/posts", "issue": "Carry-over from iteration_30/31 (out of scope this round, still unfixed): orphaned PNG left on disk if copy generation fails after image write; upstream LLM errors surface as opaque 500 instead of 502/503."},
+      {"endpoint": "routers/marketing.py", "issue": "Carry-over: dead marketing_user()/require_marketing() stubs and a mid-file `from fastapi import Header` import."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "Marketing.jsx PostCard image fetch", "issue": "Carry-over (still unfixed, not in this round's scope): the axios image GET has no .catch, so a failed image request leaves the card stuck on 'Loading…' forever with no error/retry state. Did not reproduce this round — all 5 images loaded.", "selector": "[data-testid^=\"marketing-post-\"] img", "priority": "LOW"}
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_marketing_studio.py",
+    "/app/test_reports/pytest/iter32_marketing.xml"
+  ],
+  "action_items": [
+    "No code changes needed. Close the ticket as 'code is correct — user must redeploy production'. Preview /marketing is fully functional end-to-end.",
+    "Caveat for the deployment-lag diagnosis: the preview serves CRA's DEV bundle (/static/js/bundle.js), NOT a production main.<hash>.js. I therefore verified 'Marketing Studio' inside the dev bundle, which proves the source is compiled in, but I could not verify a production `yarn build` artifact (I did not run a build to avoid disturbing the running env). If you want hard proof the prod build includes the chunk, run `yarn build` in /app/frontend and grep build/static/js/main.*.js for 'Marketing Studio'.",
+    "Also worth telling the user: /marketing is a client-side SPA route, so the production host must rewrite all unknown paths to index.html. If the deployed host 404s or serves a different index for /marketing, a redeploy alone will not fix it — the SPA fallback must be configured."
+  ],
+  "critical_code_review_comments": [
+    "App.js registers <Route path=\"/marketing\" element={<Marketing />} /> outside the ProtectedRoute Shell — correct for a self-authenticated public route.",
+    "There is no catch-all <Route path=\"*\"> in App.js, so any unmatched path renders a truly blank page. Adding a 404/redirect route would turn the reported production symptom into an explicit 'Not found' screen and make such deployment-lag issues self-diagnosing. Recommended low-effort hardening."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (17/17 pytest + 2/2 live login curls)", "frontend": "100% (all marketing login/gallery/image assertions + main-app Overview regression)"},
+  "seed_data_creation": "None persisted. Pytest suite creates one post and deletes it in the same run; gallery remains at the 5 seeded posts.",
+  "should_call_test_agent_after_fix": false,
+  "should_main_agent_self_test": true,
+  "test_credentials": "marketing@fundle.ai / market123 (Marketing Studio), admin@fundle.ai / admin123 (main app) — both verified working on preview",
+  "context_for_next_testing_agent": "Preview build is HEALTHY as of iteration 32 — /marketing login+gallery, image serving, marketing JWT endpoint and main-app Overview regression all pass; backend marketing suite is 17/17 with `pytest /app/backend/tests/test_marketing_studio.py -n0` (~20s; pytest.ini forces xdist, -n0 preserves create->delete ordering). GOTCHA: correct login testids on /marketing are `marketing-login-email` / `marketing-login-password` / `marketing-login-submit` (NOT marketing-email-input). Card count via [data-testid^=\"marketing-post-\"] returns 20 for 5 posts because per-card controls share the prefix — count [data-testid^=\"marketing-post-\"] img instead. Also: edits to /app/frontend/public/index.html require `sudo supervisorctl restart frontend`. Production URL kazob2b.fundlezone.com was deliberately NOT tested.",
+  "rca_of_the_issue": "Reported symptom: kazob2b.fundlezone.com/marketing renders a blank page. Preview at the same path is fully functional (200, root div, hydrated login card, working marketing API + JWT), and the served JS bundle contains the compiled Marketing page strings. Since nothing in the codebase changed since iteration_31 and /marketing was only added in the current build, the blank production page is attributable to the production host serving an older deployed bundle that has no /marketing route: App.js uses <Routes> with no catch-all, so an unmatched path renders nothing at all — exactly a blank page. Mitigation: redeploy production from the current build, and confirm the production host rewrites unknown paths to index.html (SPA fallback). Optional hardening: add a <Route path=\"*\"> 404 element so a stale build shows an explicit message instead of a blank screen."
+}
