@@ -184,7 +184,7 @@ async def list_users(user=Depends(require_role("admin"))):
 
 
 # Include auth router now; other routers imported below
-from routers import masters, uploads_r, calculations, reconciliation, dashboards, reports, recovery, insights, portals  # noqa: E402
+from routers import masters, uploads_r, calculations, reconciliation, dashboards, reports, recovery, insights, portals, marketing  # noqa: E402
 
 app.include_router(api)
 app.include_router(masters.router, prefix="/api", dependencies=[Depends(current_user)])
@@ -196,6 +196,8 @@ app.include_router(reports.router, prefix="/api", dependencies=[Depends(current_
 app.include_router(recovery.router, prefix="/api", dependencies=[Depends(current_user)])
 app.include_router(insights.router, prefix="/api", dependencies=[Depends(current_user)])
 app.include_router(portals.router, prefix="/api", dependencies=[Depends(current_user)])
+# Marketing router is standalone (its own JWT scope) — do NOT wrap with current_user.
+app.include_router(marketing.router, prefix="/api")
 
 # CORS — when allow_credentials=True, the spec forbids allow_origins=["*"].
 # We honour the CORS_ORIGINS env var when it's an explicit list, but if it's "*"
@@ -252,7 +254,15 @@ async def _startup():
         except Exception as e:
             logger.exception(f"Inline admin seed failed for {email} (deferring to background): {e}")
 
-    # 2) Kick off the rest of bootstrap in the background.
+    # 2) Seed marketing user + import the pre-built 5 infographics into gallery.
+    try:
+        await marketing.seed_marketing_user()
+        await marketing.seed_existing_infographics()
+        logger.info("Marketing user + gallery seeded")
+    except Exception as e:
+        logger.exception(f"Marketing seed failed: {e}")
+
+    # 3) Kick off the rest of bootstrap in the background.
     asyncio.create_task(_bootstrap())
 
 

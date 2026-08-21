@@ -1,0 +1,50 @@
+{
+  "summary": "Iteration 30 — full backend + frontend testing of the new Marketing Studio (/marketing) plus rebrand and main-app regression. Created /app/backend/tests/test_marketing_studio.py (17 pytest cases): marketing login (success/401/JWT role claim), auth enforcement on all endpoints (no token, bad token, marketing token blocked from /api/auth/me), 5 seeded posts with full schema + no _id leakage, all 5 images served as image/png >50KB, generate post (infographic) end-to-end with LLM copy + >=5 '#'-prefixed hashtags + downloadable PNG, delete post (DB + disk), 422 validation, 404s, and admin@fundle.ai regression login + /api/auth/me. Found and fixed one hard blocker: POST /api/marketing/posts returned 500 because the copy model 'gemini/gemini-3-flash' is not a valid model for the Emergent key (litellm BadRequestError). Probed valid alternatives and switched to gemini-3.6-flash — all 17 tests then passed. Frontend: login card, wrong-password error, gallery with 5 cards, all images rendered (naturalWidth>0), copy/download/delete buttons, Create dialog (both infographic and screen_collage) generating a new card at the top of the grid within ~60s, delete, and logout all pass. Main app regression at / works (admin login -> Overview Command Center renders with live KPIs). Two open issues remain for the main agent: (1) rebrand miss — 'Finance OS' still appears in the app shell (sidebar tagline, <title>, meta description); (2) copy-to-clipboard has no error handling — a rejected navigator.clipboard.writeText() shows a false 'copied' toast and raises an unhandled rejection that renders the CRA error overlay, which blocks all clicks on the page in dev.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "POST /api/marketing/posts", "issue": "If copy generation fails after the image is generated, the already-written PNG is left orphaned in /app/marketing_assets/gallery (confirmed one orphan file after the 500). Wrap generation in try/except and unlink the file on failure."},
+      {"endpoint": "POST /api/marketing/posts", "issue": "Upstream LLM/ChatError bubbles up as an unhandled 500 'Internal Server Error' with no actionable detail; should be mapped to 502/503 with a message so the UI toast is meaningful."},
+      {"endpoint": "routers/marketing.py", "issue": "Dead code: marketing_user() and require_marketing() stubs (lines 67-85) are unused; `Header` is imported mid-file (line 239) and Query/asyncio imports are unused."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "Layout.jsx / public/index.html", "issue": "Rebrand miss: 'Finance OS' still shown — sidebar tagline 'Finance OS · Marketplace Recon' (Layout.jsx:35), <title>Fundle Finance OS · Marketplace Reconciliation</title> and meta description in public/index.html. Requirement (b) asked for 'Finance OS' -> 'Marketplace AutoPilot' everywhere.", "selector": "aside .mono.uppercase", "priority": "HIGH"},
+      {"component": "Marketing.jsx PostCard.copyText", "issue": "navigator.clipboard.writeText() is not awaited/caught. Success toast fires even when the write is rejected, and the unhandled promise rejection triggers the CRA dev error overlay (#webpack-dev-server-client-overlay iframe) which intercepts pointer events and blocks every button on the gallery (reproduced: 'Create post' click timed out after the copy click).", "selector": "[data-testid^=\"marketing-post-copy-\"]", "priority": "HIGH"},
+      {"component": "Marketing.jsx PostCard image fetch", "issue": "The axios image GET has no .catch — a failed image request leaves the card stuck on 'Loading…' forever with no error state.", "selector": "[data-testid^=\"marketing-post-\"] img", "priority": "MEDIUM"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "/marketing gallery", "issues": ["Logo overlap fix verified visually — Fundle logo sits cleanly in the left of the header pill with title text to the right on all 5 seeded infographics and on newly generated images; no overlap observed.", "Create dialog copy says 'Generation takes ~15-30s' but measured end-to-end time was ~30-55s; consider updating the hint and adding a progress indicator beyond the 'Generating…' label."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_marketing_studio.py",
+    "/app/test_reports/pytest/iter30_marketing.xml",
+    "/app/test_reports/iter30_probe_copy_model.py"
+  ],
+  "action_items": [
+    "Replace remaining 'Finance OS' strings with 'Marketplace AutoPilot' in /app/frontend/src/components/Layout.jsx:35 and /app/frontend/public/index.html (title + meta description).",
+    "Fix copyText in Marketing.jsx: await navigator.clipboard.writeText with try/catch, only toast on success, fall back to a textarea+execCommand copy — the unhandled rejection currently blocks the whole gallery UI.",
+    "Add .catch to the PostCard image fetch and show an error/retry state instead of a permanent 'Loading…'.",
+    "In create_post, delete the generated PNG and return 502/503 with a readable detail when image or copy generation fails (avoid orphan files and opaque 500s).",
+    "Remove dead stubs/unused imports in routers/marketing.py and move the `from fastapi import Header` to the top."
+  ],
+  "critical_code_review_comments": [
+    "routers/marketing.py:213 hardcoded model id 'gemini-3-flash' was invalid for the Emergent key and caused a 100% failure of post creation — I changed it to 'gemini-3.6-flash' (verified working). Consider sourcing model ids from env/config so a bad id is not a silent runtime 500.",
+    "create_post writes the image to disk before the DB insert with no rollback — non-atomic, leaves orphan files on any downstream failure.",
+    "Marketing JWT correctly uses role='marketing' and is rejected by /api/auth/me (verified) — good scope isolation."
+  ],
+  "updated_files": [
+    "/app/backend/routers/marketing.py (line 213: copy model gemini-3-flash -> gemini-3.6-flash)",
+    "/app/backend/tests/test_marketing_studio.py (new)"
+  ],
+  "success_rate": {"backend": "100% (17/17 after model-id fix; 16/17 before)", "frontend": "95% (all functional flows pass; clipboard error-handling defect + rebrand miss)"},
+  "seed_data_creation": "Created and then deleted two temporary marketing posts (TEST_Recover Marketplace Leakage in Real Time via API, 'TEST UI Recover Marketplace Leakage in Real Time' screen_collage via UI). Gallery is back to exactly 5 seeded posts and 5 files in /app/marketing_assets/gallery.",
+  "should_call_test_agent_after_fix": true,
+  "should_main_agent_self_test": false,
+  "test_credentials": "marketing@fundle.ai / market123 (Marketing Studio), admin@fundle.ai / admin123 (main app)",
+  "context_for_next_testing_agent": "Run `pytest /app/backend/tests/test_marketing_studio.py -n0` (pytest.ini forces xdist, so pass -n0 to preserve create->delete ordering). Backend was fully green after the copy-model fix. Remaining unverified-after-fix items: (a) 'Finance OS' strings in Layout.jsx + public/index.html, (b) clipboard error handling in Marketing.jsx — note that clicking the Copy button in headless Playwright without granted clipboard permissions currently raises an unhandled rejection and the CRA overlay blocks all subsequent clicks; use page.context.grant_permissions(['clipboard-read','clipboard-write']) to work around it until the code is fixed. Generation takes ~30-55s; wait up to 120s.",
+  "rca_of_the_issue": "POST /api/marketing/posts 500: _generate_copy() called chat.with_model('gemini','gemini-3-flash'); litellm rejected it with 'Invalid model name passed in model=gemini/gemini-3-flash'. Image generation (gemini-3.1-flash-image-preview / Nano Banana) succeeded, so the failure occurred after the PNG was written, leaving an orphan file. Probe script confirmed gemini-3.6-flash, gemini-3.5-flash, gemini-3-flash-preview and gemini-2.5-flash all work with the Emergent key; switched to gemini-3.6-flash and creation now returns 200 with non-empty copy and 10-14 hashtags. Clipboard overlay bug: PostCard.copyText calls navigator.clipboard.writeText() without await/catch; when the Permissions API denies the write the rejection is unhandled, react-error-overlay mounts a full-screen iframe that intercepts pointer events, making every gallery button unclickable."
+}

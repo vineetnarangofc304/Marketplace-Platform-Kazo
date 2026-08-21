@@ -1,0 +1,40 @@
+{
+  "summary": "Iteration 31 — targeted retest of the two follow-ups from iteration_30. (1) Backend regression: /app/backend/tests/test_marketing_studio.py run with `pytest -n0` — 17/17 PASSED in 21s (auth, seeded gallery, image serving, generate/delete, validation, admin regression). The gemini-3.6-flash copy-model fix from iteration_30 is intact — live post generation still returns 200 with real copy + hashtags. (2) Rebrand verified: sidebar tagline is now 'MARKETPLACE AUTOPILOT · RECON', <title> = 'Fundle Marketplace AutoPilot · Reconciliation', meta description = 'Fundle Marketplace AutoPilot — Reconciliation Platform', and a global grep of the rendered DOM returns 0 matches for 'Finance OS' (also verified clean on /reports and /reconciliation). NOTE: the index.html change was NOT live until I restarted the frontend — CRA's dev-server was serving a cached copy of public/index.html (see rca_of_the_issue); source was correct all along. (3) Clipboard fix verified thoroughly with 16 assertions: without granted permissions Chromium actually auto-granted the write, so I additionally force-stubbed navigator.clipboard.writeText to reject — the document.execCommand('copy') fallback fires and shows the success toast; when BOTH paths are made to fail the error toast 'Copy failed — please copy manually' renders with NO false success toast. In every case: 0 CRA error-overlay iframes, 0 unhandled promise rejections / pageerrors, and the marketing-create-open dialog trigger remained clickable afterwards. With permissions granted, readClipboardText() exactly equals linkedin_text + '\\n\\n' + hashtags.join(' ') (517 chars, byte-for-byte match). Both iteration_30 blockers are resolved; no new issues found.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "POST /api/marketing/posts", "issue": "Carried over from iteration_30 (not in scope this round, still unfixed): orphaned PNG left on disk if copy generation fails after image write; upstream LLM errors surface as opaque 500 instead of 502/503 with detail."},
+      {"endpoint": "routers/marketing.py", "issue": "Carried over: dead marketing_user()/require_marketing() stubs and mid-file `from fastapi import Header` import."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "Marketing.jsx PostCard image fetch", "issue": "Carried over from iteration_30 (still unfixed, was not in this round's scope): the axios image GET has no .catch, so a failed image request leaves the card stuck on 'Loading…' forever with no error/retry state.", "selector": "[data-testid^=\"marketing-post-\"] img", "priority": "MEDIUM"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "/marketing Create dialog", "issues": ["Carried over: hint says 'Generation takes ~15-30s' but measured end-to-end time in iteration_30 was ~30-55s; consider updating the copy."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_marketing_studio.py",
+    "/app/test_reports/pytest/iter31_marketing.xml"
+  ],
+  "action_items": [
+    "No action required for the two fixes under test — both verified working. (Optional carry-overs from iteration_30 remain: .catch on PostCard image fetch, orphan-PNG cleanup + 502/503 mapping in create_post, dead-code cleanup in routers/marketing.py.)",
+    "Be aware: edits to /app/frontend/public/index.html are NOT picked up by CRA hot reload — HtmlWebpackPlugin snapshots it at dev-server boot. A `sudo supervisorctl restart frontend` is required after changing title/meta. I already restarted it, so the preview is now correct."
+  ],
+  "critical_code_review_comments": [
+    "Marketing.jsx copyText is now correctly structured: guards for missing navigator.clipboard.writeText, awaits inside try, falls back to a hidden textarea + execCommand, and only toasts success on an actual successful path. Verified no unhandled rejection escapes in any branch.",
+    "Minor nit: the execCommand fallback ignores the boolean return value of document.execCommand('copy') — if it returns false (rather than throwing) a false 'copied' toast would still show. Low risk, but `if (!document.execCommand('copy')) throw new Error('execCommand returned false')` would close the last gap.",
+    "Rebrand strings are now sourced correctly; /app/frontend/public/downloads.html still says 'Finance OS' but it is an out-of-app static landing page and was explicitly excluded from scope."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (17/17)", "frontend": "100% (16/16 assertions across rebrand + clipboard phases)"},
+  "seed_data_creation": "None persisted. The pytest suite creates one post and deletes it in the same run; gallery remains at the 5 seeded posts.",
+  "should_call_test_agent_after_fix": false,
+  "should_main_agent_self_test": true,
+  "test_credentials": "marketing@fundle.ai / market123 (Marketing Studio), admin@fundle.ai / admin123 (main app)",
+  "context_for_next_testing_agent": "Both iteration_30 follow-ups (rebrand strings + clipboard error handling) are CONFIRMED FIXED — do not retest unless the files change. Run backend regression with `pytest /app/backend/tests/test_marketing_studio.py -n0` (pytest.ini forces xdist; -n0 preserves create->delete ordering); it takes ~21s and should be 17/17. IMPORTANT gotcha: after any edit to /app/frontend/public/index.html you MUST restart the frontend or you will see the stale cached title/meta and report a false negative. Chromium in this harness auto-grants clipboard-write to the focused tab, so to exercise the execCommand fallback you must stub navigator.clipboard.writeText to reject via page.evaluate + Object.defineProperty. Remaining known-unfixed low-priority items: PostCard image fetch has no .catch, orphan PNG on failed generation, opaque 500 on LLM failure, dead code in routers/marketing.py.",
+  "rca_of_the_issue": "First rebrand run FAILED on <title> ('Fundle Finance OS · Marketplace Reconciliation') and meta description even though /app/frontend/public/index.html on disk already contained the corrected strings. curl against both the public URL and localhost:3000 returned the stale markup, proving it was not a browser cache. Root cause: create-react-app's webpack-dev-server generates index.html via HtmlWebpackPlugin at startup and does not add public/index.html to the watch set, so the in-memory HTML remained the pre-fix version from before the main agent's edit. `sudo supervisorctl restart frontend` regenerated it and all title/meta/DOM-grep assertions then passed. This is an environment/dev-server artifact, not an application defect — a production build would embed the correct strings."
+}

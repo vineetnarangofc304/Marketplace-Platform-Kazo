@@ -460,3 +460,31 @@ Counts: sales=14,219 · return=92 · return_dto=5,443 · rto=1,787 · internal_c
 - Return+RTO signs correct per Point 6 with return_fee=0 ✅
 - UI Sales Ledger drawers match expected colours on both leg types.
 
+
+## Iterations 30–31 — Marketing Studio + Rebrand (2026-02, session 30-31)
+User asked for a password-protected `/marketing` page to house all LinkedIn infographics + a Create button to generate new ones from keywords, and a rebrand of "Finance OS" → "Marketplace AutoPilot".
+
+### Delivered
+- **Rebrand** — sidebar tagline ('Marketplace AutoPilot · Recon'), document `<title>`, meta description all switched. 0 remaining 'Finance OS' matches in the app shell.
+- **Fundle logo** — dark-variant PNG derived from the light logo (only the light-grey letters darkened, coloured icons untouched). Composited pixel-perfect via idempotent PIL overlay (`refresh_overlays.py`). No more clipping / stacking / overlap.
+- **5 seed infographics regenerated** with the "Marketplace AutoPilot" title on every image (01 platform overview, 02 modules, 03 workflow, 04 multi-marketplace, 05 ROI). Real Fundle logo top-left off-white pill; marketplace names rendered brand-recognisably.
+- **/marketing route** — self-contained page with:
+  - Password-gated login (marketing-only JWT scope, seeded user `marketing@fundle.ai` / `market123`).
+  - Gallery grid (3-col responsive) — each card shows image, title, LinkedIn text preview, hashtag chips, Copy/PNG/Delete actions.
+  - **Create dialog** — title, keywords (comma-separated), style (`Infographic` | `Screen Collage`), tone. POST /api/marketing/posts uses Gemini Nano Banana (`gemini-3.1-flash-image-preview`) + Gemini 3.6 Flash for LinkedIn copy generation.
+  - Bulletproof clipboard: navigator.clipboard.writeText → document.execCommand fallback → error toast (never the CRA red overlay).
+
+### Backend
+- `/app/backend/routers/marketing.py` — new router: `POST /login`, `GET /posts`, `POST /posts`, `GET /posts/{id}/image`, `DELETE /posts/{id}`. Own JWT scope `role='marketing'`.
+- `server.py` startup — seeds `marketing_users` + `marketing_posts` (imports the 5 pre-generated infographics into the gallery on first boot; idempotent).
+
+### Verified (testing_agent iteration 30 + 31 — 100% pass)
+- 17/17 backend pytest cases (`/app/backend/tests/test_marketing_studio.py`).
+- Frontend: login, wrong-password error, gallery renders 5 cards, images load, copy/download/delete, Create infographic + screen-collage end-to-end, logout.
+- Regression: `admin@fundle.ai` still logs into the main app; Overview KPIs render; no 'Finance OS' anywhere.
+- Clipboard: 16 assertions cover permission-granted, permission-denied, and both-paths-failing; no CRA overlay, no unhandled rejections.
+
+### Credentials
+- Main app admin: `admin@fundle.ai` / `admin123`
+- Marketing Studio: `marketing@fundle.ai` / `market123`
+

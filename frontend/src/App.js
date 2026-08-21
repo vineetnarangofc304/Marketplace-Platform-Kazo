@@ -15,6 +15,7 @@ import Discrepancies from "@/pages/Discrepancies";
 import Recovery from "@/pages/Recovery";
 import Insights from "@/pages/Insights";
 import Masters from "@/pages/Masters";
+import Marketing from "@/pages/Marketing";
 import { Toaster } from "sonner";
 
 function Shell({ children }) {
@@ -43,6 +44,7 @@ function App() {
               <Route path="/recovery" element={<Shell><Recovery /></Shell>} />
               <Route path="/insights" element={<Shell><Insights /></Shell>} />
               <Route path="/masters" element={<Shell><Masters /></Shell>} />
+              <Route path="/marketing" element={<Marketing />} />
             </Routes>
           </BrowserRouter>
           <Toaster

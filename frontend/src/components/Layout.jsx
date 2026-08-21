@@ -32,7 +32,7 @@ export default function Layout({ children }) {
         <div className="px-5 py-5 border-b border-border bg-slate-900">
           <a href="https://fundle.ai" target="_blank" rel="noopener noreferrer" className="flex flex-col gap-1">
             <img src="/fundle_logo.png" alt="Fundle" className="h-7 w-auto" data-testid="fundle-logo-sidebar" />
-            <div className="text-[10px] mono uppercase tracking-widest text-slate-400 mt-1">Finance OS · Marketplace Recon</div>
+            <div className="text-[10px] mono uppercase tracking-widest text-slate-400 mt-1">Marketplace AutoPilot · Recon</div>
           </a>
         </div>
         <nav className="flex-1 py-3 flex flex-col">
