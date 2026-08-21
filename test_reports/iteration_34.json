@@ -1,0 +1,40 @@
+{
+  "summary": "Iteration 34 — backend-only retest of the two iteration_33 brochure defects. BOTH ARE FIXED. (1) Fallback rebuild: deleted /app/marketing_assets/brochure.pdf, then GET /api/marketing/brochure returned http=200, Content-Type application/pdf, 466,313 bytes, %PDF-1.4 header, 5 /Type /Page objects, in 1.62s — and the file was re-materialised on disk (mtime updated). The iteration_33 503 is gone; the PLAYWRIGHT_BROWSERS_PATH=/pw-browsers module-level pin + inline async_playwright render works inside the supervisor-launched FastAPI process. (2) Page 5 layout: rendered brochure.html with Playwright and measured geometry — all 5 .page elements have scrollHeight == clientHeight (diff 0, zero overflow, was ~99px on p5). Page 5 box is 1122.5px; .stat-grid 287→678, .cta 708→940, .footer 1046→1077 — no pairwise overlap and nothing exceeds the A4 box. Visual screenshot confirms the dark CTA panel is fully rendered (not clipped) and the footer sits on white below it, so the contrast issue is resolved too. Also proved the served PDF is the current fixed HTML: byte-diff against a fresh render of brochure.html shows only 6 differing bytes, all inside /CreationDate and /ModDate. Regression: pytest -n0 on test_brochure.py (9) + test_marketing_studio.py (17) = 26/26 PASSED in 28.65s. No frontend runs (no FE changes).",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "brochure.pdf page 5 (ROI + CTA)", "issues": ["COSMETIC ONLY (not a defect): after the padding trim there is now a ~106px whitespace band between the CTA panel bottom (940) and the footer rule (1046); page reads slightly bottom-light. Optional polish, no overlap/overflow."]},
+      {"screen": "brochure.pdf page 1 (cover)", "issues": ["Still-open cosmetic item carried from iteration_33: large vertical dead space between subtitle and the bottom stat row."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_brochure.py",
+    "/app/backend/tests/test_marketing_studio.py",
+    "/app/test_reports/pytest/iter34.xml",
+    "/app/test_reports/iter34_brochure_visual.py",
+    "/app/test_reports/iter34_pdf_match.py"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "marketing.py: dead code still present — marketing_user() (L73) and require_marketing() (L90) are unused stubs returning the raw Authorization header. Nothing imports them (verified with grep). Remove so they can't be mistakenly wired in as an auth dependency.",
+    "marketing.py L19: `import asyncio` is now unused (the subprocess/to_thread approach was replaced by inline async_playwright). Drop the import.",
+    "marketing.py get_brochure(): the fallback writes directly to the final path ASSETS_DIR/'brochure.pdf'. Two concurrent cold requests will both render into the same file and can serve a truncated PDF. Render to a temp file and os.replace() atomically, and/or guard with an asyncio.Lock.",
+    "marketing.py get_brochure(): the 503 body interpolates the raw exception (`f\"Brochure build failed: {e}\"`) onto a public unauthenticated endpoint — leaks container filesystem paths. Log the detail and return a generic message."
+  ],
+  "updated_files": [
+    "/app/test_reports/iter34_brochure_visual.py",
+    "/app/test_reports/iter34_pdf_match.py"
+  ],
+  "success_rate": {"backend": "100% (26/26 pytest + fallback-rebuild path + page-5 layout all verified)", "frontend": "not tested (no frontend changes this iteration)"},
+  "seed_data_creation": "None persisted. Deleted /app/marketing_assets/brochure.pdf to exercise the fallback; the endpoint regenerated it (466,313 bytes, verified byte-equal to a fresh render apart from PDF timestamps). Temp files cleaned up. test_marketing_studio.py creates and then deletes one Nano-Banana post (self-cleaning).",
+  "should_call_test_agent_after_fix": false,
+  "should_main_agent_self_test": true,
+  "test_credentials": "marketing@fundle.ai / market123 (/marketing), admin@fundle.ai / admin123 (main app), admin@kazo.com / admin123",
+  "context_for_next_testing_agent": "Brochure suite: /app/backend/tests/test_brochure.py (9 cases) + /app/backend/tests/test_marketing_studio.py (17) — run with `cd /app/backend && /root/.venv/bin/python -m pytest tests/test_brochure.py tests/test_marketing_studio.py -n0`. Current brochure.pdf = 466,313 bytes / 5 pages / %PDF-1.4. To retest the fallback: rm /app/marketing_assets/brochure.pdf then curl the endpoint (rebuilds in ~1.6s, no need to run build_brochure.py manually anymore). Layout/geometry harness: /app/test_reports/iter34_brochure_visual.py (needs PLAYWRIGHT_BROWSERS_PATH=/pw-browsers and /root/.venv/bin/python); it prints per-page overflow and page-5 overlap checks and dumps JPEGs to /app/test_reports/ui_iteration_34/. There is no PDF rasteriser in the container (no pdftoppm, no pymupdf) — visual PDF checks are done by rendering brochure.html and separately byte-diffing the PDF against a fresh render (/app/test_reports/iter34_pdf_match.py). Only remaining items are the 4 code-review nits in marketing.py (dead stubs, unused asyncio import, non-atomic PDF write race, exception leak in the 503 body) plus cosmetic cover/page-5 whitespace.",
+  "rca_of_the_issue": "Iteration_33 503 root cause was that the endpoint shelled out to bare `python`, resolving to /usr/local/bin/python whose Playwright browser cache had no Chromium binary. The fix removed the subprocess entirely: marketing.py now does os.environ.setdefault('PLAYWRIGHT_BROWSERS_PATH', '/pw-browsers') at import time and renders inline with `async with async_playwright()`, so the render happens in-process with the correct browser path and without blocking the single uvicorn worker. Page-5 clipping root cause was total content height ~1222px vs the 1123px overflow:hidden .page box plus an absolutely-positioned .footer at bottom:12mm painting over the navy CTA; trimming stat-card padding 10mm→7mm, stat number 50pt→40pt, CTA padding 12mm→8mm and CTA h2 24pt→20pt brought content to 1077px, clearing both the overflow and the overlap."
+}

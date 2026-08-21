@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Fundle Marketplace AutoPilot — E-Brochure</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@300;400;600;700;800;900&display=swap" rel="stylesheet" />
+<style>
+  @page { size: A4; margin: 0; }
+  * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  html, body { margin: 0; padding: 0; font-family: 'Nunito Sans', system-ui, sans-serif; color: #0B1E3B; }
+  .page { width: 210mm; height: 297mm; padding: 22mm 20mm; page-break-after: always; position: relative; overflow: hidden; }
+  .page:last-child { page-break-after: auto; }
+  h1 { font-size: 42pt; line-height: 1.02; font-weight: 900; margin: 0 0 6mm; letter-spacing: -0.01em; }
+  h2 { font-size: 22pt; line-height: 1.15; font-weight: 900; margin: 0 0 6mm; letter-spacing: -0.01em; }
+  h3 { font-size: 12pt; font-weight: 800; margin: 0 0 2mm; text-transform: uppercase; letter-spacing: 0.08em; color: #FF6B4A; }
+  p { font-size: 11pt; line-height: 1.55; color: #334155; margin: 0 0 3mm; }
+  .eyebrow { font-size: 9pt; text-transform: uppercase; letter-spacing: 0.22em; color: #FF6B4A; font-weight: 800; margin-bottom: 4mm; }
+  .logo-row { display: flex; align-items: center; gap: 4mm; margin-bottom: 10mm; }
+  .logo-row img { height: 12mm; }
+  .footer { position: absolute; bottom: 12mm; left: 20mm; right: 20mm; display: flex; justify-content: space-between; align-items: center; font-size: 8.5pt; color: #64748B; border-top: 1px solid #E2E8F0; padding-top: 4mm; }
+  .footer .brand { font-weight: 800; color: #0B1E3B; }
+  .pill { display: inline-block; padding: 1.5mm 4mm; border-radius: 100px; background: #F5F1EA; font-weight: 700; font-size: 9pt; color: #0B1E3B; margin-right: 2mm; margin-bottom: 2mm; }
+
+  /* Cover */
+  .cover { background: #0B1E3B; color: #F5F1EA; padding: 26mm 20mm; }
+  .cover h1 { color: #F5F1EA; font-size: 54pt; letter-spacing: -0.02em; }
+  .cover .eyebrow { color: #FF6B4A; }
+  .cover .subtitle { font-size: 14pt; font-weight: 400; line-height: 1.5; color: #CBD5E1; max-width: 130mm; }
+  .cover .stats { position: absolute; bottom: 26mm; left: 20mm; right: 20mm; display: flex; gap: 6mm; }
+  .cover .stat { flex: 1; padding: 6mm; border-radius: 3mm; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.10); }
+  .cover .stat .n { font-size: 28pt; font-weight: 900; color: #FF6B4A; line-height: 1; }
+  .cover .stat .l { font-size: 9pt; text-transform: uppercase; letter-spacing: 0.14em; color: #94A3B8; font-weight: 700; margin-top: 2mm; }
+  .cover .accent { position: absolute; right: -60mm; top: -60mm; width: 180mm; height: 180mm; border-radius: 50%; background: radial-gradient(circle, rgba(255,107,74,0.28), transparent 70%); }
+  .cover .logo-row img { filter: brightness(0) invert(0.85); }
+
+  /* Two-col grid */
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 6mm 8mm; margin-top: 6mm; }
+  .card { padding: 6mm; border: 1px solid #E2E8F0; border-radius: 4mm; background: #FBFAF7; }
+  .card .icon { width: 8mm; height: 8mm; border-radius: 100px; background: #FFEDE7; color: #FF6B4A; display: inline-flex; align-items: center; justify-content: center; font-weight: 900; font-size: 12pt; margin-bottom: 2mm; }
+  .card h4 { font-size: 12pt; font-weight: 800; margin: 0 0 1mm; }
+  .card p { font-size: 9.5pt; line-height: 1.45; margin: 0; color: #475569; }
+
+  /* Stat cards page */
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6mm; margin-top: 6mm; }
+  .stat-card { padding: 7mm; border-radius: 4mm; background: #F5F1EA; border: 1px solid #E2E8F0; }
+  .stat-card .n { font-size: 40pt; font-weight: 900; color: #FF6B4A; line-height: 1; letter-spacing: -0.02em; }
+  .stat-card .l { font-size: 10.5pt; font-weight: 700; margin-top: 2.5mm; color: #0B1E3B; }
+  .stat-card .d { font-size: 8.5pt; color: #64748B; margin-top: 2mm; line-height: 1.4; }
+
+  /* Workflow */
+  .flow { display: flex; align-items: stretch; gap: 3mm; margin-top: 10mm; }
+  .flow .step { flex: 1; padding: 6mm 4mm; text-align: center; background: #F5F1EA; border-radius: 3mm; border: 1px solid #E2E8F0; position: relative; }
+  .flow .step .n { display: inline-flex; width: 10mm; height: 10mm; border-radius: 100px; background: #0B1E3B; color: #F5F1EA; align-items: center; justify-content: center; font-weight: 900; font-size: 12pt; margin-bottom: 3mm; }
+  .flow .step h4 { font-size: 11pt; font-weight: 800; margin: 0 0 1mm; }
+  .flow .step p { font-size: 8.5pt; margin: 0; color: #475569; line-height: 1.4; }
+  .flow .arrow { align-self: center; color: #FF6B4A; font-weight: 900; font-size: 14pt; }
+
+  /* Marketplaces */
+  .mp-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6mm; margin-top: 10mm; }
+  .mp-tile { padding: 10mm 4mm; text-align: center; border-radius: 3mm; background: #FBFAF7; border: 1px solid #E2E8F0; font-weight: 800; font-size: 14pt; letter-spacing: 0.02em; }
+  .mp-tile.myntra { color: #FF3F6C; }
+  .mp-tile.amazon { color: #131A22; }
+  .mp-tile.amazon::after { content: "→"; display: block; color: #FF9900; font-size: 12pt; margin-top: 1mm; }
+  .mp-tile.ajio { color: #C11E38; }
+  .mp-tile.nykaa { color: #E10071; font-style: italic; }
+  .mp-tile.tatacliq { color: #5A2680; }
+  .mp-tile.flipkart { color: #2874F0; }
+
+  /* Before/after */
+  .ba { display: grid; grid-template-columns: 1fr 1fr; gap: 6mm; margin-top: 8mm; }
+  .ba .col { padding: 8mm 6mm; border-radius: 4mm; }
+  .ba .before { background: #F1F5F9; border: 1px solid #E2E8F0; }
+  .ba .after { background: #FFEDE7; border: 1px solid #FFCFC0; }
+  .ba .col h4 { font-size: 12pt; margin: 0 0 4mm; }
+  .ba .before h4 { color: #64748B; }
+  .ba .after h4 { color: #C2410C; }
+  .ba .col ul { margin: 0; padding: 0; list-style: none; }
+  .ba .col li { font-size: 10pt; padding: 2mm 0 2mm 8mm; position: relative; color: #334155; }
+  .ba .before li::before { content: "✕"; position: absolute; left: 0; color: #94A3B8; font-weight: 900; }
+  .ba .after li::before { content: "✓"; position: absolute; left: 0; color: #FF6B4A; font-weight: 900; }
+
+  /* CTA */
+  .cta { margin-top: 8mm; padding: 8mm; border-radius: 6mm; background: linear-gradient(135deg, #0B1E3B 0%, #142B57 100%); color: #F5F1EA; text-align: center; position: relative; overflow: hidden; }
+  .cta::before { content: ""; position: absolute; top: -30mm; right: -30mm; width: 90mm; height: 90mm; border-radius: 50%; background: radial-gradient(circle, rgba(255,107,74,0.35), transparent 70%); }
+  .cta h2 { color: #F5F1EA; font-size: 20pt; margin: 0 0 3mm; position: relative; }
+  .cta p { color: #CBD5E1; font-size: 10pt; max-width: 130mm; margin: 0 auto 4mm; position: relative; }
+  .cta .btn { display: inline-block; padding: 3mm 8mm; background: #FF6B4A; color: #fff; border-radius: 100px; font-weight: 800; font-size: 11pt; position: relative; }
+  .cta .contact { margin-top: 4mm; font-size: 8.5pt; color: #94A3B8; position: relative; }
+</style>
+</head>
+<body>
+
+<!-- Page 1: Cover -->
+<section class="page cover">
+  <div class="accent"></div>
+  <div class="logo-row">
+    <img src="/app/marketing_assets/logos/fundle.png" alt="Fundle" />
+  </div>
+  <div class="eyebrow">Powered by Fundle · An E-Brochure</div>
+  <h1>Marketplace<br/>AutoPilot.</h1>
+  <p class="subtitle">
+    The finance operating system for marketplace sellers.<br/>
+    Reconcile every rupee across Myntra, Amazon, AJIO, Nykaa, Tata CLiQ and Flipkart —
+    catch commission leakage, GT reversals and settlement gaps before your CFO does.
+  </p>
+  <div class="stats">
+    <div class="stat"><div class="n">6</div><div class="l">Marketplaces</div></div>
+    <div class="stat"><div class="n">21k+</div><div class="l">Orders Reconciled</div></div>
+    <div class="stat"><div class="n">&lt;1%</div><div class="l">Unmapped Rows</div></div>
+    <div class="stat"><div class="n">48h</div><div class="l">Upload to Recovery</div></div>
+  </div>
+</section>
+
+<!-- Page 2: Problem & Solution -->
+<section class="page">
+  <div class="logo-row"><img src="/app/marketing_assets/logos/fundle.png" alt="Fundle" /></div>
+  <div class="eyebrow">The Problem</div>
+  <h2>Marketplace finance is a spreadsheet crime scene.</h2>
+  <p>Every marketplace hands you a different XLSX, in a different format, at a different cutoff, with fees and commissions that are almost — but not quite — what the contract says. Every month, finance teams re-invent the same reconciliation from scratch. The rupees you're owed get lost in VLOOKUPs.</p>
+
+  <div class="eyebrow" style="margin-top: 10mm;">The Solution</div>
+  <h2>One ledger. Six marketplaces. Every rupee reconciled.</h2>
+  <p>Marketplace AutoPilot ingests every marketplace file natively, computes what each order <em>should</em> have settled at from your contract rate card, and flags the variance — before the month closes. Discrepancies come out as recovery-ready claim packs.</p>
+
+  <div class="ba">
+    <div class="col before">
+      <h4>Before</h4>
+      <ul>
+        <li>6 different XLSX formats</li>
+        <li>3 people, 4 days a month</li>
+        <li>Commission errors caught monthly — maybe</li>
+        <li>Recovery claims raised sporadically</li>
+      </ul>
+    </div>
+    <div class="col after">
+      <h4>After</h4>
+      <ul>
+        <li>One normalised ledger</li>
+        <li>2 clicks, 2 minutes</li>
+        <li>Variance caught in real time</li>
+        <li>Recovery pack exported in one click</li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer"><span class="brand">Fundle · Marketplace AutoPilot</span><span>Page 2 of 5</span></div>
+</section>
+
+<!-- Page 3: Modules -->
+<section class="page">
+  <div class="logo-row"><img src="/app/marketing_assets/logos/fundle.png" alt="Fundle" /></div>
+  <div class="eyebrow">Inside the Platform</div>
+  <h2>Eight purpose-built modules.<br/>One operating system.</h2>
+
+  <div class="cols">
+    <div class="card"><div class="icon">↑</div><h4>Uploads</h4><p>Drop marketplace XLSX. Columns are auto-mapped. Amazon, Myntra, AJIO, Nykaa, Tata CLiQ and Flipkart parsers ship on day one.</p></div>
+    <div class="card"><div class="icon">Σ</div><h4>Calculations</h4><p>Rule-based expected charges — category, sub-category, price band, level, zone. No hardcoding, no guesswork.</p></div>
+    <div class="card"><div class="icon">☰</div><h4>Sales Ledger</h4><p>31-column drillable ledger. Filter by order type, SKU, marketplace, month. Export in one click.</p></div>
+    <div class="card"><div class="icon">⇄</div><h4>Reconciliation</h4><p>Match settlement lines against expected charges at the SKU × line level. Every rupee accounted for.</p></div>
+    <div class="card"><div class="icon">!</div><h4>Discrepancies</h4><p>Every variance surfaced, scored by severity, tagged with a reason and a rupee number.</p></div>
+    <div class="card"><div class="icon">✓</div><h4>Recovery</h4><p>Turn discrepancies into claim packs, track them from raise to closure, and never lose a rupee.</p></div>
+    <div class="card"><div class="icon">↧</div><h4>Reports</h4><p>Monthly, quarterly, YTD and annual reports. One-click Excel export with all 31 fields.</p></div>
+    <div class="card"><div class="icon">✦</div><h4>AI Insights</h4><p>A Morning Brief that reads your ledger before you do. Anomalies flagged before your CFO asks.</p></div>
+  </div>
+  <div class="footer"><span class="brand">Fundle · Marketplace AutoPilot</span><span>Page 3 of 5</span></div>
+</section>
+
+<!-- Page 4: Workflow + Marketplaces -->
+<section class="page">
+  <div class="logo-row"><img src="/app/marketing_assets/logos/fundle.png" alt="Fundle" /></div>
+  <div class="eyebrow">The Workflow</div>
+  <h2>From Excel to recovered rupees — in 5 steps.</h2>
+
+  <div class="flow">
+    <div class="step"><div class="n">1</div><h4>Upload</h4><p>Drop XLSX</p></div>
+    <div class="arrow">→</div>
+    <div class="step"><div class="n">2</div><h4>Calculate</h4><p>Rule engine</p></div>
+    <div class="arrow">→</div>
+    <div class="step"><div class="n">3</div><h4>Reconcile</h4><p>Match rows</p></div>
+    <div class="arrow">→</div>
+    <div class="step"><div class="n">4</div><h4>Flag</h4><p>Score variance</p></div>
+    <div class="arrow">→</div>
+    <div class="step"><div class="n">5</div><h4>Recover</h4><p>Close claims</p></div>
+  </div>
+
+  <div class="eyebrow" style="margin-top: 16mm;">Marketplaces Supported</div>
+  <h2>Native parsers. Day one.</h2>
+
+  <div class="mp-grid">
+    <div class="mp-tile myntra">Myntra</div>
+    <div class="mp-tile amazon">amazon</div>
+    <div class="mp-tile ajio">AJIO</div>
+    <div class="mp-tile nykaa">Nykaa</div>
+    <div class="mp-tile tatacliq">Tata CLiQ</div>
+    <div class="mp-tile flipkart">Flipkart</div>
+  </div>
+  <div class="footer"><span class="brand">Fundle · Marketplace AutoPilot</span><span>Page 4 of 5</span></div>
+</section>
+
+<!-- Page 5: ROI + CTA -->
+<section class="page">
+  <div class="logo-row"><img src="/app/marketing_assets/logos/fundle.png" alt="Fundle" /></div>
+  <div class="eyebrow">The ROI</div>
+  <h2>What Marketplace AutoPilot<br/>recovers for you.</h2>
+
+  <div class="stat-grid">
+    <div class="stat-card">
+      <div class="n">95%+</div>
+      <div class="l">of settlements auto-reconciled</div>
+      <div class="d">The moment your marketplace file lands, the rule engine has already computed expected charges for every line.</div>
+    </div>
+    <div class="stat-card">
+      <div class="n">&lt;48h</div>
+      <div class="l">from upload to recovery pack</div>
+      <div class="d">Discrepancies are exported straight to the marketplace claims format — no rework.</div>
+    </div>
+    <div class="stat-card">
+      <div class="n">6</div>
+      <div class="l">marketplaces on day one</div>
+      <div class="d">Myntra, Amazon, AJIO, Nykaa, Tata CLiQ, Flipkart — native parsers, no custom code.</div>
+    </div>
+    <div class="stat-card">
+      <div class="n">0</div>
+      <div class="l">lines of Excel formulas required</div>
+      <div class="d">Finance teams stop maintaining private spreadsheets. Everything lives in the ledger.</div>
+    </div>
+  </div>
+
+  <div class="cta">
+    <h2>Ready to see it live?</h2>
+    <p>A 20-minute walkthrough is all it takes to know if Marketplace AutoPilot fits your ops.</p>
+    <span class="btn">Book a demo · fundlezone.com</span>
+    <div class="contact">hello@fundlezone.com · +91 · fundlezone.com/marketing</div>
+  </div>
+  <div class="footer"><span class="brand">Fundle · Marketplace AutoPilot</span><span>Page 5 of 5</span></div>
+</section>
+
+</body>
+</html>

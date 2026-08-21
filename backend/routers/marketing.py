@@ -37,6 +37,12 @@ from db import db
 
 load_dotenv("/app/backend/.env")
 
+# Playwright looks up browsers under $PLAYWRIGHT_BROWSERS_PATH; the container
+# actually stores them at /pw-browsers but the env var isn't inherited by the
+# supervisor-managed FastAPI process. Pin it here so the on-the-fly brochure
+# renderer finds Chromium without requiring an env change.
+os.environ.setdefault("PLAYWRIGHT_BROWSERS_PATH", "/pw-browsers")
+
 router = APIRouter(prefix="/marketing", tags=["marketing"])
 
 JWT_SECRET = os.environ["JWT_SECRET"]
@@ -295,6 +301,38 @@ async def delete_post(post_id: str, _: str = Depends(_auth)):
         path.unlink()
     await db.marketing_posts.delete_one({"id": post_id})
     return {"ok": True}
+
+
+@router.get("/brochure")
+async def get_brochure():
+    """Public download for the platform e-brochure (no auth — shareable with
+    prospects). Returns the pre-built PDF; if the file is missing on disk it
+    is built on the fly via Playwright."""
+    pdf = ASSETS_DIR / "brochure.pdf"
+    if not pdf.exists():
+        try:
+            from playwright.async_api import async_playwright  # local import; heavy
+            html_path = ASSETS_DIR / "brochure.html"
+            async with async_playwright() as p:
+                browser = await p.chromium.launch()
+                page = await (await browser.new_context()).new_page()
+                await page.goto(f"file://{html_path.resolve()}", wait_until="networkidle")
+                await page.pdf(
+                    path=str(pdf),
+                    format="A4",
+                    print_background=True,
+                    margin={"top": "0", "right": "0", "bottom": "0", "left": "0"},
+                )
+                await browser.close()
+        except Exception as e:
+            raise HTTPException(503, f"Brochure build failed: {e}")
+    if not pdf.exists():
+        raise HTTPException(404, "Brochure missing")
+    return FileResponse(
+        str(pdf),
+        media_type="application/pdf",
+        filename="Fundle-Marketplace-AutoPilot-Brochure.pdf",
+    )
 
 
 # ---------- Seed helpers (called from server.py startup) ----------

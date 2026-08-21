@@ -1,0 +1,40 @@
+{
+  "summary": "Iteration 33 — tested the new public brochure endpoint + frontend Brochure button and ran regressions. Created /app/backend/tests/test_brochure.py (9 cases, all pass): GET /api/marketing/brochure returns 200, Content-Type application/pdf, Content-Disposition attachment with filename 'Fundle-Marketplace-AutoPilot-Brochure.pdf', body starts with %PDF- and is 478,819 bytes (>300KB), exactly 5 /Type /Page objects, and works with NO auth header as well as with a bogus bearer token (public, as intended). Regression: all 17 cases in test_marketing_studio.py pass with -n0. UI: /marketing login -> 'Brochure' button (data-testid marketing-download-brochure) visible, href=<BASE>/api/marketing/brochure, target=_blank; browser-context fetch returned 200 / application/pdf / 478,819 bytes. Gallery still shows 5 seeded posts, 0 broken images. Main-app admin@fundle.ai/admin123 login lands on Overview (Command Center renders with KPIs). Two defects found: (1) the router's on-the-fly fallback build path is broken (503), (2) brochure page 5 content overflows the A4 box and the footer overlaps the dark CTA panel.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "GET /api/marketing/brochure (fallback build path)", "issue": "With /app/marketing_assets/brochure.pdf deleted, the endpoint returns 503 in ~1.7s instead of regenerating. Root cause: subprocess.run(['python', ...]) resolves to /usr/local/bin/python whose Playwright has no browsers installed -> 'Executable doesn't exist at /root/.cache/ms-playwright/chromium_headless_shell-1208/...'. The same script succeeds with /root/.venv/bin/python. Fix: invoke sys.executable (or /root/.venv/bin/python) and run it via asyncio.to_thread / anyio.to_thread so the blocking 90s subprocess doesn't stall the single-worker event loop. PDF was restored after the test; primary path serves 200."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "brochure.pdf page 5 (ROI + CTA)", "issues": ["Content overflows the fixed 297mm .page box by ~99px; since .page has overflow:hidden the bottom of the CTA panel is clipped in the rendered PDF", "The absolutely-positioned .footer (bottom:12mm) sits on top of the dark navy CTA panel: the navy 'Fundle · Marketplace AutoPilot' brand text is effectively invisible on navy and 'Page 5 of 5' (#64748B on #0B1E3B) fails contrast", "Suggested fix: reduce .cta margin-top (12mm) / padding (12mm) on page 5 or add bottom padding so the CTA ends above the footer band"]},
+      {"screen": "brochure.pdf page 1 (cover)", "issues": ["Large ~30% vertical dead space between the subtitle paragraph and the bottom stat row — cover reads sparse; consider tightening or adding a visual element"]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_brochure.py",
+    "/app/test_reports/pytest/iter33_brochure.xml",
+    "/app/test_reports/pytest/iter33_marketing.xml",
+    "/app/test_reports/iter33_brochure_visual.py"
+  ],
+  "action_items": [
+    "Fix the brochure fallback build: use sys.executable (venv python) instead of bare 'python', and run the subprocess off the event loop (asyncio.to_thread); return a clearer error body than plain 503.",
+    "Fix brochure page 5 overflow/footer overlap (CTA clipped, footer text unreadable on navy panel)."
+  ],
+  "critical_code_review_comments": [
+    "marketing.py get_brochure(): blocking subprocess.run(timeout=90) inside an async endpoint blocks the whole uvicorn worker (single --workers 1); wrap in asyncio.to_thread.",
+    "marketing.py: dead code — marketing_user() and require_marketing() are unused stubs that return the raw Authorization header; remove to avoid someone wiring them in as a fake dependency.",
+    "marketing.py imports asyncio but never uses it (would be used by the to_thread fix above)."
+  ],
+  "updated_files": ["/app/backend/tests/test_brochure.py", "/app/test_reports/iter33_brochure_visual.py"],
+  "success_rate": {"backend": "100% (26/26: 9 brochure + 17 marketing_studio) on the served path; fallback-build path fails", "frontend": "100% (Brochure button, href/target, PDF network fetch, gallery, admin login)"},
+  "seed_data_creation": "None. Regenerated /app/marketing_assets/brochure.pdf (identical 478,819 bytes) after testing the fallback path; file restored.",
+  "should_call_test_agent_after_fix": false,
+  "should_main_agent_self_test": true,
+  "test_credentials": "marketing@fundle.ai / market123 (/marketing), admin@fundle.ai / admin123 (main app)",
+  "context_for_next_testing_agent": "Brochure regression suite lives at /app/backend/tests/test_brochure.py (run with -n0). It also covers the marketing gallery listing/images and admin login. To retest the fallback path: mv /app/marketing_assets/brochure.pdf away, hit /api/marketing/brochure, then restore with `python /app/marketing_assets/build_brochure.py` (must use /root/.venv/bin/python — system python lacks playwright browsers). /app/test_reports/iter33_brochure_visual.py renders each brochure.html page to JPEG and prints overflow diagnostics.",
+  "rca_of_the_issue": "Fallback 503: the FastAPI process shells out to 'python' which PATH-resolves to /usr/local/bin/python (system 3.11). Playwright is installed there but its browser cache (/root/.cache/ms-playwright/chromium_headless_shell-1208) has no binary, so chromium.launch() raises and subprocess exits non-zero -> check=True -> HTTPException(503). Page-5 clipping: .page is a fixed 297mm box with overflow:hidden while .cta adds 12mm margin-top + 12mm padding, pushing total content to ~1222px vs the 1123px page height; .footer is absolutely positioned at bottom:12mm so it renders over the navy CTA panel."
+}

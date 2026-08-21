@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Download, Copy, Trash2, LogOut, Sparkles } from "lucide-react";
+import { Plus, Download, Copy, Trash2, LogOut, Sparkles, FileDown } from "lucide-react";
 
 const BASE = process.env.REACT_APP_BACKEND_URL;
 const TOKEN_KEY = "fundle_marketing_token";
@@ -281,6 +281,15 @@ export default function Marketing() {
             <h1 className="text-2xl font-black text-slate-900">Marketing Studio</h1>
           </div>
           <div className="flex items-center gap-3">
+            <a
+              href={`${BASE}/api/marketing/brochure`}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1 text-sm font-semibold text-slate-700 hover:text-slate-900 rounded-full px-4 py-2 border border-slate-300 bg-white"
+              data-testid="marketing-download-brochure"
+            >
+              <FileDown size={16} /> Brochure
+            </a>
             <CreatePostDialog onCreated={(p) => setPosts([p, ...posts])} />
             <button onClick={logout} className="text-slate-500 hover:text-slate-900" data-testid="marketing-logout" aria-label="Logout">
               <LogOut size={18} />
