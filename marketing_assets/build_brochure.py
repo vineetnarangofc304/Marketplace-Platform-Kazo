@@ -1,8 +1,14 @@
 """Render /app/marketing_assets/brochure.html to a print-ready A4 PDF.
 Uses Playwright (already available in the container)."""
 import asyncio
+import os
 from pathlib import Path
-from playwright.async_api import async_playwright
+
+# Ensure Playwright finds the container-installed browser (same pin used by
+# the FastAPI process — see routers/marketing.py).
+os.environ.setdefault("PLAYWRIGHT_BROWSERS_PATH", "/pw-browsers")
+
+from playwright.async_api import async_playwright  # noqa: E402
 
 SRC = Path("/app/marketing_assets/brochure.html").resolve()
 OUT = Path("/app/marketing_assets/brochure.pdf")
