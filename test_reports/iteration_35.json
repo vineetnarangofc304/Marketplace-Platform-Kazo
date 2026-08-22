@@ -1,0 +1,34 @@
+{
+  "summary": "Backend-only verification of the marketing gallery disk-persistence fix (seed_existing_infographics() image-idempotency). Independently reproduced BOTH production scenarios: (A) gallery/ wiped with Mongo rows intact -> after `supervisorctl restart backend` exactly 5 PNGs re-materialised under the SAME existing UUID filenames (740KB-902KB, %PNG magic verified), DB rows byte-identical (id + image_file unchanged, no new UUIDs), GET /api/marketing/posts returned exactly 5 items and all 5 /image endpoints returned 200 / image/png / >500KB. (B) first-boot: marketing_posts collection dropped AND gallery/ wiped -> restart recreated 5 Mongo rows + 5 matching disk files, all /image endpoints 200. A third restart with everything present was a verified no-op (idempotent). Brochure regression: /api/marketing/brochure returns 200 with %PDF-1.4 header and 5 pages. Regression suites test_marketing_studio.py + test_brochure.py: 26/26 passed with -n0. No frontend testing per request. Total 33/33 backend tests passing, zero backend errors in supervisor logs.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "startup seed_existing_infographics()", "issue": "Repair check is existence-only (`if not dst.exists()`). A zero-byte or truncated gallery PNG (partial write / interrupted copy) would NOT be repaired on restart and /image would serve a corrupt file with HTTP 200. Consider comparing st_size against the committed source."},
+      {"endpoint": "GET /api/marketing/posts/{id}/image", "issue": "Known/scoped-out: user-created posts (POST /posts) remain ephemeral — their generated PNG is not re-materialisable, so after a redeploy those rows exist in Mongo but the image 404s. Confirmed still true; main agent has deferred this."}
+    ]
+  },
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_marketing_disk_persistence.py",
+    "/app/backend/tests/test_marketing_studio.py",
+    "/app/backend/tests/test_brochure.py",
+    "/app/test_reports/pytest/marketing_disk_persistence.xml"
+  ],
+  "action_items": [
+    "Optional hardening: in seed_existing_infographics(), also re-copy when the on-disk file size differs from the committed source (guards against truncated/0-byte files), not just when it is missing.",
+    "Future iteration (already acknowledged): persist user-generated post images (GridFS / object storage / base64 in Mongo) so Create-dialog posts survive redeploys."
+  ],
+  "critical_code_review_comments": [
+    "seed_existing_infographics() correctly builds a title->row map with a projection excluding _id and reuses the existing image_file, so no UUID churn — the fix is sound and verified.",
+    "GALLERY_DIR.mkdir(parents=True, exist_ok=True) at import time means a fresh container with no gallery dir still works — verified implicitly by the wipe test.",
+    "Disk-existence repair is O(5) file stats per startup; negligible cost, safe to keep unconditional."
+  ],
+  "updated_files": ["/app/backend/tests/test_marketing_disk_persistence.py"],
+  "success_rate": {"backend": "100% (33/33)", "frontend": "not tested (out of scope)"},
+  "seed_data_creation": "No new seed data. Tests intentionally dropped db.marketing_posts once to exercise first-boot; the startup seeder recreated all 5 rows (with new UUIDs, which is expected for that scenario). Gallery is currently healthy: 5 PNGs matching the 5 DB image_file values.",
+  "should_call_test_agent_after_fix": false,
+  "should_main_agent_self_test": true,
+  "test_credentials": "marketing@fundle.ai / market123 (marketing scope), admin@fundle.ai / admin123 (admin) — both worked",
+  "context_for_next_testing_agent": "New reusable regression file: /app/backend/tests/test_marketing_disk_persistence.py. It restarts the backend 3 times (~46s total) and DROPS db.marketing_posts, so run it with -n0 and only when a backend restart is acceptable. It re-seeds itself, so end state is always healthy. Because it drops the collection, seeded post UUIDs change between runs — never hardcode gallery UUIDs in other tests.",
+  "rca_of_the_issue": "Original bug: gallery PNGs lived only on the stateless container's disk while Mongo persisted marketing_posts rows referencing UUID.png filenames; every redeploy wiped the disk so GET /posts/{id}/image raised 404 'Image missing on disk'. The fix makes startup seeding image-idempotent: for each of the 5 seeded titles it looks up the existing DB row and, if GALLERY_DIR/image_file is absent, copies the committed source /app/marketing_assets/0X_<slug>.png into that exact filename without touching the DB row. Verified by wiping gallery/ + restarting: files reappeared with identical UUIDs and all image endpoints returned 200."
+}

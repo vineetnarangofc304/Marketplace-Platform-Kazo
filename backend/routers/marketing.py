@@ -353,12 +353,17 @@ async def seed_marketing_user() -> None:
 
 
 async def seed_existing_infographics() -> None:
-    """One-time: import the 5 pre-generated LinkedIn infographics into
-    the marketing gallery so the user sees them the first time they log in.
-    Idempotent — skips if the exact title is already present.
+    """Ensure the 5 pre-built LinkedIn infographics are always available on
+    disk AND in the DB. This runs on every startup and is idempotent:
+
+    * If neither DB row nor disk file exists → create both.
+    * If DB row exists but disk file is missing (e.g. fresh production
+      container where the volume was wiped) → re-materialise the disk file
+      under the existing image_file name so /image endpoints keep working.
+    * If both exist → do nothing.
     """
-    existing_titles = {
-        d["title"] async for d in db.marketing_posts.find({}, {"title": 1})
+    existing_by_title: Dict[str, Dict[str, Any]] = {
+        d["title"]: d async for d in db.marketing_posts.find({}, {"_id": 0, "title": 1, "image_file": 1})
     }
     seeds = [
         (
@@ -393,11 +398,17 @@ async def seed_existing_infographics() -> None:
         ),
     ]
     for src_slug, title, keywords, style in seeds:
-        if title in existing_titles:
-            continue
         src = ASSETS_DIR / f"{src_slug}.png"
         if not src.exists():
             continue
+        existing = existing_by_title.get(title)
+        if existing:
+            # DB row already there — just ensure the image file is on disk.
+            dst = GALLERY_DIR / existing["image_file"]
+            if not dst.exists():
+                dst.write_bytes(src.read_bytes())
+            continue
+        # New row: create both DB entry and disk file.
         pid = str(uuid.uuid4())
         fname = f"{pid}.png"
         dst = GALLERY_DIR / fname
