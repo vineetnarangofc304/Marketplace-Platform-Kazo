@@ -1,0 +1,22 @@
+{
+  "summary": "Frontend-only retest of the legacy-upload (HTTP 410) download toast fix on /uploads as admin@fundle.ai. Verified: (1) clicking Download for the legacy upload (id 2ae44043-..., no db.upload_files row) now surfaces a sonner error toast with the exact FastAPI detail \"Raw file for this upload wasn't captured (uploaded before raw-file store was enabled). Re-upload the file to enable download.\" and no file download occurs; (2) regression — a newly uploaded openpyxl .xlsx (2 accepted rows) downloads successfully via the Download button, downloaded bytes are byte-identical (md5 match, 5141 bytes) to the source file; (3) legacy toast repeats reliably on subsequent clicks (tested 3x, incl. after a successful download); (4) no CRA red overlay, no pageerror/unhandled rejection (only expected network console entries for the 410/400 HTTP responses), portal switcher and delete button remained functional after the failed download. Test data cleaned up (new upload deleted, 0 TEST_SKU sales rows remain).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": ["/app/test_reports/ui_iteration_37/legacy_toast.jpeg", "/app/test_reports/ui_iteration_37b/final.jpeg"],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "downloadRaw() blob->text->JSON.parse fallback chain is correct and defensive; consider extracting it into a shared lib/api helper (e.g. formatBlobApiError) since any other responseType:'blob' download (reports/exports) will hit the same interceptor blind spot."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "not tested (frontend-only request)", "frontend": "100%"},
+  "seed_data_creation": "Uploaded /tmp/TEST_new_upload.xlsx (2 synthetic sales rows, TEST_ORD_1/2, TEST_SKU_1/2, portal=myntra) via the UI for the download regression, then deleted it through the UI delete button. DB verified clean.",
+  "should_call_test_agent_after_fix": false,
+  "should_main_agent_self_test": false,
+  "test_credentials": "admin@fundle.ai / admin123 (from /app/memory/test_credentials.md)",
+  "context_for_next_testing_agent": "Only one legacy upload exists in Mongo: uploads.id=2ae44043-40bc-4352-9a20-d1460a255229 (SaleData.xlsx, 21,614 rows) with NO db.upload_files row — use it to reproduce the 410 download path. New uploads always create upload_files rows so they download fine. Valid minimal sales .xlsx headers for POST /api/uploads/sales: Order Id, SKU, NSV, MRP, Qty, Month, Brand, Category, Sub Category, Zone, Order Date, Order Status, Txn Type (required canonical set = online_order_id, sku, nsv_val; header row needs >=3 alias matches else 400).",
+  "rca_of_the_issue": "Original defect: axios responseType 'blob' makes error bodies Blobs, so e.response.data.detail was undefined and no toast rendered. Fix (Uploads.jsx downloadRaw) reads the Blob via .text() and JSON.parses it to extract .detail, with plain-text and formatApiError fallbacks. Verified working end-to-end."
+}

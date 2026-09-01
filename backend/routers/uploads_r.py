@@ -346,6 +346,18 @@ async def upload_sales(file: UploadFile = File(...), portal: str = Query("myntra
         "portal": portal,
     }
     await db.uploads.insert_one({**upload_doc})
+    # Store the raw file bytes so it can be re-downloaded (raw/original upload).
+    # Base64 encode inside a separate collection to keep the uploads row small.
+    import base64 as _b64
+    await db.upload_files.insert_one({
+        "upload_id": upload_id,
+        "filename": file.filename,
+        "content_b64": _b64.b64encode(content).decode("ascii"),
+        "size": len(content),
+        "portal": portal,
+        "type": "sales",
+        "uploaded_at": _iso(),
+    })
 
     invalidate_cache()
 
@@ -484,6 +496,17 @@ async def upload_settlement(file: UploadFile = File(...), portal: str = Query("m
         "portal": portal,
     }
     await db.uploads.insert_one(upload_doc)
+    # Store raw file bytes for re-download.
+    import base64 as _b64
+    await db.upload_files.insert_one({
+        "upload_id": upload_id,
+        "filename": file.filename,
+        "content_b64": _b64.b64encode(content).decode("ascii"),
+        "size": len(content),
+        "portal": portal,
+        "type": "settlement",
+        "uploaded_at": _iso(),
+    })
 
     invalidate_cache("periods")
     invalidate_cache("overview")
@@ -522,8 +545,36 @@ async def delete_upload(upload_id: str):
         if sales_ids:
             await db.calculations.delete_many({"sales_id": {"$in": sales_ids}})
     await db.uploads.delete_one({"id": upload_id})
+    await db.upload_files.delete_one({"upload_id": upload_id})
     invalidate_cache()  # nuke all — sales/calc/disc caches all potentially stale
     return {"ok": True}
+
+
+@router.get("/uploads/{upload_id}/download")
+async def download_upload(upload_id: str):
+    """Return the original XLSX bytes that were uploaded. Raw file is stored
+    at upload time in db.upload_files. Older uploads (pre-2026-02) predate
+    the raw-file store and will 404 with a helpful message."""
+    doc = await db.upload_files.find_one({"upload_id": upload_id})
+    if not doc:
+        up = await db.uploads.find_one({"id": upload_id})
+        if not up:
+            raise HTTPException(404, "Upload not found")
+        raise HTTPException(
+            410,
+            "Raw file for this upload wasn't captured (uploaded before raw-file store was enabled). Re-upload the file to enable download.",
+        )
+    import base64 as _b64
+    from fastapi.responses import Response
+    raw = _b64.b64decode(doc["content_b64"])
+    return Response(
+        content=raw,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={
+            "Content-Disposition": f'attachment; filename="{doc["filename"]}"',
+            "Content-Length": str(len(raw)),
+        },
+    )
 
 
 @router.get("/sales")

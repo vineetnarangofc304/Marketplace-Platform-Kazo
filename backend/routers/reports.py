@@ -138,8 +138,8 @@ async def _period_aggregate(months: List[str], label: str, portal: Optional[str]
     return await get_or_set(cache_key, 30, _load, tag="calculations")
 
 
-async def _month_aggregate(month: str) -> Dict[str, Any]:
-    return await _period_aggregate([month], month)
+async def _month_aggregate(month: str, portal: Optional[str] = None) -> Dict[str, Any]:
+    return await _period_aggregate([month], month, portal=portal)
 
 
 @router.get("/reports/periods")
@@ -173,10 +173,10 @@ async def period_report(
 
 
 @router.get("/reports/monthly")
-async def monthly_report(month: str = Query(..., description="YYYY-MM")):
+async def monthly_report(month: str = Query(..., description="YYYY-MM"), portal: Optional[str] = None):
     if not MONTH_RE.match(month or ""):
         raise HTTPException(400, "month must be in YYYY-MM format")
-    return await _month_aggregate(month)
+    return await _month_aggregate(month, portal=portal)
 
 
 def _fmt_num(x):
@@ -189,9 +189,12 @@ def _fmt_num(x):
 
 
 @router.get("/reports/monthly/export")
-async def export_monthly(month: str = Query(..., description="YYYY-MM")):
+async def export_monthly(
+    month: str = Query(..., description="YYYY-MM"),
+    portal: Optional[str] = None,
+):
     """Return an Excel workbook with the full monthly report."""
-    agg = await _month_aggregate(month)
+    agg = await _month_aggregate(month, portal=portal)
 
     wb = openpyxl.Workbook()
 
@@ -218,7 +221,7 @@ async def export_monthly(month: str = Query(..., description="YYYY-MM")):
     ws = wb.active
     ws.title = "Summary"
     ws.cell(1, 1, "KAZO Marketplace Finance — Monthly Report").font = title_font
-    ws.cell(2, 1, f"Marketplace: Myntra   |   Report Month: {month}   |   Generated: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}").font = subtitle_font
+    ws.cell(2, 1, f"Marketplace: {(portal or 'ALL').title()}   |   Report Month: {month}   |   Generated: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}").font = subtitle_font
     ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=4)
     ws.merge_cells(start_row=2, start_column=1, end_row=2, end_column=6)
 

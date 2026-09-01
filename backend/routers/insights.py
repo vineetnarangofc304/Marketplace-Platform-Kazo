@@ -30,10 +30,13 @@ class BriefIn(BaseModel):
     period_type: Literal["month", "quarter", "year", "ytd", "all"] = "month"
     period_value: Optional[str] = None
     tone: Literal["executive", "operational", "concise"] = "executive"
+    portal: Optional[str] = None
 
 
-async def _collect_metrics(period_type: str, period_value: Optional[str]) -> Dict[str, Any]:
+async def _collect_metrics(period_type: str, period_value: Optional[str], portal: Optional[str] = None) -> Dict[str, Any]:
     match = month_query(period_type, period_value)
+    if portal and portal.lower() != "all":
+        match = {**match, "portal": portal.lower()}
     _, label = parse_period(period_type, period_value) if period_value or period_type == "all" else ([], "")
 
     # Calculations rollup
@@ -238,12 +241,14 @@ async def _llm_narrative(m: Dict[str, Any], health: Dict[str, Any], tone: str) -
 async def health_score(
     period_type: Literal["month", "quarter", "year", "ytd", "all"] = "month",
     period_value: Optional[str] = None,
+    portal: Optional[str] = None,
 ):
-    metrics = await _collect_metrics(period_type, period_value)
+    metrics = await _collect_metrics(period_type, period_value, portal=portal)
     health = _compute_health(metrics)
     return {
         "period_type": period_type,
         "period_value": period_value,
+        "portal": portal,
         "label": metrics.get("label"),
         "health": health,
         "metrics": {
@@ -256,7 +261,7 @@ async def health_score(
 
 @router.post("/morning-brief")
 async def morning_brief(payload: BriefIn):
-    metrics = await _collect_metrics(payload.period_type, payload.period_value)
+    metrics = await _collect_metrics(payload.period_type, payload.period_value, portal=payload.portal)
     health = _compute_health(metrics)
 
     narrative = await _llm_narrative(metrics, health, payload.tone)

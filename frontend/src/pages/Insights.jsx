@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import PeriodSelector from "@/components/PeriodSelector";
 import StatChip from "@/components/StatChip";
 import { fmtCurrency, fmtInt } from "@/lib/format";
+import { usePortal } from "@/context/PortalContext";
 import { Sparkles, RefreshCw, Gauge } from "lucide-react";
 import { RadialBarChart, RadialBar, PolarAngleAxis, ResponsiveContainer } from "recharts";
 import ReactMarkdown from "react-markdown";
@@ -13,6 +14,7 @@ const GRADE_COLOR = { A: "#059669", B: "#22C55E", C: "#F59E0B", D: "#EA580C", F:
 
 export default function Insights() {
   const [searchParams] = useSearchParams();
+  const { portalParam } = usePortal();
   const [period, setPeriod] = useState({
     period_type: searchParams.get("period_type") || "month",
     period_value: searchParams.get("period_value") || "",
@@ -28,7 +30,7 @@ export default function Insights() {
     setLoadingHealth(true);
     try {
       const { data } = await api.get("/insights/health-score", {
-        params: { period_type: period.period_type, period_value: period.period_value || undefined },
+        params: { period_type: period.period_type, period_value: period.period_value || undefined, portal: portalParam },
       });
       setHealth(data);
     } catch (e) { toast.error(formatApiError(e.response?.data?.detail)); }
@@ -42,6 +44,7 @@ export default function Insights() {
         period_type: period.period_type,
         period_value: period.period_value || undefined,
         tone,
+        portal: portalParam,
       });
       setBrief(data);
       toast.success(data.source === "llm" ? "AI brief generated" : "Rule-based brief generated");
@@ -49,7 +52,7 @@ export default function Insights() {
     finally { setLoadingBrief(false); }
   };
 
-  useEffect(() => { loadHealth(); setBrief(null); /* eslint-disable-next-line */ }, [period.period_type, period.period_value]);
+  useEffect(() => { loadHealth(); setBrief(null); /* eslint-disable-next-line */ }, [period.period_type, period.period_value, portalParam]);
 
   const h = health?.health;
   const gradeColor = h ? GRADE_COLOR[h.grade] || "#475569" : "#94A3B8";

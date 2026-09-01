@@ -1,0 +1,39 @@
+{
+  "summary": "Iteration 36 verification of 4 reported fixes (report portal filters, raw upload download, Recovery page crash, AI Insights) on Fundle Marketplace AutoPilot. Backend: new pytest suite /app/backend/tests/test_iter36_fixes.py — 12/12 passing (portal-scoped monthly report + export, upload raw download incl. byte-for-byte match & 404/410 paths, recovery cases, insights health-score + morning-brief LLM, regressions on /uploads and /calculations). Regression suites test_marketing_studio.py + test_brochure.py: 26/26 passing. Frontend: logged in as admin@fundle.ai, verified /recovery renders (no crash, all rec-* testids present), /insights renders health score 95.6 + Generate Brief triggers POST and renders LLM narrative (Source: LLM), /reports portal switcher re-fetches KPIs (Myntra vs Amazon differ) and export downloads Fundle_MYNTRA_Report_2026-04.xlsx, /uploads Download button present per row — new upload downloaded successfully (TEST_iter36_ui.xlsx, 5013 bytes, valid PK header). One real UX defect found: legacy upload download (HTTP 410) fails silently with no toast.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "POST /api/insights/morning-brief", "issue": "Response has no top-level `headline` field; headline is only nested at health.headline. Frontend works (reads health.headline), but the contract stated in the request is inaccurate — consider surfacing headline at top level for API consumers."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "Uploads.jsx downloadRaw()", "issue": "Silent failure on legacy uploads: api.get uses responseType:'blob', so on a 410 the error body is a Blob and e.response.data.detail is undefined -> formatApiError(undefined) produces no toast. Clicking Download on a pre-raw-store upload does nothing visible (verified: request to /api/uploads/{id}/download returned 410, zero toasts rendered). Fix: await e.response.data.text() and JSON.parse to extract detail, or set a fallback message.", "selector": "[data-testid^=\"btn-download-upload-\"]", "priority": "HIGH"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "AI Insights — Morning Brief", "issues": ["ReactMarkdown output is unstyled: h3 headings ('Headline', 'What Went Well', 'Recommended Actions Today') render at the same size/weight as body text, so the brief reads as a wall of text. Add Tailwind `prose` classes or explicit markdown component styling."]},
+      {"screen": "Reports (portal with no data, e.g. Amazon)", "issues": ["KPI cards show bare '—' and the sub-category bar chart renders as an empty bordered box with only a legend; no explicit 'No data for this portal/period' empty state."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_iter36_fixes.py", "/app/test_reports/pytest/iter36.xml"],
+  "action_items": [
+    "Uploads.jsx downloadRaw(): decode blob error response so the 410 'raw file not captured' message surfaces as a toast (currently silent no-op).",
+    "Optional: add `prose` styling to the Morning Brief markdown container.",
+    "Optional: add explicit empty-state copy on /reports when the selected portal has no rows."
+  ],
+  "critical_code_review_comments": [
+    "uploads_r.py stores the full XLSX as base64 inside a MongoDB document (db.upload_files.content_b64). Real marketplace files can exceed the 16MB BSON limit (base64 inflates ~33%), which will hard-fail large uploads. Use GridFS or object storage.",
+    "`import base64 as _b64` / `from fastapi.responses import Response` are done inline inside handlers in uploads_r.py — move to module-level imports.",
+    "GET /uploads/{upload_id}/download loads the entire base64 payload into memory and returns it as a single Response; consider streaming for large files.",
+    "uploads_r.py is ~880 lines — split parsers (sales/settlement) and query/export endpoints into separate modules."
+  ],
+  "updated_files": ["/app/backend/tests/test_iter36_fixes.py"],
+  "success_rate": {"backend": "100%", "frontend": "90%"},
+  "seed_data_creation": "Created and then deleted one TEST_ upload (TEST_iter36.xlsx via API, TEST_iter36_ui.xlsx via UI) plus their single sales rows. No residual test data.",
+  "should_call_test_agent_after_fix": false,
+  "should_main_agent_self_test": true,
+  "test_credentials": "admin@fundle.ai / admin123 (worked)",
+  "context_for_next_testing_agent": "Reusable suite: /app/backend/tests/test_iter36_fixes.py (requires login token — helper _login() uses admin@fundle.ai/admin123; all API routes require Bearer auth). Data present: only one legacy Myntra sales upload (SaleData.xlsx, 21,614 rows, month 2026-04) which predates the raw-file store, so its /download returns 410 by design. Amazon/other portals have zero rows — useful for portal-filter assertions. Recovery has 0 cases for 2026-04.",
+  "rca_of_the_issue": "Legacy-upload download silence: axios request is made with responseType:'blob', so for non-2xx responses e.response.data is a Blob rather than parsed JSON; e.response.data.detail is undefined and formatApiError(undefined) returns falsy, so toast.error() renders nothing. All four reported bugs themselves are fixed and verified end-to-end."
+}

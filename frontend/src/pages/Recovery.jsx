@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import PeriodSelector from "@/components/PeriodSelector";
 import StatChip from "@/components/StatChip";
 import { SortableTh, nextDir } from "@/components/SortableTable";
+import { usePortal } from "@/context/PortalContext";
 import {
   Wallet, Wand2, RefreshCw, Search, X, Filter, Paperclip, Send, Trash2, Download, ChevronRight,
 } from "lucide-react";

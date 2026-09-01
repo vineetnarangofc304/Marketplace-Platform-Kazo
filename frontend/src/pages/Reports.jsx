@@ -35,11 +35,11 @@ export default function Reports() {
     }
     setDownloading(true);
     try {
-      const res = await api.get("/reports/monthly/export", { params: { month: period.period_value }, responseType: "blob" });
+      const res = await api.get("/reports/monthly/export", { params: { month: period.period_value, portal: portalParam }, responseType: "blob" });
       const url = window.URL.createObjectURL(new Blob([res.data]));
       const a = document.createElement("a");
       a.href = url;
-      a.download = `KAZO_Myntra_Report_${period.period_value}.xlsx`;
+      a.download = `Fundle_${(portalParam || "ALL").toUpperCase()}_Report_${period.period_value}.xlsx`;
       document.body.appendChild(a);
       a.click();
       a.remove();

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import api, { formatApiError } from "@/lib/api";
-import { UploadCloud, FileSpreadsheet, Trash2, PlayCircle, AlertTriangle } from "lucide-react";
+import { UploadCloud, FileSpreadsheet, Trash2, PlayCircle, AlertTriangle, Download } from "lucide-react";
 import { toast } from "sonner";
 import { fmtInt } from "@/lib/format";
 import { usePortal } from "@/context/PortalContext";
@@ -114,6 +114,32 @@ export default function Uploads() {
       toast.error(formatApiError(e.response?.data?.detail));
     } finally {
       setRunning(false);
+    }
+  };
+
+  const downloadRaw = async (upload_id, filename) => {
+    try {
+      const res = await api.get(`/uploads/${upload_id}/download`, { responseType: "blob" });
+      const url = URL.createObjectURL(res.data);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename || `upload_${upload_id}.xlsx`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      // Server errors come back as a Blob (because we asked for blob response).
+      // Try to read the blob as JSON to surface the FastAPI detail message.
+      let msg = "Download failed";
+      try {
+        if (e.response?.data instanceof Blob) {
+          const t = await e.response.data.text();
+          try { msg = JSON.parse(t).detail || t; }
+          catch { msg = t || msg; }
+        } else {
+          msg = formatApiError(e.response?.data?.detail) || msg;
+        }
+      } catch { /* keep default */ }
+      toast.error(msg);
     }
   };
 
@@ -245,6 +271,9 @@ export default function Uploads() {
                           <PlayCircle size={12} /> Run Calc
                         </button>
                       ) : null}
+                      <button onClick={() => downloadRaw(u.id, u.filename)} data-testid={`btn-download-upload-${u.id}`} className="btn text-xs" title="Download original file">
+                        <Download size={12} />
+                      </button>
                       <button onClick={() => deleteUpload(u.id)} data-testid={`btn-delete-upload-${u.id}`} className="btn btn-danger text-xs">
                         <Trash2 size={12} />
                       </button>
